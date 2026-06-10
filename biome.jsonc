@@ -6,6 +6,9 @@
 		"useIgnoreFile": true,
 		"clientKind": "git"
 	},
+	"files": {
+		"includes": ["**", "!.codex"]
+	},
 	"assist": {
 		"enabled": true,
 		"actions": {
