@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mise exec -- bun run check:write",
+            "timeout": 120,
+            "statusMessage": "Formatting changed files"
+          }
+        ]
+      }
+    ]
+  }
+}
