@@ -399,14 +399,46 @@ export async function validateRunStore(): Promise<FixtureCounts> {
 	}
 
 	for (const briefingOutput of briefingOutputs) {
+		const sourcePacket = sourcePacketById.get(briefingOutput.sourcePacketId);
+		const evalCase = evalCaseById.get(briefingOutput.caseId);
+
 		assertFixtureReference(
-			sourcePacketById.has(briefingOutput.sourcePacketId),
+			sourcePacket !== undefined,
 			`Briefing output ${briefingOutput.id} references missing source packet ${briefingOutput.sourcePacketId}`,
 		);
 		assertFixtureReference(
-			evalCaseById.has(briefingOutput.caseId),
+			evalCase !== undefined,
 			`Briefing output ${briefingOutput.id} references missing eval case ${briefingOutput.caseId}`,
 		);
+		assertFixtureReference(
+			runManifestById.has(briefingOutput.metadata.runId),
+			`Briefing output ${briefingOutput.id} references missing run ${briefingOutput.metadata.runId}`,
+		);
+		assertFixtureReference(
+			evalCase.sourcePacketId === briefingOutput.sourcePacketId,
+			`Briefing output ${briefingOutput.id} links source packet ${briefingOutput.sourcePacketId} to eval case ${evalCase.id}, but that case belongs to source packet ${evalCase.sourcePacketId}`,
+		);
+		assertFixtureReference(
+			sourcePacket.caseId === briefingOutput.caseId,
+			`Briefing output ${briefingOutput.id} links eval case ${briefingOutput.caseId} to source packet ${sourcePacket.id}, but that packet belongs to eval case ${sourcePacket.caseId}`,
+		);
+
+		const sourceCitationIds = new Set(
+			sourcePacket.sources.map((source) => source.id),
+		);
+		const acceptedCitationIds = new Set(evalCase.acceptedCitations);
+		for (const claim of briefingOutput.claims) {
+			for (const citation of claim.citations) {
+				assertFixtureReference(
+					sourceCitationIds.has(citation),
+					`Briefing output ${briefingOutput.id} cites ${citation}, which is not present in source packet ${sourcePacket.id}`,
+				);
+				assertFixtureReference(
+					acceptedCitationIds.has(citation),
+					`Briefing output ${briefingOutput.id} cites ${citation}, which is not accepted by eval case ${evalCase.id}`,
+				);
+			}
+		}
 	}
 
 	for (const trace of generationTraces) {

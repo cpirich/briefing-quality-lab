@@ -27,7 +27,7 @@
 		{
 			"label": "Cost ratio",
 			"value": "1.08x",
-			"delta": "+0.04x",
+			"delta": "+0.08x",
 			"status": "Inside 1.15x guardrail",
 			"tone": "amber"
 		},

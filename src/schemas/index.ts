@@ -10,7 +10,22 @@ const citationIdSchema = z
 	.min(1)
 	.regex(/^[A-Z][0-9]+$/);
 
-const artifactPathSchema = z.string().min(1);
+const artifactPathSchema = z
+	.string()
+	.min(1)
+	.refine(
+		(value) =>
+			/^(data|reports|runs)\//.test(value) &&
+			!value.startsWith("/") &&
+			!value.includes("\\") &&
+			!value.includes("//") &&
+			!value.split("/").includes(".") &&
+			!value.split("/").includes(".."),
+		{
+			message:
+				"Artifact paths must be normalized repo-relative paths under data/, reports/, or runs/",
+		},
+	);
 
 export const SourceDocumentSchema = z.object({
 	id: citationIdSchema,
@@ -83,39 +98,65 @@ export const ToolCallTraceSchema = z.object({
 	error: z.string().min(1).optional(),
 });
 
-export const GenerationTraceSchema = z.object({
-	id: fixtureIdSchema,
-	runId: fixtureIdSchema,
-	caseId: fixtureIdSchema,
-	sourcePacketId: fixtureIdSchema,
-	input: z.object({
-		userRequest: z.string().min(1),
-		sourcePacketPath: artifactPathSchema,
-	}),
-	messages: z
-		.array(
-			z.object({
-				role: z.enum(["system", "user", "assistant", "tool"]),
-				content: z.string().min(1),
-			}),
-		)
-		.min(1),
-	model: z.object({
-		provider: z.string().min(1),
-		name: z.string().min(1),
-		temperature: z.number().min(0).optional(),
-	}),
-	output: BriefingOutputSchema,
-	toolCalls: z.array(ToolCallTraceSchema),
-	cost: z.object({
-		inputTokens: z.number().int().nonnegative(),
-		outputTokens: z.number().int().nonnegative(),
-		estimatedUsd: z.number().nonnegative(),
-	}),
-	latencyMs: z.number().int().nonnegative(),
-	artifactPaths: z.array(artifactPathSchema).min(1),
-	error: z.string().min(1).optional(),
-});
+export const GenerationTraceSchema = z
+	.object({
+		id: fixtureIdSchema,
+		runId: fixtureIdSchema,
+		caseId: fixtureIdSchema,
+		sourcePacketId: fixtureIdSchema,
+		input: z.object({
+			userRequest: z.string().min(1),
+			sourcePacketPath: artifactPathSchema,
+		}),
+		messages: z
+			.array(
+				z.object({
+					role: z.enum(["system", "user", "assistant", "tool"]),
+					content: z.string().min(1),
+				}),
+			)
+			.min(1),
+		model: z.object({
+			provider: z.string().min(1),
+			name: z.string().min(1),
+			temperature: z.number().min(0).optional(),
+		}),
+		output: BriefingOutputSchema,
+		toolCalls: z.array(ToolCallTraceSchema),
+		cost: z.object({
+			inputTokens: z.number().int().nonnegative(),
+			outputTokens: z.number().int().nonnegative(),
+			estimatedUsd: z.number().nonnegative(),
+		}),
+		latencyMs: z.number().int().nonnegative(),
+		artifactPaths: z.array(artifactPathSchema).min(1),
+		error: z.string().min(1).optional(),
+	})
+	.superRefine((trace, context) => {
+		if (trace.output.caseId !== trace.caseId) {
+			context.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: "Trace output caseId must match trace caseId",
+				path: ["output", "caseId"],
+			});
+		}
+
+		if (trace.output.sourcePacketId !== trace.sourcePacketId) {
+			context.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: "Trace output sourcePacketId must match trace sourcePacketId",
+				path: ["output", "sourcePacketId"],
+			});
+		}
+
+		if (trace.output.metadata.runId !== trace.runId) {
+			context.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: "Trace output metadata.runId must match trace runId",
+				path: ["output", "metadata", "runId"],
+			});
+		}
+	});
 
 export const EvaluatorOutputSchema = z.object({
 	id: fixtureIdSchema,
