@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-
-import { Button } from "~/components/ui/button";
-import { Card, CardBody, CardHeader } from "~/components/ui/card";
-import { Select } from "~/components/ui/select";
+import { Button } from "~/components/button";
+import { Card, CardBody, CardHeader } from "~/components/card";
+import { NativeSelect } from "~/components/native-select";
 import type { BriefingOutput, SourcePacket } from "~/schemas";
 
 const defaultLabPacketId = "packet-eval-loop";
@@ -49,7 +48,7 @@ export function LabGeniePanel({
 					>
 						Source packet
 					</label>
-					<Select
+					<NativeSelect
 						id="lab-source-packet"
 						onChange={(event) => {
 							setSelectedPacketId(event.target.value);
@@ -63,7 +62,7 @@ export function LabGeniePanel({
 								{packet.title}
 							</option>
 						))}
-					</Select>
+					</NativeSelect>
 					<p className="mt-2 text-[var(--muted-foreground)] text-sm">
 						{selectedPacket?.summary}
 					</p>

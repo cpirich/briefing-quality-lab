@@ -2,11 +2,15 @@ import type { ComponentProps } from "react";
 
 import { cn } from "~/lib/utils";
 
-type SelectProps = ComponentProps<"select"> & {
+type NativeSelectProps = ComponentProps<"select"> & {
 	wrapperClassName?: string;
 };
 
-export function Select({ className, wrapperClassName, ...props }: SelectProps) {
+export function NativeSelect({
+	className,
+	wrapperClassName,
+	...props
+}: NativeSelectProps) {
 	return (
 		<div className={cn("relative", wrapperClassName)}>
 			<select

@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { Card, CardBody, CardHeader } from "~/components/ui/card";
-import { Select } from "~/components/ui/select";
+import { Badge } from "~/components/badge";
+import { Button } from "~/components/button";
+import { Card, CardBody, CardHeader } from "~/components/card";
+import { NativeSelect } from "~/components/native-select";
 import type { BriefingOutput, SourcePacket } from "~/schemas";
 
 type GeniePageClientProps = {
@@ -80,7 +79,7 @@ export function GeniePageClient({
 							>
 								Packet
 							</label>
-							<Select
+							<NativeSelect
 								id="source-packet"
 								onChange={(event) => {
 									setSelectedPacketId(event.target.value);
@@ -94,7 +93,7 @@ export function GeniePageClient({
 										{packet.title}
 									</option>
 								))}
-							</Select>
+							</NativeSelect>
 						</div>
 						<div className="space-y-3">
 							{selectedPacket?.sources.map((source) => (

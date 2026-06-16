@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
-import { Badge } from "~/components/ui/badge";
-import { Card, CardBody, CardHeader } from "~/components/ui/card";
+import { Badge } from "~/components/badge";
+import { Card, CardBody, CardHeader } from "~/components/card";
 import { api } from "~/trpc/server";
 import { LabActions } from "./lab-actions";
 import { LabGeniePanel } from "./lab-genie-panel";
