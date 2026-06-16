@@ -1,0 +1,32 @@
+{
+	"id": "packet-dev-adoption",
+	"title": "Developer Adoption Review",
+	"summary": "Product signals from docs usage, support tickets, onboarding interviews, and pilot-team notes.",
+	"caseId": "case-adoption-friction",
+	"sources": [
+		{
+			"id": "S1",
+			"title": "Docs analytics",
+			"excerpt": "Quickstart completion rose to 58%, but teams still drop during local setup and credential configuration.",
+			"documentType": "analytics digest"
+		},
+		{
+			"id": "S2",
+			"title": "Support digest",
+			"excerpt": "Most tickets mention environment drift, stale CLI versions, and unclear recovery steps after failed installs.",
+			"documentType": "support summary"
+		},
+		{
+			"id": "S3",
+			"title": "Pilot interviews",
+			"excerpt": "Senior engineers value traceability and want generated recommendations tied back to source snippets.",
+			"documentType": "interview synthesis"
+		}
+	],
+	"metadata": {
+		"theme": "developer adoption",
+		"synthetic": true,
+		"publicSafe": true,
+		"createdBy": "phase-4-seed"
+	}
+}

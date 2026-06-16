@@ -1,0 +1,86 @@
+{
+	"id": "trace-case-eval-loop-candidate",
+	"runId": "candidate-citation-gates",
+	"caseId": "case-eval-loop",
+	"sourcePacketId": "packet-eval-loop",
+	"input": {
+		"userRequest": "Recommend whether to expand automated evals, balancing coverage, citation support, trace utility, and cost.",
+		"sourcePacketPath": "data/source-packets/packet-eval-loop.json"
+	},
+	"messages": [
+		{
+			"role": "system",
+			"content": "You are Briefing Genie. Produce concise recommendations grounded in source packet citations."
+		},
+		{
+			"role": "user",
+			"content": "Use packet-eval-loop and preserve citation support as an explicit release guardrail."
+		},
+		{
+			"role": "assistant",
+			"content": "Generated a citation-gated recommendation for smaller eval expansion."
+		}
+	],
+	"model": {
+		"provider": "seeded-fixture",
+		"name": "fixture-candidate-citation-gates",
+		"temperature": 0
+	},
+	"output": {
+		"id": "briefing-eval-loop-candidate",
+		"sourcePacketId": "packet-eval-loop",
+		"caseId": "case-eval-loop",
+		"title": "Recommendation: gate eval expansion on citation support",
+		"summary": "The eval loop is ready for broader automation only if citation support remains a release guardrail. Smaller batches with visible failure clusters are the safer next step.",
+		"claims": [
+			{
+				"text": "Smaller eval batches make failures easier to inspect before widening model coverage.",
+				"citations": ["S1"]
+			},
+			{
+				"text": "Coverage gains should not ship when grounding regresses.",
+				"citations": ["S2"]
+			},
+			{
+				"text": "Trace depth is useful, but retry behavior needs a cost cap.",
+				"citations": ["S3"]
+			}
+		],
+		"openQuestions": [
+			"What citation-support threshold should block a candidate run?",
+			"Which traces are worth keeping when retry costs rise?"
+		],
+		"recommendation": "Run the next experiment as a small visible batch with citation support and cost ratio as explicit gates.",
+		"metadata": {
+			"variant": "candidate-citation-gates",
+			"runId": "candidate-citation-gates",
+			"model": "seeded-fixture"
+		}
+	},
+	"toolCalls": [
+		{
+			"id": "load-source-packet",
+			"toolName": "runStore.loadSourcePacket",
+			"arguments": {
+				"sourcePacketId": "packet-eval-loop"
+			},
+			"result": {
+				"path": "data/source-packets/packet-eval-loop.json",
+				"sourceCount": 3
+			},
+			"status": "success",
+			"startedAt": "2026-06-11T18:44:58.000Z",
+			"endedAt": "2026-06-11T18:44:58.012Z"
+		}
+	],
+	"cost": {
+		"inputTokens": 720,
+		"outputTokens": 280,
+		"estimatedUsd": 0
+	},
+	"latencyMs": 7600,
+	"artifactPaths": [
+		"runs/candidate-citation-gates/traces/case-eval-loop.json",
+		"runs/candidate-citation-gates/briefings/packet-eval-loop.json"
+	]
+}

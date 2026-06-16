@@ -1,0 +1,129 @@
+{
+	"id": "baseline-2026-06-10-candidate-citation-gates",
+	"baselineRunId": "baseline-2026-06-10",
+	"candidateRunId": "candidate-citation-gates",
+	"metrics": [
+		{
+			"label": "Overall quality",
+			"value": "0.84",
+			"delta": "+0.12",
+			"status": "Candidate passes target",
+			"tone": "green"
+		},
+		{
+			"label": "Citation grounding",
+			"value": "0.78",
+			"delta": "+0.19",
+			"status": "Weak cluster shrinking",
+			"tone": "green"
+		},
+		{
+			"label": "Coverage",
+			"value": "0.88",
+			"delta": "+0.07",
+			"status": "Expected points covered",
+			"tone": "blue"
+		},
+		{
+			"label": "Cost ratio",
+			"value": "1.08x",
+			"delta": "+0.04x",
+			"status": "Inside 1.15x guardrail",
+			"tone": "amber"
+		},
+		{
+			"label": "Latency ratio",
+			"value": "0.94x",
+			"delta": "-0.09x",
+			"status": "Faster than baseline",
+			"tone": "green"
+		}
+	],
+	"trend": [
+		{
+			"label": "Base",
+			"score": 59
+		},
+		{
+			"label": "Trace",
+			"score": 68
+		},
+		{
+			"label": "Cite",
+			"score": 77
+		},
+		{
+			"label": "Latest",
+			"score": 84
+		}
+	],
+	"comparisonRows": [
+		{
+			"metric": "Overall score",
+			"baseline": "0.72",
+			"candidate": "0.84",
+			"delta": "+0.12"
+		},
+		{
+			"metric": "Citation support",
+			"baseline": "0.59",
+			"candidate": "0.78",
+			"delta": "+0.19"
+		},
+		{
+			"metric": "Unsupported claims",
+			"baseline": "11",
+			"candidate": "4",
+			"delta": "-7"
+		},
+		{
+			"metric": "Median latency",
+			"baseline": "8.1s",
+			"candidate": "7.6s",
+			"delta": "-0.5s"
+		}
+	],
+	"failureClusters": [
+		{
+			"title": "Weak citation grounding",
+			"count": 4,
+			"severity": "High",
+			"evidence": "Briefings include plausible strategic claims that are only loosely connected to packet excerpts.",
+			"cases": ["case-eval-loop", "case-adoption-friction"]
+		},
+		{
+			"title": "Coverage misses governance risk",
+			"count": 2,
+			"severity": "Medium",
+			"evidence": "Outputs mention speed and cost but underweight human approval and holdout-case boundaries.",
+			"cases": ["case-eval-loop"]
+		},
+		{
+			"title": "Cost tradeoff too vague",
+			"count": 2,
+			"severity": "Medium",
+			"evidence": "Recommendations do not quantify retry or trace costs even when source notes provide ratios.",
+			"cases": ["case-runtime-choice"]
+		}
+	],
+	"featuredCase": {
+		"id": "case-eval-loop",
+		"title": "Eval loop strategy briefing",
+		"sourceExcerpt": "Coverage can improve while grounding regresses, so citation support needs an explicit shipping gate.",
+		"baseline": "The team should expand automated evals because coverage improved and review time dropped.",
+		"candidate": "The team should expand smaller eval batches only if citation support remains above the guardrail; coverage gains alone are not enough to ship.",
+		"evaluatorNote": "Candidate preserves the positive eval-loop recommendation while grounding the shipping condition in the guardrail note."
+	},
+	"recommendation": {
+		"tone": "green",
+		"label": "recommended",
+		"text": "Promote the citation-gated prompt variant to a larger visible eval run, while keeping holdout cases read-only until the run store is Zod-validated.",
+		"warning": "Cost is still inside guardrail, but the next target plan should replace these static artifacts with validated fixtures."
+	},
+	"artifactPaths": [
+		"runs/baseline-2026-06-10/manifest.json",
+		"runs/candidate-citation-gates/manifest.json",
+		"runs/candidate-citation-gates/traces/case-eval-loop.json",
+		"reports/latest-eval-summary.md"
+	]
+}

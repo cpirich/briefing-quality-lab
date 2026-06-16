@@ -1,0 +1,32 @@
+{
+	"id": "packet-local-cloud",
+	"title": "Local vs Cloud Execution",
+	"summary": "Synthetic planning packet for a product decision on local reliability, hosted convenience, and demo risk.",
+	"caseId": "case-runtime-choice",
+	"sources": [
+		{
+			"id": "S1",
+			"title": "Reliability review",
+			"excerpt": "Local operation keeps the demo inspectable but makes dependency pinning and seed data more important.",
+			"documentType": "reliability review"
+		},
+		{
+			"id": "S2",
+			"title": "Go-to-market note",
+			"excerpt": "Hosted previews reduce onboarding friction, but the current roadmap has no production hosting plan.",
+			"documentType": "planning note"
+		},
+		{
+			"id": "S3",
+			"title": "Security note",
+			"excerpt": "Public fixtures must avoid private planning paths, customer identifiers, and unreleased vendor data.",
+			"documentType": "security review"
+		}
+	],
+	"metadata": {
+		"theme": "runtime decision",
+		"synthetic": true,
+		"publicSafe": true,
+		"createdBy": "phase-4-seed"
+	}
+}

@@ -1,0 +1,48 @@
+{
+	"runId": "candidate-citation-gates",
+	"createdAt": "2026-06-11T18:45:00.000Z",
+	"variantLabel": "candidate-citation-gates",
+	"status": "complete",
+	"gitRef": "synthetic-candidate",
+	"command": "bun run demo:seed -- --variant candidate-citation-gates",
+	"caseIds": [
+		"case-adoption-friction",
+		"case-eval-loop",
+		"case-runtime-choice"
+	],
+	"aggregateMetrics": {
+		"overall": 0.84,
+		"grounding": 0.78,
+		"coverage": 0.88,
+		"citationSupport": 0.78,
+		"unsupportedClaims": 4,
+		"medianLatencyMs": 7600,
+		"costRatio": 1.08,
+		"latencyRatio": 0.94
+	},
+	"guardrails": [
+		{
+			"id": "citation-support",
+			"label": "Citation support",
+			"status": "pass",
+			"value": "0.78",
+			"threshold": ">= 0.72"
+		},
+		{
+			"id": "cost-ratio",
+			"label": "Cost ratio",
+			"status": "warn",
+			"value": "1.08x",
+			"threshold": "<= 1.15x"
+		}
+	],
+	"artifactPaths": [
+		"runs/candidate-citation-gates/manifest.json",
+		"runs/candidate-citation-gates/briefings/packet-dev-adoption.json",
+		"runs/candidate-citation-gates/briefings/packet-eval-loop.json",
+		"runs/candidate-citation-gates/briefings/packet-local-cloud.json",
+		"runs/candidate-citation-gates/traces/case-eval-loop.json",
+		"runs/candidate-citation-gates/evaluations/case-eval-loop.json",
+		"reports/latest-eval-summary.md"
+	]
+}

@@ -8,6 +8,7 @@
 		"check": "biome check .",
 		"check:unsafe": "biome check --write --unsafe .",
 		"check:write": "biome check --write .",
+		"data:validate": "bun run scripts/validate-data.ts",
 		"dev": "next dev",
 		"preview": "next build && next start",
 		"start": "next start",

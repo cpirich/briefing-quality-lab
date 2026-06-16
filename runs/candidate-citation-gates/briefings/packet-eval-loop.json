@@ -1,0 +1,31 @@
+{
+	"id": "briefing-eval-loop-candidate",
+	"sourcePacketId": "packet-eval-loop",
+	"caseId": "case-eval-loop",
+	"title": "Recommendation: gate eval expansion on citation support",
+	"summary": "The eval loop is ready for broader automation only if citation support remains a release guardrail. Smaller batches with visible failure clusters are the safer next step.",
+	"claims": [
+		{
+			"text": "Smaller eval batches make failures easier to inspect before widening model coverage.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Coverage gains should not ship when grounding regresses.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Trace depth is useful, but retry behavior needs a cost cap.",
+			"citations": ["S3"]
+		}
+	],
+	"openQuestions": [
+		"What citation-support threshold should block a candidate run?",
+		"Which traces are worth keeping when retry costs rise?"
+	],
+	"recommendation": "Run the next experiment as a small visible batch with citation support and cost ratio as explicit gates.",
+	"metadata": {
+		"variant": "candidate-citation-gates",
+		"runId": "candidate-citation-gates",
+		"model": "seeded-fixture"
+	}
+}

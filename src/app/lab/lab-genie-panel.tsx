@@ -4,11 +4,19 @@ import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { Card, CardBody, CardHeader } from "~/components/ui/card";
-import { getBriefingPreview, sourcePackets } from "~/lib/demo-lab-data";
+import type { BriefingOutput, SourcePacket } from "~/schemas";
 
 const defaultLabPacketId = "packet-eval-loop";
 
-export function LabGeniePanel() {
+type LabGeniePanelProps = {
+	sourcePackets: SourcePacket[];
+	briefingOutputs: BriefingOutput[];
+};
+
+export function LabGeniePanel({
+	sourcePackets,
+	briefingOutputs,
+}: LabGeniePanelProps) {
 	const fallbackPacket =
 		sourcePackets.find((packet) => packet.id === defaultLabPacketId) ??
 		sourcePackets[0];
@@ -18,7 +26,11 @@ export function LabGeniePanel() {
 	const selectedPacket =
 		sourcePackets.find((packet) => packet.id === selectedPacketId) ??
 		fallbackPacket;
-	const briefingPreview = getBriefingPreview(selectedPacket?.id);
+	const fallbackBriefing = briefingOutputs[0];
+	const briefingPreview =
+		briefingOutputs.find(
+			(output) => output.sourcePacketId === selectedPacket?.id,
+		) ?? fallbackBriefing;
 
 	return (
 		<Card>
@@ -76,9 +88,9 @@ export function LabGeniePanel() {
 					{status}
 				</p>
 				<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-3">
-					<h3 className="font-semibold text-sm">{briefingPreview.title}</h3>
+					<h3 className="font-semibold text-sm">{briefingPreview?.title}</h3>
 					<p className="mt-2 text-[var(--muted-foreground)] text-sm">
-						{briefingPreview.summary}
+						{briefingPreview?.summary}
 					</p>
 				</div>
 			</CardBody>

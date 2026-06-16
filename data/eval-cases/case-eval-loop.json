@@ -1,0 +1,24 @@
+{
+	"id": "case-eval-loop",
+	"title": "Eval loop strategy briefing",
+	"sourcePacketId": "packet-eval-loop",
+	"task": "Recommend whether to expand automated evals, balancing coverage, citation support, trace utility, and cost.",
+	"expectedCoverage": [
+		"Smaller eval batches make failure clusters easier to inspect.",
+		"Citation support must remain an explicit shipping gate when coverage improves.",
+		"Trace depth is useful but retry behavior needs a cost guardrail."
+	],
+	"traps": [
+		"Do not recommend expansion based only on coverage gains.",
+		"Do not ignore the 1.34x retry-cost signal."
+	],
+	"acceptedCitations": ["S1", "S2", "S3"],
+	"holdout": false,
+	"demoHighlight": true,
+	"failureTags": ["citation-grounding", "cost-guardrail"],
+	"metadata": {
+		"synthetic": true,
+		"publicSafe": true,
+		"notes": "Featured dashboard case for baseline versus candidate comparison."
+	}
+}

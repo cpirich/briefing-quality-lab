@@ -1,0 +1,24 @@
+{
+	"id": "case-runtime-choice",
+	"title": "Runtime choice briefing",
+	"sourcePacketId": "packet-local-cloud",
+	"task": "Advise whether the demo should stay local or move to hosted previews for the next iteration.",
+	"expectedCoverage": [
+		"Local operation improves inspectability but requires reliable dependency pinning and seed data.",
+		"Hosted previews reduce onboarding friction but are outside the current hosting plan.",
+		"Public fixtures must exclude private paths, customer identifiers, and unreleased vendor data."
+	],
+	"traps": [
+		"Do not invent a production hosting plan.",
+		"Do not treat public fixture safety as optional."
+	],
+	"acceptedCitations": ["S1", "S2", "S3"],
+	"holdout": true,
+	"demoHighlight": false,
+	"failureTags": ["runtime-choice", "public-data-safety"],
+	"metadata": {
+		"synthetic": true,
+		"publicSafe": true,
+		"notes": "Holdout-style summary case; tuning labels should remain read-only in the lab."
+	}
+}

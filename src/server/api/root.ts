@@ -1,3 +1,5 @@
+import { genieRouter } from "~/server/api/routers/genie";
+import { labRouter } from "~/server/api/routers/lab";
 import { postRouter } from "~/server/api/routers/post";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
@@ -7,6 +9,8 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
+	genie: genieRouter,
+	lab: labRouter,
 	post: postRouter,
 });
 

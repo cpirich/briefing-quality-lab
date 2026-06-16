@@ -1,0 +1,24 @@
+{
+	"id": "case-adoption-friction",
+	"title": "Developer adoption friction briefing",
+	"sourcePacketId": "packet-dev-adoption",
+	"task": "Summarize adoption risks and recommend the next product-quality improvement for pilot expansion.",
+	"expectedCoverage": [
+		"Quickstart completion is improving but setup remains a drop-off point.",
+		"Environment drift, stale CLI versions, and credential recovery drive support volume.",
+		"Senior reviewers require traceable recommendations tied to source snippets."
+	],
+	"traps": [
+		"Do not claim pilot expansion is safe without addressing setup recovery.",
+		"Do not omit citation traceability when making product recommendations."
+	],
+	"acceptedCitations": ["S1", "S2", "S3"],
+	"holdout": false,
+	"demoHighlight": true,
+	"failureTags": ["setup-recovery", "citation-grounding"],
+	"metadata": {
+		"synthetic": true,
+		"publicSafe": true,
+		"notes": "Visible case for setup reliability and trace-backed recommendation behavior."
+	}
+}

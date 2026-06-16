@@ -1,0 +1,32 @@
+{
+	"id": "packet-eval-loop",
+	"title": "Eval Loop Strategy",
+	"summary": "Notes comparing weekly human review, automated scoring, holdout cases, and release guardrails.",
+	"caseId": "case-eval-loop",
+	"sources": [
+		{
+			"id": "S1",
+			"title": "Quality review memo",
+			"excerpt": "Teams need smaller eval batches with visible failure clusters before expanding model coverage.",
+			"documentType": "quality memo"
+		},
+		{
+			"id": "S2",
+			"title": "Release guardrail notes",
+			"excerpt": "Coverage can improve while grounding regresses, so citation support needs an explicit shipping gate.",
+			"documentType": "release notes"
+		},
+		{
+			"id": "S3",
+			"title": "Cost review",
+			"excerpt": "Long traces help debug failures, but unchecked retries created a 1.34x cost increase in the last dry run.",
+			"documentType": "cost review"
+		}
+	],
+	"metadata": {
+		"theme": "eval strategy",
+		"synthetic": true,
+		"publicSafe": true,
+		"createdBy": "phase-4-seed"
+	}
+}

@@ -1,0 +1,40 @@
+{
+	"runId": "baseline-2026-06-10",
+	"createdAt": "2026-06-10T15:30:00.000Z",
+	"variantLabel": "baseline",
+	"status": "complete",
+	"gitRef": "synthetic-baseline",
+	"command": "bun run demo:seed -- --variant baseline",
+	"caseIds": [
+		"case-adoption-friction",
+		"case-eval-loop",
+		"case-runtime-choice"
+	],
+	"aggregateMetrics": {
+		"overall": 0.72,
+		"grounding": 0.59,
+		"coverage": 0.81,
+		"citationSupport": 0.59,
+		"unsupportedClaims": 11,
+		"medianLatencyMs": 8100,
+		"costRatio": 1,
+		"latencyRatio": 1
+	},
+	"guardrails": [
+		{
+			"id": "citation-support",
+			"label": "Citation support",
+			"status": "fail",
+			"value": "0.59",
+			"threshold": ">= 0.72"
+		},
+		{
+			"id": "cost-ratio",
+			"label": "Cost ratio",
+			"status": "pass",
+			"value": "1.00x",
+			"threshold": "<= 1.15x"
+		}
+	],
+	"artifactPaths": ["runs/baseline-2026-06-10/manifest.json"]
+}
