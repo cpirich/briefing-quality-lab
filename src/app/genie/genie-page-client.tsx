@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardBody, CardHeader } from "~/components/ui/card";
+import { Select } from "~/components/ui/select";
 import type { BriefingOutput, SourcePacket } from "~/schemas";
 
 type GeniePageClientProps = {
@@ -79,21 +80,21 @@ export function GeniePageClient({
 							>
 								Packet
 							</label>
-							<select
-								className="mt-1 h-9 w-full rounded-md border border-[var(--border)] bg-[var(--card)] px-3 text-[var(--foreground)] text-sm"
+							<Select
 								id="source-packet"
 								onChange={(event) => {
 									setSelectedPacketId(event.target.value);
 									setGenerationStatus("Seeded preview updated for selection.");
 								}}
 								value={selectedPacket?.id ?? ""}
+								wrapperClassName="mt-1"
 							>
 								{sourcePackets.map((packet) => (
 									<option key={packet.id} value={packet.id}>
 										{packet.title}
 									</option>
 								))}
-							</select>
+							</Select>
 						</div>
 						<div className="space-y-3">
 							{selectedPacket?.sources.map((source) => (

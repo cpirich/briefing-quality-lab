@@ -23,8 +23,7 @@ import {
 
 const repoRoot = process.cwd();
 const defaultCandidateRunId = "candidate-citation-gates";
-const defaultComparisonPath =
-	"runs/comparisons/baseline-2026-06-10__candidate-citation-gates.json";
+const defaultComparisonId = "baseline-2026-06-10-candidate-citation-gates";
 
 type FixtureCounts = {
 	sourcePackets: number;
@@ -69,7 +68,14 @@ async function loadJsonFixture<T>(
 	schema: z.ZodType<T>,
 ): Promise<T> {
 	const rawText = await readFile(absolutePath(relativePath), "utf8");
-	const rawJson: unknown = JSON.parse(rawText);
+	let rawJson: unknown;
+	try {
+		rawJson = JSON.parse(rawText);
+	} catch (error) {
+		throw new Error(
+			`Invalid JSON fixture ${relativePath}: ${error instanceof Error ? error.message : String(error)}`,
+		);
+	}
 	const result = schema.safeParse(rawJson);
 
 	if (!result.success) {
@@ -92,11 +98,38 @@ async function listJsonFixturePaths(relativeDir: string) {
 		.sort();
 }
 
+async function listOptionalJsonFixturePaths(relativeDir: string) {
+	try {
+		return await listJsonFixturePaths(relativeDir);
+	} catch (error) {
+		if (
+			error &&
+			typeof error === "object" &&
+			"code" in error &&
+			error.code === "ENOENT"
+		) {
+			return [];
+		}
+
+		throw error;
+	}
+}
+
 async function loadJsonFixtures<T>(
 	relativeDir: string,
 	schema: z.ZodType<T>,
 ): Promise<T[]> {
 	const fixturePaths = await listJsonFixturePaths(relativeDir);
+	return Promise.all(
+		fixturePaths.map((fixturePath) => loadJsonFixture(fixturePath, schema)),
+	);
+}
+
+async function loadOptionalJsonFixtures<T>(
+	relativeDir: string,
+	schema: z.ZodType<T>,
+): Promise<T[]> {
+	const fixturePaths = await listOptionalJsonFixturePaths(relativeDir);
 	return Promise.all(
 		fixturePaths.map((fixturePath) => loadJsonFixture(fixturePath, schema)),
 	);
@@ -209,14 +242,35 @@ export async function listEvaluatorOutputs(
 	return sortById(outputs);
 }
 
+export async function listRunComparisons(): Promise<RunComparison[]> {
+	const comparisons = await loadJsonFixtures(
+		"runs/comparisons",
+		RunComparisonSchema,
+	);
+	return sortById(comparisons);
+}
+
 export async function compareRuns(input?: {
 	baselineRunId?: string;
 	candidateRunId?: string;
 }): Promise<RunComparison> {
-	const comparison = await loadJsonFixture(
-		defaultComparisonPath,
-		RunComparisonSchema,
-	);
+	const comparisons = await listRunComparisons();
+	const comparison =
+		comparisons.find(
+			(candidateComparison) =>
+				(!input?.baselineRunId ||
+					candidateComparison.baselineRunId === input.baselineRunId) &&
+				(!input?.candidateRunId ||
+					candidateComparison.candidateRunId === input.candidateRunId),
+		) ??
+		comparisons.find(
+			(candidateComparison) => candidateComparison.id === defaultComparisonId,
+		) ??
+		comparisons[0];
+
+	if (!comparison) {
+		throw new Error("No seeded run comparisons found");
+	}
 
 	if (
 		input?.baselineRunId &&
@@ -263,26 +317,57 @@ function assertFixtureReference(
 	}
 }
 
+async function listAllBriefingOutputs(runManifests: RunManifest[]) {
+	const outputs = await Promise.all(
+		runManifests.map((manifest) =>
+			loadOptionalJsonFixtures(
+				`runs/${manifest.runId}/briefings`,
+				BriefingOutputSchema,
+			),
+		),
+	);
+	return sortById(outputs.flat());
+}
+
+async function listAllGenerationTraces(runManifests: RunManifest[]) {
+	const traces = await Promise.all(
+		runManifests.map((manifest) =>
+			loadOptionalJsonFixtures(
+				`runs/${manifest.runId}/traces`,
+				GenerationTraceSchema,
+			),
+		),
+	);
+	return sortById(traces.flat());
+}
+
+async function listAllEvaluatorOutputs(runManifests: RunManifest[]) {
+	const outputs = await Promise.all(
+		runManifests.map((manifest) =>
+			loadOptionalJsonFixtures(
+				`runs/${manifest.runId}/evaluations`,
+				EvaluatorOutputSchema,
+			),
+		),
+	);
+	return sortById(outputs.flat());
+}
+
 export async function validateRunStore(): Promise<FixtureCounts> {
-	const [
-		sourcePackets,
-		evalCases,
-		runManifests,
-		briefingOutputs,
-		generationTraces,
-		evaluatorOutputs,
-		runComparison,
-		artifacts,
-	] = await Promise.all([
-		listSourcePackets(),
-		listEvalCases(),
-		listRunManifests(),
-		listBriefingOutputs(),
-		listGenerationTraces(),
-		listEvaluatorOutputs(),
-		compareRuns(),
-		listArtifacts(),
-	]);
+	const [sourcePackets, evalCases, runManifests, runComparisons, artifacts] =
+		await Promise.all([
+			listSourcePackets(),
+			listEvalCases(),
+			listRunManifests(),
+			listRunComparisons(),
+			listArtifacts(),
+		]);
+	const [briefingOutputs, generationTraces, evaluatorOutputs] =
+		await Promise.all([
+			listAllBriefingOutputs(runManifests),
+			listAllGenerationTraces(runManifests),
+			listAllEvaluatorOutputs(runManifests),
+		]);
 
 	const sourcePacketById = indexById(sourcePackets);
 	const evalCaseById = indexById(evalCases);
@@ -350,14 +435,16 @@ export async function validateRunStore(): Promise<FixtureCounts> {
 		);
 	}
 
-	assertFixtureReference(
-		runManifestById.has(runComparison.baselineRunId),
-		`Run comparison ${runComparison.id} references missing baseline run ${runComparison.baselineRunId}`,
-	);
-	assertFixtureReference(
-		runManifestById.has(runComparison.candidateRunId),
-		`Run comparison ${runComparison.id} references missing candidate run ${runComparison.candidateRunId}`,
-	);
+	for (const runComparison of runComparisons) {
+		assertFixtureReference(
+			runManifestById.has(runComparison.baselineRunId),
+			`Run comparison ${runComparison.id} references missing baseline run ${runComparison.baselineRunId}`,
+		);
+		assertFixtureReference(
+			runManifestById.has(runComparison.candidateRunId),
+			`Run comparison ${runComparison.id} references missing candidate run ${runComparison.candidateRunId}`,
+		);
+	}
 
 	return {
 		sourcePackets: sourcePackets.length,
@@ -366,7 +453,7 @@ export async function validateRunStore(): Promise<FixtureCounts> {
 		briefingOutputs: briefingOutputs.length,
 		generationTraces: generationTraces.length,
 		evaluatorOutputs: evaluatorOutputs.length,
-		runComparisons: 1,
+		runComparisons: runComparisons.length,
 		artifacts: artifacts.length,
 	};
 }
