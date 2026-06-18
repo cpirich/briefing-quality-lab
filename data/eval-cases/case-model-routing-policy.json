@@ -1,0 +1,25 @@
+{
+	"id": "case-model-routing-policy",
+	"title": "Model routing policy briefing",
+	"sourcePacketId": "packet-model-routing",
+	"task": "Recommend a model-routing policy for low-risk summaries versus high-risk recommendations.",
+	"expectedCoverage": [
+		"Smaller models are faster for low-risk summaries.",
+		"High-risk recommendation cases need stronger models when sources conflict.",
+		"Cost savings disappear if missed caveats cause retries.",
+		"Routing should consider task risk and source disagreement, not only packet length."
+	],
+	"traps": [
+		"Do not route solely by source-packet length.",
+		"Do not send release, customer, or compliance recommendations through the fast path without checks."
+	],
+	"acceptedCitations": ["S1", "S2", "S3", "S4"],
+	"holdout": true,
+	"demoHighlight": false,
+	"failureTags": ["model-routing", "cost-guardrail", "citation-grounding"],
+	"metadata": {
+		"synthetic": true,
+		"publicSafe": true,
+		"notes": "Holdout case for routing-policy robustness; expected labels should stay out of product flows."
+	}
+}

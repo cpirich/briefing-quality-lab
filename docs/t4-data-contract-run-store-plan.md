@@ -13,6 +13,8 @@ Move Briefing Genie and the Briefing Genie Improvement Lab from UI-local TypeScr
 
 This phase does not add live LLM calls. It makes the demo evidence inspectable by future Codex sessions through `data/`, `runs/`, and `reports/`.
 
+This phase intentionally seeds only a tiny starter dataset. Those source packets are for validating the run-store shape, route wiring, and citation display. The next planned slice is [Phase 5: Expanded Synthetic Eval Set](./t5-expanded-eval-set-plan.md), which should add larger packets and enough cases for meaningful eval and improvement work before live generation becomes the main focus.
+
 ## Fixture Paths
 
 - `data/source-packets/*.json`: source packets selectable by Briefing Genie.
@@ -158,3 +160,4 @@ The command loads every committed fixture through the run-store readers and prin
 - Validation errors include a useful fixture path and, when available, a record id.
 - All committed data is synthetic and public-safe.
 - A future Codex session can inspect `data/`, `runs/`, and `reports/` to explain the baseline failure cluster.
+- The follow-on plan identifies the Phase 4 packets as smoke fixtures, not a complete eval set.

@@ -1,0 +1,28 @@
+{
+	"id": "briefing-code-review-queues-baseline",
+	"sourcePacketId": "packet-code-review-queues",
+	"caseId": "case-code-review-queues",
+	"title": "Recommendation: automate routine code reviews",
+	"summary": "Review waits are improving, so the queue helper should approve routine changes and free senior reviewers for complex work.",
+	"claims": [
+		{
+			"text": "Reviewer rotation already reduced median wait time.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Bot approvals are acceptable for routine changes.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Fast-tracking did not increase defects.",
+			"citations": ["S3"]
+		}
+	],
+	"openQuestions": ["Which changes should count as routine?"],
+	"recommendation": "Enable bot approvals for routine changes and monitor defect rates.",
+	"metadata": {
+		"variant": "baseline",
+		"runId": "baseline-2026-06-10",
+		"model": "seeded-fixture"
+	}
+}

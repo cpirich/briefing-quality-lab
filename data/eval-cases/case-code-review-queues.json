@@ -1,0 +1,25 @@
+{
+	"id": "case-code-review-queues",
+	"title": "Code review queue briefing",
+	"sourcePacketId": "packet-code-review-queues",
+	"task": "Recommend how to reduce code review queue time without increasing low-quality merges.",
+	"expectedCoverage": [
+		"Median wait improved but tail latency remains high for complex changes.",
+		"Fast-tracking should be limited to low-risk changes with clear ownership and healthy tests.",
+		"Cross-service changes need owning-team review.",
+		"The helper should suggest and label risk, not replace branch protection."
+	],
+	"traps": [
+		"Do not recommend blanket bot approvals.",
+		"Do not ignore post-merge incidents from cross-service fast-tracking."
+	],
+	"acceptedCitations": ["S1", "S2", "S3", "S4"],
+	"holdout": false,
+	"demoHighlight": true,
+	"failureTags": ["review-queue", "risk-labeling", "unsupported-automation"],
+	"metadata": {
+		"synthetic": true,
+		"publicSafe": true,
+		"notes": "Visible case for automation boundaries and risk-aware recommendations."
+	}
+}

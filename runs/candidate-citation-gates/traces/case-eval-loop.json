@@ -1,5 +1,5 @@
 {
-	"id": "trace-case-eval-loop-candidate",
+	"id": "trace-eval-loop-candidate",
 	"runId": "candidate-citation-gates",
 	"caseId": "case-eval-loop",
 	"sourcePacketId": "packet-eval-loop",
@@ -14,16 +14,16 @@
 		},
 		{
 			"role": "user",
-			"content": "Use packet-eval-loop and preserve citation support as an explicit release guardrail."
+			"content": "Recommend whether to expand automated evals, balancing coverage, citation support, trace utility, and cost."
 		},
 		{
 			"role": "assistant",
-			"content": "Generated a citation-gated recommendation for smaller eval expansion."
+			"content": "The eval loop is ready for broader automation only if citation support remains a release guardrail. Smaller batches with visible failure clusters are the safer next step."
 		}
 	],
 	"model": {
 		"provider": "seeded-fixture",
-		"name": "fixture-candidate-citation-gates",
+		"name": "phase-5-candidate",
 		"temperature": 0
 	},
 	"output": {
@@ -34,7 +34,7 @@
 		"summary": "The eval loop is ready for broader automation only if citation support remains a release guardrail. Smaller batches with visible failure clusters are the safer next step.",
 		"claims": [
 			{
-				"text": "Smaller eval batches make failures easier to inspect before widening model coverage.",
+				"text": "Smaller eval batches make repeated failure patterns inspectable before widening model coverage.",
 				"citations": ["S1"]
 			},
 			{
@@ -42,8 +42,12 @@
 				"citations": ["S2"]
 			},
 			{
-				"text": "Trace depth is useful, but retry behavior needs a cost cap.",
+				"text": "Trace depth is useful, but retry behavior needs a cost cap and run-manifest summary.",
 				"citations": ["S3"]
+			},
+			{
+				"text": "Holdout labels should remain outside prompt-iteration workflows.",
+				"citations": ["S4"]
 			}
 		],
 		"openQuestions": [
@@ -59,28 +63,29 @@
 	},
 	"toolCalls": [
 		{
-			"id": "load-source-packet",
-			"toolName": "runStore.loadSourcePacket",
+			"id": "tool-read-eval-loop",
+			"toolName": "read_source_packet",
 			"arguments": {
 				"sourcePacketId": "packet-eval-loop"
 			},
 			"result": {
-				"path": "data/source-packets/packet-eval-loop.json",
-				"sourceCount": 3
+				"sourceCount": 4,
+				"sourceIds": ["S1", "S2", "S3", "S4"]
 			},
 			"status": "success",
-			"startedAt": "2026-06-11T18:44:58.000Z",
-			"endedAt": "2026-06-11T18:44:58.012Z"
+			"startedAt": "2026-06-18T17:45:00.000Z",
+			"endedAt": "2026-06-18T17:45:00.005Z"
 		}
 	],
 	"cost": {
-		"inputTokens": 720,
-		"outputTokens": 280,
-		"estimatedUsd": 0
+		"inputTokens": 2280,
+		"outputTokens": 420,
+		"estimatedUsd": 0.014
 	},
-	"latencyMs": 7600,
+	"latencyMs": 7680,
 	"artifactPaths": [
-		"runs/candidate-citation-gates/traces/case-eval-loop.json",
-		"runs/candidate-citation-gates/briefings/packet-eval-loop.json"
+		"data/source-packets/packet-eval-loop.json",
+		"runs/candidate-citation-gates/briefings/packet-eval-loop.json",
+		"runs/candidate-citation-gates/traces/case-eval-loop.json"
 	]
 }

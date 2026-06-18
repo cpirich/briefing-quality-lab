@@ -1,0 +1,43 @@
+{
+	"id": "evaluation-incident-recovery-comms-candidate",
+	"runId": "candidate-citation-gates",
+	"caseId": "case-incident-recovery-comms",
+	"scores": {
+		"overall": 0.83,
+		"grounding": 0.81,
+		"coverage": 0.86,
+		"citationSupport": 0.82
+	},
+	"failureTags": ["customer-claim-risk", "stale-source"],
+	"rubricEvidence": [
+		"Candidate avoids the baseline's unsupported universal-resolution claim.",
+		"Candidate separates affected users, action, and pending environments."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "Supports partial-install recovery confusion."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "Supports macOS/Linux-only verification and Windows caveat."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "Supports customer-success communication structure."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "Supports patched recovery command and stale docs."
+		}
+	],
+	"notes": "Candidate grounds the communication plan in environment-specific evidence.",
+	"artifactPaths": [
+		"runs/candidate-citation-gates/evaluations/case-incident-recovery-comms.json",
+		"runs/candidate-citation-gates/briefings/packet-incident-recovery.json"
+	]
+}

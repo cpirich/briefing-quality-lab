@@ -1,0 +1,87 @@
+{
+	"id": "trace-adoption-friction-candidate",
+	"runId": "candidate-citation-gates",
+	"caseId": "case-adoption-friction",
+	"sourcePacketId": "packet-dev-adoption",
+	"input": {
+		"userRequest": "Summarize adoption risks and recommend the next product-quality improvement for pilot expansion.",
+		"sourcePacketPath": "data/source-packets/packet-dev-adoption.json"
+	},
+	"messages": [
+		{
+			"role": "system",
+			"content": "You are Briefing Genie. Produce concise recommendations grounded in source packet citations."
+		},
+		{
+			"role": "user",
+			"content": "Summarize adoption risks and recommend the next product-quality improvement for pilot expansion."
+		},
+		{
+			"role": "assistant",
+			"content": "Developer adoption is improving, but the most visible remaining friction is setup recovery. Treat environment reliability and citation traceability as the product-quality gate before adding more pilot teams."
+		}
+	],
+	"model": {
+		"provider": "seeded-fixture",
+		"name": "phase-5-candidate",
+		"temperature": 0
+	},
+	"output": {
+		"id": "briefing-adoption-friction-candidate",
+		"sourcePacketId": "packet-dev-adoption",
+		"caseId": "case-adoption-friction",
+		"title": "Recommendation: fix setup recovery before expanding pilots",
+		"summary": "Developer adoption is improving, but the most visible remaining friction is setup recovery. Treat environment reliability and citation traceability as the product-quality gate before adding more pilot teams.",
+		"claims": [
+			{
+				"text": "Quickstart completion improved, yet local setup remains the highest-friction step.",
+				"citations": ["S1", "S2"]
+			},
+			{
+				"text": "Senior reviewers want recommendations to stay tied to source snippets, not just synthesized summaries.",
+				"citations": ["S3"]
+			},
+			{
+				"text": "Pilot expansion should wait until failed-install recovery and trace-backed citation checks are visible.",
+				"citations": ["S2", "S4"]
+			}
+		],
+		"openQuestions": [
+			"Which setup failures are caused by stale CLI versions versus missing credentials?",
+			"Should the lab block releases when citation support drops even if coverage improves?"
+		],
+		"recommendation": "Ship the recovery-path copy and trace-backed citation checks before widening the pilot.",
+		"metadata": {
+			"variant": "candidate-citation-gates",
+			"runId": "candidate-citation-gates",
+			"model": "seeded-fixture"
+		}
+	},
+	"toolCalls": [
+		{
+			"id": "tool-read-adoption-friction",
+			"toolName": "read_source_packet",
+			"arguments": {
+				"sourcePacketId": "packet-dev-adoption"
+			},
+			"result": {
+				"sourceCount": 4,
+				"sourceIds": ["S1", "S2", "S3", "S4"]
+			},
+			"status": "success",
+			"startedAt": "2026-06-18T17:45:00.000Z",
+			"endedAt": "2026-06-18T17:45:00.005Z"
+		}
+	],
+	"cost": {
+		"inputTokens": 2280,
+		"outputTokens": 420,
+		"estimatedUsd": 0.014
+	},
+	"latencyMs": 7680,
+	"artifactPaths": [
+		"data/source-packets/packet-dev-adoption.json",
+		"runs/candidate-citation-gates/briefings/packet-dev-adoption.json",
+		"runs/candidate-citation-gates/traces/case-adoption-friction.json"
+	]
+}

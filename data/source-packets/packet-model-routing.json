@@ -1,0 +1,38 @@
+{
+	"id": "packet-model-routing",
+	"title": "Model Routing Policy Packet",
+	"summary": "Holdout packet about routing simple and high-risk briefing jobs across model tiers.",
+	"caseId": "case-model-routing-policy",
+	"sources": [
+		{
+			"id": "S1",
+			"title": "Latency experiment",
+			"excerpt": "The smaller model answered routine summaries 42% faster with similar coverage on low-risk cases. It missed two caveats on high-risk recommendation cases where source documents contradicted each other.",
+			"documentType": "experiment report"
+		},
+		{
+			"id": "S2",
+			"title": "Cost analysis",
+			"excerpt": "Routing low-risk summaries to the smaller model would reduce estimated demo-run cost by 18%. The savings disappear if high-risk cases require multiple retries after a missed caveat.",
+			"documentType": "cost note"
+		},
+		{
+			"id": "S3",
+			"title": "Evaluator notes",
+			"excerpt": "Evaluator failures cluster around unsupported recommendations, not factual extraction. The routing policy should consider task risk and source disagreement rather than only packet length.",
+			"documentType": "evaluator synthesis"
+		},
+		{
+			"id": "S4",
+			"title": "Product manager note",
+			"excerpt": "The PM wants a simple rule that can be explained in a demo: routine summaries may use the fast path, but recommendations that change release, customer, or compliance posture need the stronger model and citation checks.",
+			"documentType": "planning note"
+		}
+	],
+	"metadata": {
+		"theme": "model routing",
+		"synthetic": true,
+		"publicSafe": true,
+		"createdBy": "phase-5-expanded-eval-set"
+	}
+}

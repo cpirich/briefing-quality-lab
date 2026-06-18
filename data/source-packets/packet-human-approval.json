@@ -1,0 +1,38 @@
+{
+	"id": "packet-human-approval",
+	"title": "Human Approval Boundary Packet",
+	"summary": "Notes about when AI-generated operational recommendations can act automatically versus require review.",
+	"caseId": "case-human-approval-boundary",
+	"sources": [
+		{
+			"id": "S1",
+			"title": "Governance workshop",
+			"excerpt": "Participants approved automatic drafting, summarization, and artifact linking when outputs are clearly marked as generated. They rejected automatic policy changes, customer commitments, and release blocking without a human approver.",
+			"documentType": "workshop notes"
+		},
+		{
+			"id": "S2",
+			"title": "Operations incident note",
+			"excerpt": "A prior automation posted a recommendation as if it were an approved decision, causing two teams to pause rollout work unnecessarily. The incident review asks for explicit status labels: draft, recommendation, approved action, and blocked.",
+			"documentType": "incident review"
+		},
+		{
+			"id": "S3",
+			"title": "Product analytics",
+			"excerpt": "Users are most likely to accept generated briefings when the interface separates evidence, recommendation, and action controls. Acceptance drops when the recommendation and execution button appear in the same visual cluster.",
+			"documentType": "analytics digest"
+		},
+		{
+			"id": "S4",
+			"title": "Legal review",
+			"excerpt": "Any automated message that could be interpreted as a customer commitment needs an accountable human reviewer. Legal approved internal draft summaries as long as they cannot be confused with final commitments.",
+			"documentType": "legal review"
+		}
+	],
+	"metadata": {
+		"theme": "human governance",
+		"synthetic": true,
+		"publicSafe": true,
+		"createdBy": "phase-5-expanded-eval-set"
+	}
+}

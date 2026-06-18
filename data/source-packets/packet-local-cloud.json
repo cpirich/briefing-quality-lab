@@ -7,26 +7,32 @@
 		{
 			"id": "S1",
 			"title": "Reliability review",
-			"excerpt": "Local operation keeps the demo inspectable but makes dependency pinning and seed data more important.",
+			"excerpt": "Local operation keeps the demo inspectable and makes file-backed artifacts easy to explain. The tradeoff is setup fragility: dependency pinning, seed commands, and deterministic fixture validation must be boring before a live walkthrough.",
 			"documentType": "reliability review"
 		},
 		{
 			"id": "S2",
 			"title": "Go-to-market note",
-			"excerpt": "Hosted previews reduce onboarding friction, but the current roadmap has no production hosting plan.",
+			"excerpt": "Hosted previews reduce onboarding friction for reviewers who do not want to run the app locally. The current roadmap, however, has no production hosting plan and no owner for preview secrets, deploys, or data retention.",
 			"documentType": "planning note"
 		},
 		{
 			"id": "S3",
 			"title": "Security note",
-			"excerpt": "Public fixtures must avoid private planning paths, customer identifiers, and unreleased vendor data.",
+			"excerpt": "Public fixtures must avoid private planning paths, customer identifiers, and unreleased vendor data. Hosted previews would also need environment-variable review before anyone shares a link externally.",
 			"documentType": "security review"
+		},
+		{
+			"id": "S4",
+			"title": "Demo rehearsal",
+			"excerpt": "The local demo failed once because a stale runtime used the wrong package manager. After mise pinned the runtime, the second rehearsal succeeded and reviewers valued seeing artifacts written directly into the repo.",
+			"documentType": "rehearsal note"
 		}
 	],
 	"metadata": {
 		"theme": "runtime decision",
 		"synthetic": true,
 		"publicSafe": true,
-		"createdBy": "phase-4-seed"
+		"createdBy": "phase-5-expanded-eval-set"
 	}
 }

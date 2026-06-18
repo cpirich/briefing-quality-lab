@@ -79,10 +79,12 @@ Briefing Genie Improvement Lab should have five primary views:
 
 Use a small synthetic developer-tooling / AI-product strategy dataset. Briefing Genie should feel like a fictional but plausible product, so the cases are realistic without exposing private data or making benchmark claims.
 
+The initial three source packets added with the run-store slice are starter fixtures for UI, schema, and citation smoke testing. They are intentionally too small for meaningful LLM evaluation. Before live generation or eval orchestration becomes the main work, expand them into a first real synthetic eval set with larger, messier source packets.
+
 Each case should include:
 
 - user request
-- source packet with 3-6 short source documents
+- source packet with 3-6 source documents that are long enough to create non-trivial grounding and citation choices
 - expected coverage points
 - known traps or ambiguities
 - acceptable citations
@@ -98,6 +100,15 @@ Initial dataset size:
 - 1 featured failure cluster around weak citation grounding
 - 1-2 hidden or holdout cases for basic anti-gaming signal
 
+Demo-realistic dataset size:
+
+- 25-40 total eval cases once the first expanded set is reviewed
+- 4-6 highlighted cases for the live walkthrough
+- 5-8 holdout or regression cases that contribute to aggregate confidence but do not expose tuning labels
+- enough examples to show repeated failure patterns across citation grounding, stale evidence, unsupported recommendations, cost/latency tradeoffs, human approval boundaries, and holdout leakage
+
+Use 8-12 cases to prove the richer fixture shape and keep the first Phase 5 PR reviewable. Move to 25-40 cases in a separate follow-on PR before claiming real prompt, model, or evaluator improvement. Treat 60-100 cases as a later hardening target once live generation, evaluator reliability, and run costs are stable.
+
 Good case themes:
 
 - code review bottlenecks
@@ -107,6 +118,14 @@ Good case themes:
 - developer adoption
 - cost and latency tradeoffs
 - human judgment and governance
+
+Good packet traits:
+
+- enough source text that the answer cannot simply restate every snippet
+- mixed relevance, including distractor details that should not be cited
+- overlapping evidence across sources so citation choice matters
+- at least occasional tension between sources, stale evidence, missing data, or ambiguity
+- expected outputs and evaluator notes that identify unsupported claims, weak citations, and overconfident recommendations
 
 ## Dataset Lifecycle
 
@@ -235,20 +254,34 @@ The meaningful boundary is between probabilistic LLM communication and determini
    - Add filesystem helpers for discovering and validating `data/`, `runs/`, and `reports/`.
    - Expose run summaries and selected case details through tRPC.
 
-5. Generation runtime and trace logging
+5. Expanded synthetic eval set
+   - Treat the Phase 4 run-store fixtures as smoke fixtures, not the final eval set.
+   - Add reviewed fixture files for 8-12 synthetic eval cases with 3-4 highlighted cases and 1-2 holdout cases.
+   - Expand source packets beyond the current three-snippet shape so they contain 3-6 richer source documents with distractors, overlaps, ambiguity, and citation traps.
+   - Add or refresh seeded baseline/candidate briefing outputs, evaluator outputs, traces, and comparisons so the lab shows meaningful before/after evidence without live model calls.
+   - Keep holdout summaries visible, but keep tuning labels and expected answers out of the Genie product surface.
+   - Validate the expanded dataset with Zod before wiring it into any live generation or eval-run path.
+
+6. Demo-realistic eval expansion
+   - Grow the reviewed Phase 5 fixture set from 8-12 cases to 25-40 cases in a separate PR.
+   - Keep 4-6 cases highlighted for live walkthroughs while metrics and failure clusters come from the broader set.
+   - Add enough cases to get repeated examples per target failure mode, especially citation grounding, stale evidence, unsupported recommendations, cost/latency tradeoffs, human approval boundaries, and holdout leakage.
+   - Preserve the holdout boundary by keeping holdout labels and expected answers out of `/genie` and prompt-iteration views.
+   - Use this dataset size as the minimum bar for credible "real improvement work" during demo preparation.
+
+7. Generation runtime and trace logging
    - Add a shared Briefing Genie generation service callable from both `/genie` and lab/eval code.
    - Add tRPC entry points for synchronous generation, job start, and job status.
    - Integrate at least one current LLM API with structured output and tool-call support.
    - Log generation traces to the backend filesystem so the lab can inspect inputs, outputs, tools, model metadata, costs, latency, and available provider traces.
 
-6. Dataset, fixtures, and command path
-   - Add reviewed fixture files for 8-12 synthetic eval cases with 3-4 highlighted cases and 1-2 holdout cases.
-   - Add source packet fixtures, dataset indexes, and Zod validation for dataset discovery.
+8. Dataset commands and artifact path
+   - Add dataset indexes and any seed metadata needed for deterministic discovery.
    - Add seed data, sample generation traces, and baseline artifacts.
    - Add commands for seed, baseline eval, latest eval, and compare.
    - Make dashboard states work with both fixture data and generated run artifacts.
 
-7. Lab eval runner and experiment-loop affordances
+9. Lab eval runner and experiment-loop affordances
    - Add a plan/report artifact that Codex can update after runs.
    - Ensure evals run from the lab side and can trigger Briefing Genie generations programmatically.
    - Add tRPC entry points for eval-run start, eval-run status, run comparison, and artifact listing.
@@ -257,7 +290,7 @@ The meaningful boundary is between probabilistic LLM communication and determini
    - Use a simple local run queue/sequential runner first; revisit BullMQ and Redis only if concurrency or persistence needs justify it.
    - Include a recommendation state so the loop ends with human review, not endless iteration.
 
-8. End-to-end demo polish
+10. End-to-end demo polish
    - Run the dashboard in the in-app browser.
    - Verify no stock T3 copy remains in visible routes or metadata.
    - Check empty, loading, stale, failed, and older-artifact states.

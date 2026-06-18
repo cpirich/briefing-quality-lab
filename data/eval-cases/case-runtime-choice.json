@@ -6,13 +6,15 @@
 	"expectedCoverage": [
 		"Local operation improves inspectability but requires reliable dependency pinning and seed data.",
 		"Hosted previews reduce onboarding friction but are outside the current hosting plan.",
-		"Public fixtures must exclude private paths, customer identifiers, and unreleased vendor data."
+		"Public fixtures must exclude private paths, customer identifiers, and unreleased vendor data.",
+		"Runtime pinning reduced local demo risk in rehearsal."
 	],
 	"traps": [
 		"Do not invent a production hosting plan.",
-		"Do not treat public fixture safety as optional."
+		"Do not treat public fixture safety as optional.",
+		"Do not expose holdout tuning labels in the product UI."
 	],
-	"acceptedCitations": ["S1", "S2", "S3"],
+	"acceptedCitations": ["S1", "S2", "S3", "S4"],
 	"holdout": true,
 	"demoHighlight": false,
 	"failureTags": ["runtime-choice", "public-data-safety"],

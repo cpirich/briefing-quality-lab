@@ -1,0 +1,43 @@
+{
+	"id": "evaluation-adoption-friction-candidate",
+	"runId": "candidate-citation-gates",
+	"caseId": "case-adoption-friction",
+	"scores": {
+		"overall": 0.86,
+		"grounding": 0.83,
+		"coverage": 0.9,
+		"citationSupport": 0.85
+	},
+	"failureTags": ["setup-recovery", "citation-grounding"],
+	"rubricEvidence": [
+		"Candidate preserves the adoption improvement while refusing to overstate readiness for pilot expansion.",
+		"Recommendation cites both support-ticket recovery evidence and the explicit pilot expansion note."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "Supports quickstart improvement and remaining setup drop-off."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "Supports environment drift and failed-install recovery friction."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "Supports traceability requirement from senior reviewers."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "Supports gating pilot expansion on recovery and citation checks."
+		}
+	],
+	"notes": "Candidate fixes the baseline's overconfident expansion recommendation and uses source-specific citations.",
+	"artifactPaths": [
+		"runs/candidate-citation-gates/evaluations/case-adoption-friction.json",
+		"runs/candidate-citation-gates/briefings/packet-dev-adoption.json"
+	]
+}

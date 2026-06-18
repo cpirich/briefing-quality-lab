@@ -1,0 +1,38 @@
+{
+	"id": "packet-code-review-queues",
+	"title": "Code Review Queue Signals",
+	"summary": "Operational notes on review latency, reviewer load, bot suggestions, and merge quality.",
+	"caseId": "case-code-review-queues",
+	"sources": [
+		{
+			"id": "S1",
+			"title": "Queue analytics",
+			"excerpt": "Median review wait time improved from 19 hours to 13 hours after adding reviewer rotation. The 90th percentile is still 46 hours because complex changes often wait for the same two senior reviewers.",
+			"documentType": "analytics digest"
+		},
+		{
+			"id": "S2",
+			"title": "Reviewer survey",
+			"excerpt": "Reviewers like auto-assignment for routine changes, but they distrust bot approvals when tests are flaky or ownership is unclear. Several asked for risk labels that explain why a change is safe to fast-track.",
+			"documentType": "survey summary"
+		},
+		{
+			"id": "S3",
+			"title": "Post-merge defect review",
+			"excerpt": "Defects did not rise for small documentation and config changes, but two incidents came from fast-tracking cross-service changes without the owning team. The review lead wants different treatment for low-risk and cross-boundary changes.",
+			"documentType": "defect review"
+		},
+		{
+			"id": "S4",
+			"title": "Tooling proposal",
+			"excerpt": "The proposed queue helper can suggest reviewers, group similar low-risk changes, and surface missing ownership metadata. It cannot yet verify semantic ownership or override branch protection.",
+			"documentType": "tooling note"
+		}
+	],
+	"metadata": {
+		"theme": "code review operations",
+		"synthetic": true,
+		"publicSafe": true,
+		"createdBy": "phase-5-expanded-eval-set"
+	}
+}

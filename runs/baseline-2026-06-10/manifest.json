@@ -4,19 +4,23 @@
 	"variantLabel": "baseline",
 	"status": "complete",
 	"gitRef": "synthetic-baseline",
-	"command": "bun run demo:seed -- --variant baseline",
+	"command": "bun run data:seed-phase5",
 	"caseIds": [
 		"case-adoption-friction",
 		"case-eval-loop",
-		"case-runtime-choice"
+		"case-code-review-queues",
+		"case-release-note-drift",
+		"case-human-approval-boundary",
+		"case-cost-latency-budget",
+		"case-incident-recovery-comms"
 	],
 	"aggregateMetrics": {
-		"overall": 0.72,
-		"grounding": 0.59,
-		"coverage": 0.81,
-		"citationSupport": 0.59,
-		"unsupportedClaims": 11,
-		"medianLatencyMs": 8100,
+		"overall": 0.66,
+		"grounding": 0.52,
+		"coverage": 0.74,
+		"citationSupport": 0.51,
+		"unsupportedClaims": 26,
+		"medianLatencyMs": 8400,
 		"costRatio": 1,
 		"latencyRatio": 1
 	},
@@ -25,7 +29,7 @@
 			"id": "citation-support",
 			"label": "Citation support",
 			"status": "fail",
-			"value": "0.59",
+			"value": "0.51",
 			"threshold": ">= 0.72"
 		},
 		{
@@ -36,5 +40,14 @@
 			"threshold": "<= 1.15x"
 		}
 	],
-	"artifactPaths": ["runs/baseline-2026-06-10/manifest.json"]
+	"artifactPaths": [
+		"runs/baseline-2026-06-10/manifest.json",
+		"runs/baseline-2026-06-10/briefings/packet-dev-adoption.json",
+		"runs/baseline-2026-06-10/briefings/packet-eval-loop.json",
+		"runs/baseline-2026-06-10/briefings/packet-code-review-queues.json",
+		"runs/baseline-2026-06-10/briefings/packet-release-note-drift.json",
+		"runs/baseline-2026-06-10/briefings/packet-human-approval.json",
+		"runs/baseline-2026-06-10/briefings/packet-cost-latency.json",
+		"runs/baseline-2026-06-10/briefings/packet-incident-recovery.json"
+	]
 }
