@@ -1,0 +1,31 @@
+{
+	"id": "briefing-dev-adoption-candidate",
+	"sourcePacketId": "packet-dev-adoption",
+	"caseId": "case-adoption-friction",
+	"title": "Recommendation: fix setup recovery before expanding pilots",
+	"summary": "Developer adoption is improving, but the most visible friction is still setup recovery. Treat environment reliability and citation traceability as the next product-quality gate before adding more pilot teams.",
+	"claims": [
+		{
+			"text": "Quickstart completion improved, yet local setup remains the highest-friction step.",
+			"citations": ["S1", "S2"]
+		},
+		{
+			"text": "Senior reviewers want recommendations to stay tied to source snippets, not just synthesized summaries.",
+			"citations": ["S3"]
+		},
+		{
+			"text": "The next iteration should add clearer failed-install recovery and trace-backed recommendations.",
+			"citations": ["S2", "S3"]
+		}
+	],
+	"openQuestions": [
+		"Which setup failures are caused by stale CLI versions versus missing credentials?",
+		"Should the lab block releases when citation support drops even if coverage improves?"
+	],
+	"recommendation": "Ship the recovery-path copy and trace-backed citation checks before widening the pilot.",
+	"metadata": {
+		"variant": "candidate-citation-gates",
+		"runId": "candidate-citation-gates",
+		"model": "seeded-fixture"
+	}
+}

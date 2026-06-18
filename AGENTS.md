@@ -4,6 +4,7 @@
 - A project hook runs `mise exec -- bun run check:write` after Codex edit/write tool calls. If a shell command generates or rewrites files, run `mise exec -- bun run check:write` manually afterward.
 - Before committing new changes, run `bun run typecheck:native` to catch TypeScript issues quickly.
 - Prefer shadcn/ui for reusable React UI primitives and app chrome. Treat shadcn components as open code checked into this repo, then adapt them locally to the product instead of adding a second component library.
+- Reserve `src/components/ui/` for shadcn components only, so future shadcn CLI imports do not collide with bespoke demo primitives. Keep non-shadcn local components flat under `src/components/` unless a clearer product-specific folder becomes necessary.
 - Use the shadcn CLI, or a shadcn MCP server when it materially helps with browsing, searching, or installing registry components. Skip the MCP path when a simple local component or direct CLI command is faster.
 - For this app's dashboard UX, favor dense operational surfaces: tables, tabs, badges, metric summaries, diff views, source/eval artifact links, and clear action controls over marketing-style landing-page sections.
 - Keep the app TypeScript-only for the main demo path. Use Zod to make LLM communication, eval cases, evaluator outputs, and persisted artifacts type-safe at runtime and via `z.infer`.

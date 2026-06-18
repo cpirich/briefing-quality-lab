@@ -2,13 +2,21 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Badge } from "~/components/badge";
+import { Button } from "~/components/button";
+import { Card, CardBody, CardHeader } from "~/components/card";
+import { NativeSelect } from "~/components/native-select";
+import type { BriefingOutput, SourcePacket } from "~/schemas";
 
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { Card, CardBody, CardHeader } from "~/components/ui/card";
-import { getBriefingPreview, sourcePackets } from "~/lib/demo-lab-data";
+type GeniePageClientProps = {
+	sourcePackets: SourcePacket[];
+	briefingOutputs: BriefingOutput[];
+};
 
-export function GeniePageClient() {
+export function GeniePageClient({
+	sourcePackets,
+	briefingOutputs,
+}: GeniePageClientProps) {
 	const fallbackPacket = sourcePackets[0];
 	const [selectedPacketId, setSelectedPacketId] = useState(fallbackPacket?.id);
 	const [generationStatus, setGenerationStatus] = useState(
@@ -18,7 +26,11 @@ export function GeniePageClient() {
 	const selectedPacket =
 		sourcePackets.find((packet) => packet.id === selectedPacketId) ??
 		fallbackPacket;
-	const briefingPreview = getBriefingPreview(selectedPacket?.id);
+	const fallbackBriefing = briefingOutputs[0];
+	const briefingPreview =
+		briefingOutputs.find(
+			(output) => output.sourcePacketId === selectedPacket?.id,
+		) ?? fallbackBriefing;
 
 	function generateSeededBriefing() {
 		setGenerationStatus(
@@ -67,21 +79,21 @@ export function GeniePageClient() {
 							>
 								Packet
 							</label>
-							<select
-								className="mt-1 h-9 w-full rounded-md border border-[var(--border)] bg-[var(--card)] px-3 text-[var(--foreground)] text-sm"
+							<NativeSelect
 								id="source-packet"
 								onChange={(event) => {
 									setSelectedPacketId(event.target.value);
 									setGenerationStatus("Seeded preview updated for selection.");
 								}}
 								value={selectedPacket?.id ?? ""}
+								wrapperClassName="mt-1"
 							>
 								{sourcePackets.map((packet) => (
 									<option key={packet.id} value={packet.id}>
 										{packet.title}
 									</option>
 								))}
-							</select>
+							</NativeSelect>
 						</div>
 						<div className="space-y-3">
 							{selectedPacket?.sources.map((source) => (
@@ -135,16 +147,16 @@ export function GeniePageClient() {
 						<CardBody className="space-y-5">
 							<div>
 								<h3 className="font-semibold text-xl">
-									{briefingPreview.title}
+									{briefingPreview?.title}
 								</h3>
 								<p className="mt-2 text-[var(--muted-foreground)]">
-									{briefingPreview.summary}
+									{briefingPreview?.summary}
 								</p>
 							</div>
 							<div>
 								<h4 className="font-semibold text-sm">Claims</h4>
 								<div className="mt-2 grid gap-2">
-									{briefingPreview.claims.map((claim) => (
+									{briefingPreview?.claims.map((claim) => (
 										<div
 											className="rounded-md border border-[var(--border)] p-3"
 											key={claim.text}
@@ -165,7 +177,7 @@ export function GeniePageClient() {
 								<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-3">
 									<h4 className="font-semibold text-sm">Open Questions</h4>
 									<ul className="mt-2 space-y-2 text-[var(--muted-foreground)] text-sm">
-										{briefingPreview.openQuestions.map((question) => (
+										{briefingPreview?.openQuestions.map((question) => (
 											<li key={question}>{question}</li>
 										))}
 									</ul>
@@ -175,7 +187,7 @@ export function GeniePageClient() {
 										Recommendation
 									</h4>
 									<p className="mt-2 text-[var(--success-foreground)] text-sm">
-										{briefingPreview.recommendation}
+										{briefingPreview?.recommendation}
 									</p>
 								</div>
 							</div>

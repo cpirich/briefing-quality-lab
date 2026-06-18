@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { Button } from "~/components/ui/button";
+import { Button } from "~/components/button";
 
 export function LabActions() {
 	const [status, setStatus] = useState("Seeded lab view loaded.");

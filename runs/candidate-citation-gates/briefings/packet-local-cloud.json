@@ -1,0 +1,31 @@
+{
+	"id": "briefing-local-cloud-candidate",
+	"sourcePacketId": "packet-local-cloud",
+	"caseId": "case-runtime-choice",
+	"title": "Recommendation: keep the demo local until seed reliability is boring",
+	"summary": "Local execution is still the better demo default because it keeps artifacts inspectable. The tradeoff is that dependency pinning and public-safe fixtures must be treated as product requirements.",
+	"claims": [
+		{
+			"text": "Local operation improves inspectability but depends on reliable setup and seed data.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Hosted previews may reduce onboarding friction, but they are outside the current plan.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Public fixtures need explicit privacy and data-safety checks.",
+			"citations": ["S3"]
+		}
+	],
+	"openQuestions": [
+		"What setup failures must be eliminated before a live demo?",
+		"Which artifacts are safe to commit in a public repo?"
+	],
+	"recommendation": "Keep the first demo local and invest the next slice in deterministic fixtures, validation, and seed commands.",
+	"metadata": {
+		"variant": "candidate-citation-gates",
+		"runId": "candidate-citation-gates",
+		"model": "seeded-fixture"
+	}
+}

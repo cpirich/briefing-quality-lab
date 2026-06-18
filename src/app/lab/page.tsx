@@ -1,15 +1,8 @@
 import type { Metadata } from "next";
 
-import { Badge } from "~/components/ui/badge";
-import { Card, CardBody, CardHeader } from "~/components/ui/card";
-import {
-	artifacts,
-	failureClusters,
-	featuredCase,
-	labMetrics,
-	runComparison,
-	runTrend,
-} from "~/lib/demo-lab-data";
+import { Badge } from "~/components/badge";
+import { Card, CardBody, CardHeader } from "~/components/card";
+import { api } from "~/trpc/server";
 import { LabActions } from "./lab-actions";
 import { LabGeniePanel } from "./lab-genie-panel";
 
@@ -17,15 +10,25 @@ export const metadata: Metadata = {
 	title: "Briefing Genie Improvement Lab",
 };
 
-export default function LabPage() {
+export default async function LabPage() {
+	const [runComparison, artifacts, evalCases, sourcePackets, briefingOutputs] =
+		await Promise.all([
+			api.lab.compareRuns(),
+			api.lab.listArtifacts(),
+			api.lab.listEvalCases(),
+			api.genie.listSourcePackets(),
+			api.genie.listSeededBriefingOutputs(),
+		]);
+	const { featuredCase, failureClusters } = runComparison;
+
 	return (
 		<main className="lab-route min-h-screen bg-[var(--background)] text-[var(--foreground)]">
 			<header className="border-[var(--border)] border-b bg-[var(--header)]">
 				<div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
 					<div>
 						<div className="flex flex-wrap items-center gap-2">
-							<Badge tone="blue">candidate-citation-gates</Badge>
-							<Badge>baseline-2026-06-10</Badge>
+							<Badge tone="blue">{runComparison.candidateRunId}</Badge>
+							<Badge>{runComparison.baselineRunId}</Badge>
 						</div>
 						<h1 className="mt-2 font-semibold text-2xl tracking-tight">
 							Briefing Genie Improvement Lab
@@ -44,7 +47,7 @@ export default function LabPage() {
 			<div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 xl:grid-cols-[minmax(0,1fr)_360px]">
 				<section className="grid min-w-0 gap-4">
 					<div className="grid gap-3 md:grid-cols-5">
-						{labMetrics.map((metric) => (
+						{runComparison.metrics.map((metric) => (
 							<Card className="min-h-32" key={metric.label}>
 								<CardBody className="space-y-3">
 									<div className="flex items-center justify-between gap-2">
@@ -77,7 +80,7 @@ export default function LabPage() {
 							</CardHeader>
 							<CardBody>
 								<div className="flex h-52 items-end gap-3 border-[var(--border)] border-b px-2">
-									{runTrend.map((point) => (
+									{runComparison.trend.map((point) => (
 										<div
 											className="flex min-w-0 flex-1 flex-col items-center gap-2"
 											key={point.label}
@@ -105,7 +108,7 @@ export default function LabPage() {
 											</tr>
 										</thead>
 										<tbody>
-											{runComparison.map((row) => (
+											{runComparison.comparisonRows.map((row) => (
 												<tr
 													className="border-[var(--border)] border-t"
 													key={row.metric}
@@ -173,7 +176,8 @@ export default function LabPage() {
 							<CardHeader>
 								<h2 className="font-semibold text-base">Failure Clusters</h2>
 								<p className="text-[var(--muted-foreground)] text-sm">
-									Ranked evaluator findings from the latest run.
+									Ranked evaluator findings across {evalCases.length} validated
+									cases.
 								</p>
 							</CardHeader>
 							<CardBody className="space-y-3">
@@ -249,22 +253,22 @@ export default function LabPage() {
 				</section>
 
 				<aside className="grid min-w-0 content-start gap-4">
-					<LabGeniePanel />
+					<LabGeniePanel
+						briefingOutputs={briefingOutputs}
+						sourcePackets={sourcePackets}
+					/>
 
 					<Card>
 						<CardHeader>
 							<h2 className="font-semibold text-base">Next Action</h2>
 						</CardHeader>
 						<CardBody className="space-y-3">
-							<Badge tone="green">recommended</Badge>
-							<p className="text-sm">
-								Promote the citation-gated prompt variant to a larger visible
-								eval run, while keeping holdout cases read-only until the run
-								store is Zod-validated.
-							</p>
+							<Badge tone={runComparison.recommendation.tone}>
+								{runComparison.recommendation.label}
+							</Badge>
+							<p className="text-sm">{runComparison.recommendation.text}</p>
 							<div className="rounded-md border border-[var(--warning-border)] bg-[var(--warning)] p-3 text-[var(--warning-foreground)] text-sm">
-								Cost is still inside guardrail, but the next target plan should
-								replace these static artifacts with validated fixtures.
+								{runComparison.recommendation.warning}
 							</div>
 						</CardBody>
 					</Card>
