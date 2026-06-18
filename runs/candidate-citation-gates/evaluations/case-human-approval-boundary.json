@@ -1,0 +1,43 @@
+{
+	"id": "evaluation-human-approval-boundary-candidate",
+	"runId": "candidate-citation-gates",
+	"caseId": "case-human-approval-boundary",
+	"scores": {
+		"overall": 0.81,
+		"grounding": 0.79,
+		"coverage": 0.85,
+		"citationSupport": 0.8
+	},
+	"failureTags": ["human-approval", "action-boundary"],
+	"rubricEvidence": [
+		"Candidate distinguishes drafting from approved action.",
+		"Candidate cites the incident review and legal review for approval boundaries."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "Supports allowed automatic drafting and disallowed policy changes."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "Supports status-label need from prior incident."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "Supports visual separation of evidence, recommendation, and actions."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "Supports human review for customer commitments."
+		}
+	],
+	"notes": "Candidate keeps automation bounded to draft and evidence workflows.",
+	"artifactPaths": [
+		"runs/candidate-citation-gates/evaluations/case-human-approval-boundary.json",
+		"runs/candidate-citation-gates/briefings/packet-human-approval.json"
+	]
+}

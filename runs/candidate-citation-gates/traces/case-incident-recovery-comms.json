@@ -1,0 +1,87 @@
+{
+	"id": "trace-incident-recovery-comms-candidate",
+	"runId": "candidate-citation-gates",
+	"caseId": "case-incident-recovery-comms",
+	"sourcePacketId": "packet-incident-recovery",
+	"input": {
+		"userRequest": "Recommend how Briefing Genie should summarize recovery work after a setup incident.",
+		"sourcePacketPath": "data/source-packets/packet-incident-recovery.json"
+	},
+	"messages": [
+		{
+			"role": "system",
+			"content": "You are Briefing Genie. Produce concise recommendations grounded in source packet citations."
+		},
+		{
+			"role": "user",
+			"content": "Recommend how Briefing Genie should summarize recovery work after a setup incident."
+		},
+		{
+			"role": "assistant",
+			"content": "Briefing Genie should summarize the incident as partially recovered: macOS and Linux are verified, Windows remains pending, and users need clear steps for partial installs and stale credentials."
+		}
+	],
+	"model": {
+		"provider": "seeded-fixture",
+		"name": "phase-5-candidate",
+		"temperature": 0
+	},
+	"output": {
+		"id": "briefing-incident-recovery-comms-candidate",
+		"sourcePacketId": "packet-incident-recovery",
+		"caseId": "case-incident-recovery-comms",
+		"title": "Recommendation: communicate partial recovery with environment caveats",
+		"summary": "Briefing Genie should summarize the incident as partially recovered: macOS and Linux are verified, Windows remains pending, and users need clear steps for partial installs and stale credentials.",
+		"claims": [
+			{
+				"text": "The incident created recovery confusion for users with partial installs.",
+				"citations": ["S1"]
+			},
+			{
+				"text": "Resolution should not be described as universal until Windows recovery is validated.",
+				"citations": ["S2", "S3"]
+			},
+			{
+				"text": "The patched CLI recovery command needs matching docs updates before broad rollout.",
+				"citations": ["S4"]
+			}
+		],
+		"openQuestions": [
+			"When will Windows recovery validation finish?",
+			"Can docs show the new recovery command before the release candidate is promoted?"
+		],
+		"recommendation": "Send a segmented recovery message now, with clear Windows caveats and docs updates tied to the patched recovery command.",
+		"metadata": {
+			"variant": "candidate-citation-gates",
+			"runId": "candidate-citation-gates",
+			"model": "seeded-fixture"
+		}
+	},
+	"toolCalls": [
+		{
+			"id": "tool-read-incident-recovery-comms",
+			"toolName": "read_source_packet",
+			"arguments": {
+				"sourcePacketId": "packet-incident-recovery"
+			},
+			"result": {
+				"sourceCount": 4,
+				"sourceIds": ["S1", "S2", "S3", "S4"]
+			},
+			"status": "success",
+			"startedAt": "2026-06-18T17:45:00.000Z",
+			"endedAt": "2026-06-18T17:45:00.005Z"
+		}
+	],
+	"cost": {
+		"inputTokens": 2280,
+		"outputTokens": 420,
+		"estimatedUsd": 0.014
+	},
+	"latencyMs": 7680,
+	"artifactPaths": [
+		"data/source-packets/packet-incident-recovery.json",
+		"runs/candidate-citation-gates/briefings/packet-incident-recovery.json",
+		"runs/candidate-citation-gates/traces/case-incident-recovery-comms.json"
+	]
+}

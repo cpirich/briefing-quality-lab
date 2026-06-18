@@ -1,0 +1,31 @@
+{
+	"id": "briefing-code-review-queues-candidate",
+	"sourcePacketId": "packet-code-review-queues",
+	"caseId": "case-code-review-queues",
+	"title": "Recommendation: fast-track only labeled low-risk changes",
+	"summary": "Use the queue helper to reduce tail latency, but keep it advisory. Fast-track only low-risk changes with clear ownership and healthy tests, while routing cross-service changes to owning teams.",
+	"claims": [
+		{
+			"text": "Queue tail latency is still concentrated in complex changes that wait for senior reviewers.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Reviewers need risk labels before trusting automation on routine changes.",
+			"citations": ["S2", "S4"]
+		},
+		{
+			"text": "Cross-service changes should not be fast-tracked without owning-team review.",
+			"citations": ["S3"]
+		}
+	],
+	"openQuestions": [
+		"Which ownership metadata is reliable enough to drive risk labels?",
+		"Should flaky-test status automatically block fast-track suggestions?"
+	],
+	"recommendation": "Ship advisory reviewer suggestions and risk labels first; defer any auto-approval path until ownership and test-health gates are proven.",
+	"metadata": {
+		"variant": "candidate-citation-gates",
+		"runId": "candidate-citation-gates",
+		"model": "seeded-fixture"
+	}
+}

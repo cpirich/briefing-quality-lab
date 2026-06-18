@@ -1,0 +1,31 @@
+{
+	"id": "briefing-adoption-friction-baseline",
+	"sourcePacketId": "packet-dev-adoption",
+	"caseId": "case-adoption-friction",
+	"title": "Recommendation: expand pilots after adoption lift",
+	"summary": "Adoption is moving in the right direction, so the team can widen pilots while continuing to monitor setup issues.",
+	"claims": [
+		{
+			"text": "The docs refresh improved quickstart completion enough to justify broader pilots.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Support issues are mostly implementation details that can be handled reactively.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Reviewers want more traceability in generated recommendations.",
+			"citations": ["S3"]
+		}
+	],
+	"openQuestions": [
+		"Which teams should join the next pilot?",
+		"How much setup friction is acceptable during expansion?"
+	],
+	"recommendation": "Expand the pilot and keep support ready to handle setup questions.",
+	"metadata": {
+		"variant": "baseline",
+		"runId": "baseline-2026-06-10",
+		"model": "seeded-fixture"
+	}
+}

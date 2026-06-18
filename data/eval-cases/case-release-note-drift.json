@@ -1,0 +1,25 @@
+{
+	"id": "case-release-note-drift",
+	"title": "Release note drift briefing",
+	"sourcePacketId": "packet-release-note-drift",
+	"task": "Advise how to improve generated release notes while keeping customer-facing claims accurate.",
+	"expectedCoverage": [
+		"Generated notes have good coverage but drift when PR descriptions become stale.",
+		"Customer-facing accuracy matters most for migration, compatibility, and removed features.",
+		"Workflow should highlight changed or removed claims instead of requiring a second manual changelog.",
+		"Sensitive claims require explicit human approval."
+	],
+	"traps": [
+		"Do not treat 83% coverage as proof the notes are safe to publish.",
+		"Do not omit human approval for security, data-retention, or access-control claims."
+	],
+	"acceptedCitations": ["S1", "S2", "S3", "S4"],
+	"holdout": false,
+	"demoHighlight": true,
+	"failureTags": ["stale-source", "human-approval", "customer-claim-risk"],
+	"metadata": {
+		"synthetic": true,
+		"publicSafe": true,
+		"notes": "Featured case for stale evidence and human approval gates."
+	}
+}

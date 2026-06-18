@@ -1,0 +1,31 @@
+{
+	"id": "briefing-eval-loop-baseline",
+	"sourcePacketId": "packet-eval-loop",
+	"caseId": "case-eval-loop",
+	"title": "Recommendation: expand automated eval coverage",
+	"summary": "The team should expand automated evals because broader coverage will speed review and provide more data for model iteration.",
+	"claims": [
+		{
+			"text": "More cases will make the eval loop more reliable.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Coverage gains are enough to justify shipping the candidate.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Long traces are worth keeping because they help debug failures.",
+			"citations": ["S3"]
+		}
+	],
+	"openQuestions": [
+		"How many cases should the next run include?",
+		"How much trace detail should be retained?"
+	],
+	"recommendation": "Expand automated evals and rely on reviewer spot checks to catch regressions.",
+	"metadata": {
+		"variant": "baseline",
+		"runId": "baseline-2026-06-10",
+		"model": "seeded-fixture"
+	}
+}

@@ -1,9 +1,9 @@
 {
-	"id": "briefing-dev-adoption-candidate",
+	"id": "briefing-adoption-friction-candidate",
 	"sourcePacketId": "packet-dev-adoption",
 	"caseId": "case-adoption-friction",
 	"title": "Recommendation: fix setup recovery before expanding pilots",
-	"summary": "Developer adoption is improving, but the most visible friction is still setup recovery. Treat environment reliability and citation traceability as the next product-quality gate before adding more pilot teams.",
+	"summary": "Developer adoption is improving, but the most visible remaining friction is setup recovery. Treat environment reliability and citation traceability as the product-quality gate before adding more pilot teams.",
 	"claims": [
 		{
 			"text": "Quickstart completion improved, yet local setup remains the highest-friction step.",
@@ -14,8 +14,8 @@
 			"citations": ["S3"]
 		},
 		{
-			"text": "The next iteration should add clearer failed-install recovery and trace-backed recommendations.",
-			"citations": ["S2", "S3"]
+			"text": "Pilot expansion should wait until failed-install recovery and trace-backed citation checks are visible.",
+			"citations": ["S2", "S4"]
 		}
 	],
 	"openQuestions": [

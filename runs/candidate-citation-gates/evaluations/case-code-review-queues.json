@@ -1,0 +1,43 @@
+{
+	"id": "evaluation-code-review-queues-candidate",
+	"runId": "candidate-citation-gates",
+	"caseId": "case-code-review-queues",
+	"scores": {
+		"overall": 0.82,
+		"grounding": 0.8,
+		"coverage": 0.84,
+		"citationSupport": 0.81
+	},
+	"failureTags": ["risk-labeling", "unsupported-automation"],
+	"rubricEvidence": [
+		"Candidate distinguishes low-risk changes from cross-service changes.",
+		"Candidate keeps the helper advisory because the source says it cannot verify semantic ownership."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "Supports median and tail latency framing."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "Supports reviewer distrust and risk-label request."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "Supports cross-service fast-track incident risk."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "Supports helper capabilities and limitations."
+		}
+	],
+	"notes": "Candidate avoids the baseline's unsupported leap from suggestions to approvals.",
+	"artifactPaths": [
+		"runs/candidate-citation-gates/evaluations/case-code-review-queues.json",
+		"runs/candidate-citation-gates/briefings/packet-code-review-queues.json"
+	]
+}

@@ -9,6 +9,7 @@
 		"check:unsafe": "biome check --write --unsafe .",
 		"check:write": "biome check --write .",
 		"data:validate": "bun run scripts/validate-data.ts",
+		"data:seed-phase5": "bun run scripts/seed-phase5-fixtures.ts",
 		"dev": "next dev",
 		"preview": "next build && next start",
 		"start": "next start",

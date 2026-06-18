@@ -1,0 +1,28 @@
+{
+	"id": "briefing-cost-latency-budget-baseline",
+	"sourcePacketId": "packet-cost-latency",
+	"caseId": "case-cost-latency-budget",
+	"title": "Recommendation: keep full traces for the next run",
+	"summary": "Full traces are valuable for debugging, and the next demo should preserve them even if token usage rises.",
+	"claims": [
+		{
+			"text": "The candidate reduced unsupported claims with a modest token increase.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Finance allows some cost growth for demo-quality evals.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Reviewers find traces useful for debugging.",
+			"citations": ["S3"]
+		}
+	],
+	"openQuestions": ["How much trace detail is enough?"],
+	"recommendation": "Keep full traces for all cases and revisit cost after the demo.",
+	"metadata": {
+		"variant": "baseline",
+		"runId": "baseline-2026-06-10",
+		"model": "seeded-fixture"
+	}
+}

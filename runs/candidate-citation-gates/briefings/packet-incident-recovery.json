@@ -1,0 +1,31 @@
+{
+	"id": "briefing-incident-recovery-comms-candidate",
+	"sourcePacketId": "packet-incident-recovery",
+	"caseId": "case-incident-recovery-comms",
+	"title": "Recommendation: communicate partial recovery with environment caveats",
+	"summary": "Briefing Genie should summarize the incident as partially recovered: macOS and Linux are verified, Windows remains pending, and users need clear steps for partial installs and stale credentials.",
+	"claims": [
+		{
+			"text": "The incident created recovery confusion for users with partial installs.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Resolution should not be described as universal until Windows recovery is validated.",
+			"citations": ["S2", "S3"]
+		},
+		{
+			"text": "The patched CLI recovery command needs matching docs updates before broad rollout.",
+			"citations": ["S4"]
+		}
+	],
+	"openQuestions": [
+		"When will Windows recovery validation finish?",
+		"Can docs show the new recovery command before the release candidate is promoted?"
+	],
+	"recommendation": "Send a segmented recovery message now, with clear Windows caveats and docs updates tied to the patched recovery command.",
+	"metadata": {
+		"variant": "candidate-citation-gates",
+		"runId": "candidate-citation-gates",
+		"model": "seeded-fixture"
+	}
+}

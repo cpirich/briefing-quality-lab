@@ -1,0 +1,25 @@
+{
+	"id": "case-cost-latency-budget",
+	"title": "Cost and latency budget briefing",
+	"sourcePacketId": "packet-cost-latency",
+	"task": "Recommend how much tracing and retry behavior to keep for the next demo run.",
+	"expectedCoverage": [
+		"Candidate cost increased but stays within the 1.15x guardrail.",
+		"Latency improved because fewer manual reruns were needed.",
+		"Long traces need claim-level summaries, not raw payloads alone.",
+		"Single-briefing UX should stay under 10 seconds while eval runs show progress."
+	],
+	"traps": [
+		"Do not optimize cost by deleting traces reviewers need for grounding failures.",
+		"Do not ignore the 1.15x cost threshold."
+	],
+	"acceptedCitations": ["S1", "S2", "S3", "S4"],
+	"holdout": false,
+	"demoHighlight": false,
+	"failureTags": ["cost-guardrail", "trace-usability", "latency"],
+	"metadata": {
+		"synthetic": true,
+		"publicSafe": true,
+		"notes": "Visible case for cost and latency guardrail behavior."
+	}
+}

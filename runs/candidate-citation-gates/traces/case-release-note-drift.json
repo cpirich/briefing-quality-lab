@@ -1,0 +1,87 @@
+{
+	"id": "trace-release-note-drift-candidate",
+	"runId": "candidate-citation-gates",
+	"caseId": "case-release-note-drift",
+	"sourcePacketId": "packet-release-note-drift",
+	"input": {
+		"userRequest": "Advise how to improve generated release notes while keeping customer-facing claims accurate.",
+		"sourcePacketPath": "data/source-packets/packet-release-note-drift.json"
+	},
+	"messages": [
+		{
+			"role": "system",
+			"content": "You are Briefing Genie. Produce concise recommendations grounded in source packet citations."
+		},
+		{
+			"role": "user",
+			"content": "Advise how to improve generated release notes while keeping customer-facing claims accurate."
+		},
+		{
+			"role": "assistant",
+			"content": "Generated release notes are useful, but coverage is not the limiting risk. Add a drift review for changed or removed claims, and require explicit approval for sensitive customer-facing statements."
+		}
+	],
+	"model": {
+		"provider": "seeded-fixture",
+		"name": "phase-5-candidate",
+		"temperature": 0
+	},
+	"output": {
+		"id": "briefing-release-note-drift-candidate",
+		"sourcePacketId": "packet-release-note-drift",
+		"caseId": "case-release-note-drift",
+		"title": "Recommendation: gate generated notes on drift and sensitive-claim review",
+		"summary": "Generated release notes are useful, but coverage is not the limiting risk. Add a drift review for changed or removed claims, and require explicit approval for sensitive customer-facing statements.",
+		"claims": [
+			{
+				"text": "Release-note coverage is high, but stale PR descriptions create customer-facing inaccuracies.",
+				"citations": ["S1", "S2"]
+			},
+			{
+				"text": "The workflow should highlight changed or removed claims instead of asking engineers to maintain a second changelog.",
+				"citations": ["S3"]
+			},
+			{
+				"text": "Security, retention, and access-control claims need explicit human approval before publication.",
+				"citations": ["S4"]
+			}
+		],
+		"openQuestions": [
+			"Can QA delta tags be generated automatically from merged scope changes?",
+			"Which release-note categories should be blocked until compliance approval is recorded?"
+		],
+		"recommendation": "Ship generated notes behind a drift-highlighting review queue, with hard approval gates for sensitive claims.",
+		"metadata": {
+			"variant": "candidate-citation-gates",
+			"runId": "candidate-citation-gates",
+			"model": "seeded-fixture"
+		}
+	},
+	"toolCalls": [
+		{
+			"id": "tool-read-release-note-drift",
+			"toolName": "read_source_packet",
+			"arguments": {
+				"sourcePacketId": "packet-release-note-drift"
+			},
+			"result": {
+				"sourceCount": 4,
+				"sourceIds": ["S1", "S2", "S3", "S4"]
+			},
+			"status": "success",
+			"startedAt": "2026-06-18T17:45:00.000Z",
+			"endedAt": "2026-06-18T17:45:00.005Z"
+		}
+	],
+	"cost": {
+		"inputTokens": 2280,
+		"outputTokens": 420,
+		"estimatedUsd": 0.014
+	},
+	"latencyMs": 7680,
+	"artifactPaths": [
+		"data/source-packets/packet-release-note-drift.json",
+		"runs/candidate-citation-gates/briefings/packet-release-note-drift.json",
+		"runs/candidate-citation-gates/traces/case-release-note-drift.json"
+	]
+}

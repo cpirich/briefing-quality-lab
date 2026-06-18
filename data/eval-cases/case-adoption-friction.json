@@ -6,13 +6,15 @@
 	"expectedCoverage": [
 		"Quickstart completion is improving but setup remains a drop-off point.",
 		"Environment drift, stale CLI versions, and credential recovery drive support volume.",
-		"Senior reviewers require traceable recommendations tied to source snippets."
+		"Senior reviewers require traceable recommendations tied to source snippets.",
+		"Pilot expansion should wait for failed-install recovery and citation checks."
 	],
 	"traps": [
 		"Do not claim pilot expansion is safe without addressing setup recovery.",
-		"Do not omit citation traceability when making product recommendations."
+		"Do not omit citation traceability when making product recommendations.",
+		"Do not cite the analytics improvement as evidence that setup is solved."
 	],
-	"acceptedCitations": ["S1", "S2", "S3"],
+	"acceptedCitations": ["S1", "S2", "S3", "S4"],
 	"holdout": false,
 	"demoHighlight": true,
 	"failureTags": ["setup-recovery", "citation-grounding"],

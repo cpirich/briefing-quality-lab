@@ -5,29 +5,29 @@
 	"metrics": [
 		{
 			"label": "Overall quality",
-			"value": "0.84",
-			"delta": "+0.12",
-			"status": "Candidate passes target",
+			"value": "0.83",
+			"delta": "+0.17",
+			"status": "Candidate clears expanded set",
 			"tone": "green"
 		},
 		{
 			"label": "Citation grounding",
-			"value": "0.78",
-			"delta": "+0.19",
-			"status": "Weak cluster shrinking",
+			"value": "0.79",
+			"delta": "+0.27",
+			"status": "Unsupported synthesis reduced",
 			"tone": "green"
 		},
 		{
 			"label": "Coverage",
-			"value": "0.88",
-			"delta": "+0.07",
+			"value": "0.86",
+			"delta": "+0.12",
 			"status": "Expected points covered",
 			"tone": "blue"
 		},
 		{
 			"label": "Cost ratio",
-			"value": "1.08x",
-			"delta": "+0.08x",
+			"value": "1.10x",
+			"delta": "+0.10x",
 			"status": "Inside 1.15x guardrail",
 			"tone": "amber"
 		},
@@ -42,88 +42,117 @@
 	"trend": [
 		{
 			"label": "Base",
-			"score": 59
+			"score": 66
 		},
 		{
 			"label": "Trace",
-			"score": 68
+			"score": 72
 		},
 		{
 			"label": "Cite",
-			"score": 77
+			"score": 79
 		},
 		{
-			"label": "Latest",
-			"score": 84
+			"label": "Phase 5",
+			"score": 83
 		}
 	],
 	"comparisonRows": [
 		{
 			"metric": "Overall score",
-			"baseline": "0.72",
-			"candidate": "0.84",
-			"delta": "+0.12"
+			"baseline": "0.66",
+			"candidate": "0.83",
+			"delta": "+0.17"
 		},
 		{
 			"metric": "Citation support",
-			"baseline": "0.59",
-			"candidate": "0.78",
-			"delta": "+0.19"
+			"baseline": "0.51",
+			"candidate": "0.80",
+			"delta": "+0.29"
 		},
 		{
 			"metric": "Unsupported claims",
-			"baseline": "11",
-			"candidate": "4",
-			"delta": "-7"
+			"baseline": "26",
+			"candidate": "7",
+			"delta": "-19"
+		},
+		{
+			"metric": "Visible eval cases",
+			"baseline": "7",
+			"candidate": "7",
+			"delta": "0"
 		},
 		{
 			"metric": "Median latency",
-			"baseline": "8.1s",
-			"candidate": "7.6s",
+			"baseline": "8.4s",
+			"candidate": "7.9s",
 			"delta": "-0.5s"
 		}
 	],
 	"failureClusters": [
 		{
-			"title": "Weak citation grounding",
+			"title": "Unsupported rollout recommendations",
+			"count": 5,
+			"severity": "High",
+			"evidence": "Baseline outputs often turn partial progress signals into broad rollout or publication recommendations.",
+			"cases": [
+				"case-adoption-friction",
+				"case-eval-loop",
+				"case-release-note-drift",
+				"case-incident-recovery-comms",
+				"case-human-approval-boundary"
+			]
+		},
+		{
+			"title": "Weak citation selection",
 			"count": 4,
 			"severity": "High",
-			"evidence": "Briefings include plausible strategic claims that are only loosely connected to packet excerpts.",
-			"cases": ["case-eval-loop", "case-adoption-friction"]
+			"evidence": "Outputs cite broadly relevant sources but miss the snippet that contains the actual gate, caveat, or constraint.",
+			"cases": [
+				"case-code-review-queues",
+				"case-eval-loop",
+				"case-cost-latency-budget",
+				"case-adoption-friction"
+			]
 		},
 		{
-			"title": "Coverage misses governance risk",
-			"count": 2,
+			"title": "Cost and latency tradeoff too vague",
+			"count": 3,
 			"severity": "Medium",
-			"evidence": "Outputs mention speed and cost but underweight human approval and holdout-case boundaries.",
-			"cases": ["case-eval-loop"]
+			"evidence": "Recommendations mention cost or speed without tying the decision to the 1.15x guardrail, retry caps, or progress UX.",
+			"cases": [
+				"case-cost-latency-budget",
+				"case-eval-loop",
+				"case-runtime-choice"
+			]
 		},
 		{
-			"title": "Cost tradeoff too vague",
+			"title": "Holdout boundary risk",
 			"count": 2,
 			"severity": "Medium",
-			"evidence": "Recommendations do not quantify retry or trace costs even when source notes provide ratios.",
-			"cases": ["case-runtime-choice"]
+			"evidence": "Holdout cases should remain visible as summaries while their tuning labels stay out of product flows.",
+			"cases": ["case-runtime-choice", "case-model-routing-policy"]
 		}
 	],
 	"featuredCase": {
-		"id": "case-eval-loop",
-		"title": "Eval loop strategy briefing",
-		"sourceExcerpt": "Coverage can improve while grounding regresses, so citation support needs an explicit shipping gate.",
-		"baseline": "The team should expand automated evals because coverage improved and review time dropped.",
-		"candidate": "The team should expand smaller eval batches only if citation support remains above the guardrail; coverage gains alone are not enough to ship.",
-		"evaluatorNote": "Candidate preserves the positive eval-loop recommendation while grounding the shipping condition in the guardrail note."
+		"id": "case-release-note-drift",
+		"title": "Release note drift briefing",
+		"sourceExcerpt": "The generated notes covered 83% of merged changes, but 14% of entries described behavior that changed after final QA.",
+		"baseline": "Publish generated release notes after a lightweight spot review because coverage is high and customers prefer concise notes.",
+		"candidate": "Gate generated notes on drift review for changed or removed claims, and require explicit approval for sensitive customer-facing statements.",
+		"evaluatorNote": "Candidate keeps the coverage benefit while grounding the shipping gate in stale-source drift and compliance evidence."
 	},
 	"recommendation": {
 		"tone": "green",
-		"label": "recommended",
-		"text": "Promote the citation-gated prompt variant to a larger visible eval run, while keeping holdout cases read-only until the run store is Zod-validated.",
-		"warning": "Cost is still inside guardrail, but the next target plan should replace these static artifacts with validated fixtures."
+		"label": "ready for runtime",
+		"text": "Use the expanded synthetic set as the default demo eval surface before adding live LLM generation and lab-owned run orchestration.",
+		"warning": "Cost remains inside guardrail, but the next runtime slice should keep retry caps and claim-level trace summaries visible."
 	},
 	"artifactPaths": [
 		"runs/baseline-2026-06-10/manifest.json",
 		"runs/candidate-citation-gates/manifest.json",
-		"runs/candidate-citation-gates/traces/case-eval-loop.json",
+		"runs/candidate-citation-gates/traces/case-release-note-drift.json",
+		"runs/candidate-citation-gates/evaluations/case-release-note-drift.json",
 		"reports/latest-eval-summary.md"
 	]
 }

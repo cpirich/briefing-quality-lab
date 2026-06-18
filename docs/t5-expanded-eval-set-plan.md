@@ -29,6 +29,22 @@ The current three source packets remain useful as golden UI fixtures and schema 
 - seeded baseline and candidate outputs for every visible case
 - evaluator outputs and comparison artifacts that show at least one concrete failure cluster
 
+This phase should stay intentionally small enough to review carefully in one PR. It proves the richer packet shape, seeded artifact flow, holdout filtering, and dashboard evidence density.
+
+## Follow-On Dataset Scale
+
+After this Phase 5 PR is reviewed and merged, create a separate PR to grow the dataset to 25-40 cases before using the lab for serious prompt, model, or evaluator improvement claims.
+
+The follow-on expansion should:
+
+- keep 4-6 cases highlighted for demo walkthroughs
+- keep 5-8 holdout or regression cases out of the Genie product selector and prompt-tuning views
+- add repeated examples per failure mode so clusters are backed by patterns, not anecdotes
+- preserve the same Zod-validated fixture and artifact contracts from this phase
+- refresh seeded baseline/candidate outputs, traces, evaluator outputs, comparison data, and the latest report
+
+Treat 25-40 cases as the demo-realistic tier for "real improvement work." Treat 60-100 cases as a later hardening tier once live generation, evaluator reliability, runtime cost, and run duration are stable.
+
 ## Packet Requirements
 
 Each source packet should include enough evidence complexity to make the lab useful:

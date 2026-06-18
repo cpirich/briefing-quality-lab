@@ -1,39 +1,43 @@
 {
-	"id": "evaluation-case-eval-loop-candidate",
+	"id": "evaluation-eval-loop-candidate",
 	"runId": "candidate-citation-gates",
 	"caseId": "case-eval-loop",
 	"scores": {
-		"overall": 0.86,
-		"grounding": 0.84,
-		"coverage": 0.9,
-		"citationSupport": 0.88
+		"overall": 0.88,
+		"grounding": 0.86,
+		"coverage": 0.92,
+		"citationSupport": 0.87
 	},
-	"failureTags": ["cost-guardrail-watch"],
+	"failureTags": ["citation-grounding", "cost-guardrail"],
 	"rubricEvidence": [
-		"Candidate links eval expansion to smaller batches and visible failure clusters.",
-		"Candidate explicitly blocks shipping on citation support rather than coverage alone.",
-		"Candidate mentions trace value while preserving the retry-cost concern."
+		"Candidate rejects the baseline's coverage-only shipping logic.",
+		"Candidate includes cost, trace, and holdout boundaries in the recommendation."
 	],
 	"citationSupport": [
 		{
 			"citation": "S1",
 			"supported": true,
-			"note": "Supports smaller eval batches and failure cluster visibility."
+			"note": "Supports smaller batches and failure clusters."
 		},
 		{
 			"citation": "S2",
 			"supported": true,
-			"note": "Supports citation support as a shipping gate."
+			"note": "Supports citation support as a release block."
 		},
 		{
 			"citation": "S3",
 			"supported": true,
-			"note": "Supports trace utility and retry-cost risk."
+			"note": "Supports trace value and 1.34x retry-cost guardrail."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "Supports holdout label restrictions."
 		}
 	],
-	"notes": "Candidate preserves the positive eval-loop recommendation while grounding the shipping condition in the guardrail note.",
+	"notes": "Candidate grounds the shipping gate in citation support instead of treating coverage as sufficient.",
 	"artifactPaths": [
 		"runs/candidate-citation-gates/evaluations/case-eval-loop.json",
-		"runs/candidate-citation-gates/traces/case-eval-loop.json"
+		"runs/candidate-citation-gates/briefings/packet-eval-loop.json"
 	]
 }

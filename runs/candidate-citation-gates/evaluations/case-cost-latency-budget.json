@@ -1,0 +1,43 @@
+{
+	"id": "evaluation-cost-latency-budget-candidate",
+	"runId": "candidate-citation-gates",
+	"caseId": "case-cost-latency-budget",
+	"scores": {
+		"overall": 0.8,
+		"grounding": 0.78,
+		"coverage": 0.83,
+		"citationSupport": 0.78
+	},
+	"failureTags": ["cost-guardrail", "trace-usability"],
+	"rubricEvidence": [
+		"Candidate preserves traces but adds claim-level summarization and retry caps.",
+		"Candidate ties the recommendation to the 1.15x finance guardrail and 10-second UX target."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "Supports token and latency changes."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "Supports 1.15x cost guardrail."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "Supports claim-level trace summaries."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "Supports under-10-second single briefing and progress updates."
+		}
+	],
+	"notes": "Candidate is grounded but still needs stronger specificity on retry caps in a live runner.",
+	"artifactPaths": [
+		"runs/candidate-citation-gates/evaluations/case-cost-latency-budget.json",
+		"runs/candidate-citation-gates/briefings/packet-cost-latency.json"
+	]
+}

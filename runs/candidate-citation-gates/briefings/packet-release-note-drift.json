@@ -1,0 +1,31 @@
+{
+	"id": "briefing-release-note-drift-candidate",
+	"sourcePacketId": "packet-release-note-drift",
+	"caseId": "case-release-note-drift",
+	"title": "Recommendation: gate generated notes on drift and sensitive-claim review",
+	"summary": "Generated release notes are useful, but coverage is not the limiting risk. Add a drift review for changed or removed claims, and require explicit approval for sensitive customer-facing statements.",
+	"claims": [
+		{
+			"text": "Release-note coverage is high, but stale PR descriptions create customer-facing inaccuracies.",
+			"citations": ["S1", "S2"]
+		},
+		{
+			"text": "The workflow should highlight changed or removed claims instead of asking engineers to maintain a second changelog.",
+			"citations": ["S3"]
+		},
+		{
+			"text": "Security, retention, and access-control claims need explicit human approval before publication.",
+			"citations": ["S4"]
+		}
+	],
+	"openQuestions": [
+		"Can QA delta tags be generated automatically from merged scope changes?",
+		"Which release-note categories should be blocked until compliance approval is recorded?"
+	],
+	"recommendation": "Ship generated notes behind a drift-highlighting review queue, with hard approval gates for sensitive claims.",
+	"metadata": {
+		"variant": "candidate-citation-gates",
+		"runId": "candidate-citation-gates",
+		"model": "seeded-fixture"
+	}
+}

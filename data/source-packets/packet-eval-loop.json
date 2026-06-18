@@ -7,26 +7,32 @@
 		{
 			"id": "S1",
 			"title": "Quality review memo",
-			"excerpt": "Teams need smaller eval batches with visible failure clusters before expanding model coverage.",
+			"excerpt": "Teams need smaller eval batches with visible failure clusters before expanding model coverage. The last broad run increased the number of cases scored, but reviewers could not tell which failures were repeated patterns and which were one-off mistakes.",
 			"documentType": "quality memo"
 		},
 		{
 			"id": "S2",
 			"title": "Release guardrail notes",
-			"excerpt": "Coverage can improve while grounding regresses, so citation support needs an explicit shipping gate.",
+			"excerpt": "Coverage can improve while grounding regresses, so citation support needs an explicit shipping gate. The suggested threshold is not a leaderboard target; it is a release block when candidate outputs make unsupported claims.",
 			"documentType": "release notes"
 		},
 		{
 			"id": "S3",
 			"title": "Cost review",
-			"excerpt": "Long traces help debug failures, but unchecked retries created a 1.34x cost increase in the last dry run.",
+			"excerpt": "Long traces help debug failures, but unchecked retries created a 1.34x cost increase in the last dry run. The finance reviewer accepted trace retention only if retries are capped and summarized in the run manifest.",
 			"documentType": "cost review"
+		},
+		{
+			"id": "S4",
+			"title": "Holdout protocol",
+			"excerpt": "Holdout cases should appear in dashboards as summaries and aggregate scores, but their tuning labels should stay out of prompt-iteration workflows. Reviewers want confidence that prompt changes are not simply memorizing visible examples.",
+			"documentType": "governance note"
 		}
 	],
 	"metadata": {
 		"theme": "eval strategy",
 		"synthetic": true,
 		"publicSafe": true,
-		"createdBy": "phase-4-seed"
+		"createdBy": "phase-5-expanded-eval-set"
 	}
 }

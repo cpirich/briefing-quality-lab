@@ -1,0 +1,25 @@
+{
+	"id": "case-incident-recovery-comms",
+	"title": "Incident recovery communication briefing",
+	"sourcePacketId": "packet-incident-recovery",
+	"task": "Recommend how Briefing Genie should summarize recovery work after a setup incident.",
+	"expectedCoverage": [
+		"Partial installs created unclear recovery choices.",
+		"The issue is not universally resolved until Windows recovery is validated.",
+		"Customer communication should separate affected users, recommended action, and pending environments.",
+		"Docs need updates for the patched recovery command."
+	],
+	"traps": [
+		"Do not say the incident is fully resolved across all environments.",
+		"Do not omit the Windows validation caveat."
+	],
+	"acceptedCitations": ["S1", "S2", "S3", "S4"],
+	"holdout": false,
+	"demoHighlight": false,
+	"failureTags": ["setup-recovery", "stale-source", "customer-claim-risk"],
+	"metadata": {
+		"synthetic": true,
+		"publicSafe": true,
+		"notes": "Visible case for avoiding overbroad incident-resolution claims."
+	}
+}

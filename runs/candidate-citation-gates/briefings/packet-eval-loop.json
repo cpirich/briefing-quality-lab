@@ -6,7 +6,7 @@
 	"summary": "The eval loop is ready for broader automation only if citation support remains a release guardrail. Smaller batches with visible failure clusters are the safer next step.",
 	"claims": [
 		{
-			"text": "Smaller eval batches make failures easier to inspect before widening model coverage.",
+			"text": "Smaller eval batches make repeated failure patterns inspectable before widening model coverage.",
 			"citations": ["S1"]
 		},
 		{
@@ -14,8 +14,12 @@
 			"citations": ["S2"]
 		},
 		{
-			"text": "Trace depth is useful, but retry behavior needs a cost cap.",
+			"text": "Trace depth is useful, but retry behavior needs a cost cap and run-manifest summary.",
 			"citations": ["S3"]
+		},
+		{
+			"text": "Holdout labels should remain outside prompt-iteration workflows.",
+			"citations": ["S4"]
 		}
 	],
 	"openQuestions": [

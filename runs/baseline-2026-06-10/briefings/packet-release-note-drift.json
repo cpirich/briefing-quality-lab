@@ -1,0 +1,31 @@
+{
+	"id": "briefing-release-note-drift-baseline",
+	"sourcePacketId": "packet-release-note-drift",
+	"caseId": "case-release-note-drift",
+	"title": "Recommendation: publish generated release notes with spot review",
+	"summary": "Generated release notes cover most changes, so the team should publish them faster and rely on spot review for sensitive items.",
+	"claims": [
+		{
+			"text": "Generated notes cover most merged changes.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Customers prefer concise notes over exhaustive manual changelogs.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Engineers do not want to maintain a second changelog.",
+			"citations": ["S3"]
+		}
+	],
+	"openQuestions": [
+		"How often should reviewers sample generated notes?",
+		"Which customers need extra release detail?"
+	],
+	"recommendation": "Publish generated release notes after a lightweight spot review.",
+	"metadata": {
+		"variant": "baseline",
+		"runId": "baseline-2026-06-10",
+		"model": "seeded-fixture"
+	}
+}

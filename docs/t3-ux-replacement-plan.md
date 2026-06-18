@@ -100,6 +100,15 @@ Initial dataset size:
 - 1 featured failure cluster around weak citation grounding
 - 1-2 hidden or holdout cases for basic anti-gaming signal
 
+Demo-realistic dataset size:
+
+- 25-40 total eval cases once the first expanded set is reviewed
+- 4-6 highlighted cases for the live walkthrough
+- 5-8 holdout or regression cases that contribute to aggregate confidence but do not expose tuning labels
+- enough examples to show repeated failure patterns across citation grounding, stale evidence, unsupported recommendations, cost/latency tradeoffs, human approval boundaries, and holdout leakage
+
+Use 8-12 cases to prove the richer fixture shape and keep the first Phase 5 PR reviewable. Move to 25-40 cases in a separate follow-on PR before claiming real prompt, model, or evaluator improvement. Treat 60-100 cases as a later hardening target once live generation, evaluator reliability, and run costs are stable.
+
 Good case themes:
 
 - code review bottlenecks
@@ -253,19 +262,26 @@ The meaningful boundary is between probabilistic LLM communication and determini
    - Keep holdout summaries visible, but keep tuning labels and expected answers out of the Genie product surface.
    - Validate the expanded dataset with Zod before wiring it into any live generation or eval-run path.
 
-6. Generation runtime and trace logging
+6. Demo-realistic eval expansion
+   - Grow the reviewed Phase 5 fixture set from 8-12 cases to 25-40 cases in a separate PR.
+   - Keep 4-6 cases highlighted for live walkthroughs while metrics and failure clusters come from the broader set.
+   - Add enough cases to get repeated examples per target failure mode, especially citation grounding, stale evidence, unsupported recommendations, cost/latency tradeoffs, human approval boundaries, and holdout leakage.
+   - Preserve the holdout boundary by keeping holdout labels and expected answers out of `/genie` and prompt-iteration views.
+   - Use this dataset size as the minimum bar for credible "real improvement work" during demo preparation.
+
+7. Generation runtime and trace logging
    - Add a shared Briefing Genie generation service callable from both `/genie` and lab/eval code.
    - Add tRPC entry points for synchronous generation, job start, and job status.
    - Integrate at least one current LLM API with structured output and tool-call support.
    - Log generation traces to the backend filesystem so the lab can inspect inputs, outputs, tools, model metadata, costs, latency, and available provider traces.
 
-7. Dataset commands and artifact path
+8. Dataset commands and artifact path
    - Add dataset indexes and any seed metadata needed for deterministic discovery.
    - Add seed data, sample generation traces, and baseline artifacts.
    - Add commands for seed, baseline eval, latest eval, and compare.
    - Make dashboard states work with both fixture data and generated run artifacts.
 
-8. Lab eval runner and experiment-loop affordances
+9. Lab eval runner and experiment-loop affordances
    - Add a plan/report artifact that Codex can update after runs.
    - Ensure evals run from the lab side and can trigger Briefing Genie generations programmatically.
    - Add tRPC entry points for eval-run start, eval-run status, run comparison, and artifact listing.
@@ -274,7 +290,7 @@ The meaningful boundary is between probabilistic LLM communication and determini
    - Use a simple local run queue/sequential runner first; revisit BullMQ and Redis only if concurrency or persistence needs justify it.
    - Include a recommendation state so the loop ends with human review, not endless iteration.
 
-9. End-to-end demo polish
+10. End-to-end demo polish
    - Run the dashboard in the in-app browser.
    - Verify no stock T3 copy remains in visible routes or metadata.
    - Check empty, loading, stale, failed, and older-artifact states.

@@ -1,0 +1,38 @@
+{
+	"id": "packet-incident-recovery",
+	"title": "Incident Recovery Communication Packet",
+	"summary": "Support, status-page, and customer-success notes about communicating recovery after failed installs.",
+	"caseId": "case-incident-recovery-comms",
+	"sources": [
+		{
+			"id": "S1",
+			"title": "Support incident recap",
+			"excerpt": "A failed installer release caused 31 setup tickets in two days. The highest-friction users had partial installs: they could not tell whether to rerun setup, clear credentials, or wait for a patched CLI.",
+			"documentType": "support recap"
+		},
+		{
+			"id": "S2",
+			"title": "Status page draft",
+			"excerpt": "The draft status update says the issue is resolved, but engineering has only verified recovery on macOS and Linux. Windows recovery steps are still being validated by the tooling team.",
+			"documentType": "status draft"
+		},
+		{
+			"id": "S3",
+			"title": "Customer success guidance",
+			"excerpt": "Customer success wants a concise message that separates who is affected, what action they should take, and which environments are still pending validation. They specifically asked not to claim universal resolution until Windows is verified.",
+			"documentType": "customer guidance"
+		},
+		{
+			"id": "S4",
+			"title": "Engineering fix note",
+			"excerpt": "The patched CLI adds a recovery command that checks stale credentials and cleans partial install state. The command is available in the release candidate, but docs screenshots still show the old installer flow.",
+			"documentType": "engineering note"
+		}
+	],
+	"metadata": {
+		"theme": "incident communication",
+		"synthetic": true,
+		"publicSafe": true,
+		"createdBy": "phase-5-expanded-eval-set"
+	}
+}

@@ -1,0 +1,28 @@
+{
+	"id": "briefing-human-approval-boundary-baseline",
+	"sourcePacketId": "packet-human-approval",
+	"caseId": "case-human-approval-boundary",
+	"title": "Recommendation: automate low-risk lab actions",
+	"summary": "Briefing Genie can automate many lab actions if it keeps a human in the loop for major decisions.",
+	"claims": [
+		{
+			"text": "Drafting and summaries are acceptable automation candidates.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Teams were confused by a prior automated recommendation.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Users accept generated briefings when evidence is visible.",
+			"citations": ["S3"]
+		}
+	],
+	"openQuestions": ["Which actions are low risk enough to automate?"],
+	"recommendation": "Automate routine lab actions and ask for approval only on major decisions.",
+	"metadata": {
+		"variant": "baseline",
+		"runId": "baseline-2026-06-10",
+		"model": "seeded-fixture"
+	}
+}

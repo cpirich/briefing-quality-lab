@@ -7,26 +7,32 @@
 		{
 			"id": "S1",
 			"title": "Docs analytics",
-			"excerpt": "Quickstart completion rose to 58%, but teams still drop during local setup and credential configuration.",
+			"excerpt": "Quickstart completion rose from 44% to 58% after the copy refresh, and the first API call step now has fewer exits. The biggest remaining drop happens during local setup and credential configuration, where users bounce after seeing environment-specific errors.",
 			"documentType": "analytics digest"
 		},
 		{
 			"id": "S2",
 			"title": "Support digest",
-			"excerpt": "Most tickets mention environment drift, stale CLI versions, and unclear recovery steps after failed installs.",
+			"excerpt": "Most new tickets mention environment drift, stale CLI versions, and unclear recovery steps after failed installs. Several teams found the right command only after support pasted an internal checklist, which is not yet reflected in public docs.",
 			"documentType": "support summary"
 		},
 		{
 			"id": "S3",
 			"title": "Pilot interviews",
-			"excerpt": "Senior engineers value traceability and want generated recommendations tied back to source snippets.",
+			"excerpt": "Senior engineers said they trust generated recommendations only when each claim points back to source snippets they can inspect. They were less concerned about prose polish than about knowing whether a recommendation came from analytics, support, or interview evidence.",
 			"documentType": "interview synthesis"
+		},
+		{
+			"id": "S4",
+			"title": "Pilot expansion note",
+			"excerpt": "Two additional teams are available for a pilot next month, but the launch owner flagged setup recovery as the visible failure that would make the demo feel brittle. The note recommends expanding only after failed-install guidance and citation checks are observable in the lab.",
+			"documentType": "planning note"
 		}
 	],
 	"metadata": {
 		"theme": "developer adoption",
 		"synthetic": true,
 		"publicSafe": true,
-		"createdBy": "phase-4-seed"
+		"createdBy": "phase-5-expanded-eval-set"
 	}
 }

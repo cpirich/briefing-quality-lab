@@ -1,0 +1,38 @@
+{
+	"id": "packet-release-note-drift",
+	"title": "Release Note Drift Packet",
+	"summary": "Signals about generated release notes, stale changelog entries, customer-facing accuracy, and reviewer workflow.",
+	"caseId": "case-release-note-drift",
+	"sources": [
+		{
+			"id": "S1",
+			"title": "Changelog audit",
+			"excerpt": "The generated notes covered 83% of merged changes, but 14% of entries described behavior that changed after final QA. The highest-risk errors came from stale pull-request descriptions that were never updated after scope cuts.",
+			"documentType": "audit summary"
+		},
+		{
+			"id": "S2",
+			"title": "Customer success note",
+			"excerpt": "Customers value concise release notes, especially migration warnings and compatibility caveats. One customer escalated because a generated note promised an admin toggle that was removed before release.",
+			"documentType": "customer summary"
+		},
+		{
+			"id": "S3",
+			"title": "Engineering workflow memo",
+			"excerpt": "Engineers can tag final-release deltas during QA, but they will not maintain a second changelog manually. The memo recommends a review queue that highlights changed or removed claims rather than asking authors to rewrite every note.",
+			"documentType": "workflow memo"
+		},
+		{
+			"id": "S4",
+			"title": "Compliance review",
+			"excerpt": "Any customer-facing note that mentions security, data retention, or access control requires explicit human approval. The reviewer said summarization speed is useful only if sensitive claims are easy to spot.",
+			"documentType": "compliance review"
+		}
+	],
+	"metadata": {
+		"theme": "release communications",
+		"synthetic": true,
+		"publicSafe": true,
+		"createdBy": "phase-5-expanded-eval-set"
+	}
+}

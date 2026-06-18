@@ -1,0 +1,35 @@
+{
+	"id": "briefing-human-approval-boundary-candidate",
+	"sourcePacketId": "packet-human-approval",
+	"caseId": "case-human-approval-boundary",
+	"title": "Recommendation: automate drafting, not approval",
+	"summary": "Briefing Genie can automate draft briefings, summaries, and artifact links, but decisions that change policy, block releases, or commit to customers need explicit human approval and clear status labels.",
+	"claims": [
+		{
+			"text": "Automatic drafting and artifact linking are acceptable when outputs are labeled as generated.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Generated recommendations must not appear as approved decisions or blocked states.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Evidence, recommendations, and action controls should remain visually distinct.",
+			"citations": ["S3"]
+		},
+		{
+			"text": "Customer commitments require an accountable human reviewer.",
+			"citations": ["S4"]
+		}
+	],
+	"openQuestions": [
+		"Which UI labels should map to backend artifact statuses?",
+		"Should customer-facing messages be blocked unless an approver is recorded?"
+	],
+	"recommendation": "Let Genie draft and link evidence automatically, but require human approval for policy, release, and customer-commitment actions.",
+	"metadata": {
+		"variant": "candidate-citation-gates",
+		"runId": "candidate-citation-gates",
+		"model": "seeded-fixture"
+	}
+}

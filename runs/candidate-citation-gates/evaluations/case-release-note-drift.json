@@ -1,0 +1,43 @@
+{
+	"id": "evaluation-release-note-drift-candidate",
+	"runId": "candidate-citation-gates",
+	"caseId": "case-release-note-drift",
+	"scores": {
+		"overall": 0.84,
+		"grounding": 0.82,
+		"coverage": 0.87,
+		"citationSupport": 0.83
+	},
+	"failureTags": ["stale-source", "human-approval"],
+	"rubricEvidence": [
+		"Candidate treats stale PR descriptions as the central risk rather than celebrating coverage alone.",
+		"Candidate includes the compliance approval gate for sensitive claims."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "Supports coverage and stale-description drift."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "Supports customer-facing impact of removed features."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "Supports drift queue instead of manual second changelog."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "Supports sensitive-claim approval gate."
+		}
+	],
+	"notes": "Candidate improves over baseline by adding drift detection and human approval for sensitive claims.",
+	"artifactPaths": [
+		"runs/candidate-citation-gates/evaluations/case-release-note-drift.json",
+		"runs/candidate-citation-gates/briefings/packet-release-note-drift.json"
+	]
+}

@@ -1,0 +1,28 @@
+{
+	"id": "briefing-incident-recovery-comms-baseline",
+	"sourcePacketId": "packet-incident-recovery",
+	"caseId": "case-incident-recovery-comms",
+	"title": "Recommendation: announce installer recovery resolution",
+	"summary": "The installer issue has a patched CLI recovery command, so the team should announce resolution and point users to the new recovery path.",
+	"claims": [
+		{
+			"text": "The failed installer caused a spike in setup tickets.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "The issue is resolved and ready for customer communication.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "The patched CLI gives users a recovery command.",
+			"citations": ["S4"]
+		}
+	],
+	"openQuestions": ["When should docs screenshots be updated?"],
+	"recommendation": "Publish the recovery announcement and update docs afterward.",
+	"metadata": {
+		"variant": "baseline",
+		"runId": "baseline-2026-06-10",
+		"model": "seeded-fixture"
+	}
+}

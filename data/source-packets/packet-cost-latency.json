@@ -1,0 +1,38 @@
+{
+	"id": "packet-cost-latency",
+	"title": "Cost And Latency Budget Packet",
+	"summary": "Run data, finance guidance, and user feedback about trace depth, retries, and demo responsiveness.",
+	"caseId": "case-cost-latency-budget",
+	"sources": [
+		{
+			"id": "S1",
+			"title": "Run telemetry",
+			"excerpt": "The candidate prompt reduced unsupported claims but increased median token usage by 11%. Latency improved by 6% because fewer generations needed manual reruns, even though each retained trace is longer.",
+			"documentType": "telemetry report"
+		},
+		{
+			"id": "S2",
+			"title": "Finance guidance",
+			"excerpt": "Finance approved up to a 1.15x cost ratio for demo-quality eval runs if the report shows why extra tokens reduce review time. Anything above that threshold needs a smaller case batch or stricter retry cap.",
+			"documentType": "finance note"
+		},
+		{
+			"id": "S3",
+			"title": "Reviewer feedback",
+			"excerpt": "Reviewers said long traces are useful only when they are summarized next to the claim that failed. Raw provider payloads alone slowed review because people had to search for the relevant evidence.",
+			"documentType": "reviewer feedback"
+		},
+		{
+			"id": "S4",
+			"title": "Demo rehearsal",
+			"excerpt": "The live demo felt responsive when single briefings finished under 10 seconds and eval progress showed the current case. Stakeholders were tolerant of longer full runs if progress and artifact paths updated continuously.",
+			"documentType": "rehearsal note"
+		}
+	],
+	"metadata": {
+		"theme": "cost latency tradeoff",
+		"synthetic": true,
+		"publicSafe": true,
+		"createdBy": "phase-5-expanded-eval-set"
+	}
+}
