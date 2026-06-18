@@ -117,21 +117,10 @@
 		},
 		{
 			"title": "Cost and latency tradeoff too vague",
-			"count": 3,
-			"severity": "Medium",
-			"evidence": "Recommendations mention cost or speed without tying the decision to the 1.15x guardrail, retry caps, or progress UX.",
-			"cases": [
-				"case-cost-latency-budget",
-				"case-eval-loop",
-				"case-runtime-choice"
-			]
-		},
-		{
-			"title": "Holdout boundary risk",
 			"count": 2,
 			"severity": "Medium",
-			"evidence": "Holdout cases should remain visible as summaries while their tuning labels stay out of product flows.",
-			"cases": ["case-runtime-choice", "case-model-routing-policy"]
+			"evidence": "Recommendations mention cost or speed without tying the decision to the 1.15x guardrail, retry caps, or progress UX.",
+			"cases": ["case-cost-latency-budget", "case-eval-loop"]
 		}
 	],
 	"featuredCase": {

@@ -1343,10 +1343,8 @@ function runManifestFor(
 		variantLabel: isCandidate ? "candidate-citation-gates" : "baseline",
 		status: "complete",
 		gitRef: isCandidate ? "synthetic-candidate-phase-5" : "synthetic-baseline",
-		command: isCandidate
-			? "bun run data:seed-phase5 -- --variant candidate-citation-gates"
-			: "bun run data:seed-phase5 -- --variant baseline",
-		caseIds: fixtures.map((fixture) => fixture.caseId),
+		command: "bun run data:seed-phase5",
+		caseIds: visibleFixtures.map((fixture) => fixture.caseId),
 		aggregateMetrics: isCandidate
 			? {
 					overall: 0.83,
@@ -1514,23 +1512,11 @@ function comparisonFor(): RunComparison {
 			},
 			{
 				title: "Cost and latency tradeoff too vague",
-				count: 3,
-				severity: "Medium",
-				evidence:
-					"Recommendations mention cost or speed without tying the decision to the 1.15x guardrail, retry caps, or progress UX.",
-				cases: [
-					"case-cost-latency-budget",
-					"case-eval-loop",
-					"case-runtime-choice",
-				],
-			},
-			{
-				title: "Holdout boundary risk",
 				count: 2,
 				severity: "Medium",
 				evidence:
-					"Holdout cases should remain visible as summaries while their tuning labels stay out of product flows.",
-				cases: ["case-runtime-choice", "case-model-routing-policy"],
+					"Recommendations mention cost or speed without tying the decision to the 1.15x guardrail, retry caps, or progress UX.",
+				cases: ["case-cost-latency-budget", "case-eval-loop"],
 			},
 		],
 		featuredCase: {

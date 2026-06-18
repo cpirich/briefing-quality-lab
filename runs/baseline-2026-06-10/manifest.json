@@ -4,7 +4,7 @@
 	"variantLabel": "baseline",
 	"status": "complete",
 	"gitRef": "synthetic-baseline",
-	"command": "bun run data:seed-phase5 -- --variant baseline",
+	"command": "bun run data:seed-phase5",
 	"caseIds": [
 		"case-adoption-friction",
 		"case-eval-loop",
@@ -12,9 +12,7 @@
 		"case-release-note-drift",
 		"case-human-approval-boundary",
 		"case-cost-latency-budget",
-		"case-incident-recovery-comms",
-		"case-runtime-choice",
-		"case-model-routing-policy"
+		"case-incident-recovery-comms"
 	],
 	"aggregateMetrics": {
 		"overall": 0.66,
