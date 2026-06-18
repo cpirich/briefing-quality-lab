@@ -1,4 +1,4 @@
-import { readdir, readFile } from "node:fs/promises";
+import { access, readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import type { z } from "zod";
 
@@ -295,11 +295,17 @@ export async function compareRuns(input?: {
 
 export async function listArtifacts(): Promise<ArtifactEntry[]> {
 	const comparison = await compareRuns();
-	return comparison.artifactPaths.map((artifactPath) =>
-		ArtifactEntrySchema.parse({
-			label: artifactLabelForPath(artifactPath),
-			path: artifactPath,
-			type: artifactTypeForPath(artifactPath),
+	return Promise.all(
+		comparison.artifactPaths.map(async (artifactPath) => {
+			await assertArtifactPathExists(
+				artifactPath,
+				`Run comparison ${comparison.id}`,
+			);
+			return ArtifactEntrySchema.parse({
+				label: artifactLabelForPath(artifactPath),
+				path: artifactPath,
+				type: artifactTypeForPath(artifactPath),
+			});
 		}),
 	);
 }
@@ -315,6 +321,102 @@ function assertFixtureReference(
 	if (!condition) {
 		throw new Error(message);
 	}
+}
+
+function getReferencedRecord<T>(
+	recordsById: Map<string, T>,
+	id: string,
+	message: string,
+) {
+	const record = recordsById.get(id);
+	assertFixtureReference(record !== undefined, message);
+	return record;
+}
+
+function assertCaseBelongsToSourcePacket(
+	sourcePacket: SourcePacket,
+	evalCase: EvalCase,
+	ownerLabel: string,
+) {
+	assertFixtureReference(
+		evalCase.sourcePacketId === sourcePacket.id,
+		`${ownerLabel} links source packet ${sourcePacket.id} to eval case ${evalCase.id}, but that case belongs to source packet ${evalCase.sourcePacketId}`,
+	);
+	assertFixtureReference(
+		sourcePacket.caseId === evalCase.id,
+		`${ownerLabel} links eval case ${evalCase.id} to source packet ${sourcePacket.id}, but that packet belongs to eval case ${sourcePacket.caseId}`,
+	);
+}
+
+function assertCaseBelongsToRun(
+	runManifest: RunManifest,
+	caseId: string,
+	ownerLabel: string,
+) {
+	assertFixtureReference(
+		runManifest.caseIds.includes(caseId),
+		`${ownerLabel} references case ${caseId}, which is not included in run ${runManifest.runId}`,
+	);
+}
+
+function assertCitationsBelongToCase(
+	citationIds: Iterable<string>,
+	sourcePacket: SourcePacket,
+	evalCase: EvalCase,
+	ownerLabel: string,
+) {
+	const sourceCitationIds = new Set(
+		sourcePacket.sources.map((source) => source.id),
+	);
+	const acceptedCitationIds = new Set(evalCase.acceptedCitations);
+
+	for (const citationId of citationIds) {
+		assertFixtureReference(
+			sourceCitationIds.has(citationId),
+			`${ownerLabel} cites ${citationId}, which is not present in source packet ${sourcePacket.id}`,
+		);
+		assertFixtureReference(
+			acceptedCitationIds.has(citationId),
+			`${ownerLabel} cites ${citationId}, which is not accepted by eval case ${evalCase.id}`,
+		);
+	}
+}
+
+function briefingCitationIds(briefingOutput: BriefingOutput) {
+	return briefingOutput.claims.flatMap((claim) => claim.citations);
+}
+
+async function assertArtifactPathExists(
+	artifactPath: string,
+	ownerLabel: string,
+) {
+	try {
+		await access(absolutePath(artifactPath));
+	} catch (error) {
+		if (
+			error &&
+			typeof error === "object" &&
+			"code" in error &&
+			error.code === "ENOENT"
+		) {
+			throw new Error(
+				`${ownerLabel} references missing artifact ${artifactPath}`,
+			);
+		}
+
+		throw error;
+	}
+}
+
+async function assertArtifactPathsExist(
+	artifactPaths: string[],
+	ownerLabel: string,
+) {
+	await Promise.all(
+		artifactPaths.map((artifactPath) =>
+			assertArtifactPathExists(artifactPath, ownerLabel),
+		),
+	);
 }
 
 async function listAllBriefingOutputs(runManifests: RunManifest[]) {
@@ -398,73 +500,99 @@ export async function validateRunStore(): Promise<FixtureCounts> {
 		}
 	}
 
-	for (const briefingOutput of briefingOutputs) {
-		const sourcePacket = sourcePacketById.get(briefingOutput.sourcePacketId);
-		const evalCase = evalCaseById.get(briefingOutput.caseId);
+	await Promise.all(
+		runManifests.map((manifest) =>
+			assertArtifactPathsExist(
+				manifest.artifactPaths,
+				`Run manifest ${manifest.runId}`,
+			),
+		),
+	);
 
-		assertFixtureReference(
-			sourcePacket !== undefined,
+	for (const briefingOutput of briefingOutputs) {
+		const sourcePacket = getReferencedRecord(
+			sourcePacketById,
+			briefingOutput.sourcePacketId,
 			`Briefing output ${briefingOutput.id} references missing source packet ${briefingOutput.sourcePacketId}`,
 		);
-		assertFixtureReference(
-			evalCase !== undefined,
+		const evalCase = getReferencedRecord(
+			evalCaseById,
+			briefingOutput.caseId,
 			`Briefing output ${briefingOutput.id} references missing eval case ${briefingOutput.caseId}`,
 		);
-		assertFixtureReference(
-			runManifestById.has(briefingOutput.metadata.runId),
+		const runManifest = getReferencedRecord(
+			runManifestById,
+			briefingOutput.metadata.runId,
 			`Briefing output ${briefingOutput.id} references missing run ${briefingOutput.metadata.runId}`,
 		);
-		assertFixtureReference(
-			evalCase.sourcePacketId === briefingOutput.sourcePacketId,
-			`Briefing output ${briefingOutput.id} links source packet ${briefingOutput.sourcePacketId} to eval case ${evalCase.id}, but that case belongs to source packet ${evalCase.sourcePacketId}`,
-		);
-		assertFixtureReference(
-			sourcePacket.caseId === briefingOutput.caseId,
-			`Briefing output ${briefingOutput.id} links eval case ${briefingOutput.caseId} to source packet ${sourcePacket.id}, but that packet belongs to eval case ${sourcePacket.caseId}`,
-		);
+		const ownerLabel = `Briefing output ${briefingOutput.id}`;
 
-		const sourceCitationIds = new Set(
-			sourcePacket.sources.map((source) => source.id),
+		assertCaseBelongsToRun(runManifest, briefingOutput.caseId, ownerLabel);
+		assertCaseBelongsToSourcePacket(sourcePacket, evalCase, ownerLabel);
+		assertCitationsBelongToCase(
+			briefingCitationIds(briefingOutput),
+			sourcePacket,
+			evalCase,
+			ownerLabel,
 		);
-		const acceptedCitationIds = new Set(evalCase.acceptedCitations);
-		for (const claim of briefingOutput.claims) {
-			for (const citation of claim.citations) {
-				assertFixtureReference(
-					sourceCitationIds.has(citation),
-					`Briefing output ${briefingOutput.id} cites ${citation}, which is not present in source packet ${sourcePacket.id}`,
-				);
-				assertFixtureReference(
-					acceptedCitationIds.has(citation),
-					`Briefing output ${briefingOutput.id} cites ${citation}, which is not accepted by eval case ${evalCase.id}`,
-				);
-			}
-		}
 	}
 
 	for (const trace of generationTraces) {
-		assertFixtureReference(
-			runManifestById.has(trace.runId),
-			`Generation trace ${trace.id} references missing run ${trace.runId}`,
-		);
-		assertFixtureReference(
-			sourcePacketById.has(trace.sourcePacketId),
+		const sourcePacket = getReferencedRecord(
+			sourcePacketById,
+			trace.sourcePacketId,
 			`Generation trace ${trace.id} references missing source packet ${trace.sourcePacketId}`,
 		);
-		assertFixtureReference(
-			evalCaseById.has(trace.caseId),
+		const evalCase = getReferencedRecord(
+			evalCaseById,
+			trace.caseId,
 			`Generation trace ${trace.id} references missing eval case ${trace.caseId}`,
 		);
+		const runManifest = getReferencedRecord(
+			runManifestById,
+			trace.runId,
+			`Generation trace ${trace.id} references missing run ${trace.runId}`,
+		);
+		const ownerLabel = `Generation trace ${trace.id}`;
+
+		assertCaseBelongsToRun(runManifest, trace.caseId, ownerLabel);
+		assertCaseBelongsToSourcePacket(sourcePacket, evalCase, ownerLabel);
+		assertCitationsBelongToCase(
+			briefingCitationIds(trace.output),
+			sourcePacket,
+			evalCase,
+			`${ownerLabel} output`,
+		);
+		await assertArtifactPathsExist(trace.artifactPaths, ownerLabel);
 	}
 
 	for (const evaluatorOutput of evaluatorOutputs) {
-		assertFixtureReference(
-			runManifestById.has(evaluatorOutput.runId),
-			`Evaluator output ${evaluatorOutput.id} references missing run ${evaluatorOutput.runId}`,
-		);
-		assertFixtureReference(
-			evalCaseById.has(evaluatorOutput.caseId),
+		const evalCase = getReferencedRecord(
+			evalCaseById,
+			evaluatorOutput.caseId,
 			`Evaluator output ${evaluatorOutput.id} references missing eval case ${evaluatorOutput.caseId}`,
 		);
+		const sourcePacket = getReferencedRecord(
+			sourcePacketById,
+			evalCase.sourcePacketId,
+			`Evaluator output ${evaluatorOutput.id} references missing source packet ${evalCase.sourcePacketId}`,
+		);
+		const runManifest = getReferencedRecord(
+			runManifestById,
+			evaluatorOutput.runId,
+			`Evaluator output ${evaluatorOutput.id} references missing run ${evaluatorOutput.runId}`,
+		);
+		const ownerLabel = `Evaluator output ${evaluatorOutput.id}`;
+
+		assertCaseBelongsToRun(runManifest, evaluatorOutput.caseId, ownerLabel);
+		assertCaseBelongsToSourcePacket(sourcePacket, evalCase, ownerLabel);
+		assertCitationsBelongToCase(
+			evaluatorOutput.citationSupport.map((citation) => citation.citation),
+			sourcePacket,
+			evalCase,
+			ownerLabel,
+		);
+		await assertArtifactPathsExist(evaluatorOutput.artifactPaths, ownerLabel);
 	}
 
 	for (const runComparison of runComparisons) {
@@ -475,6 +603,10 @@ export async function validateRunStore(): Promise<FixtureCounts> {
 		assertFixtureReference(
 			runManifestById.has(runComparison.candidateRunId),
 			`Run comparison ${runComparison.id} references missing candidate run ${runComparison.candidateRunId}`,
+		);
+		await assertArtifactPathsExist(
+			runComparison.artifactPaths,
+			`Run comparison ${runComparison.id}`,
 		);
 	}
 

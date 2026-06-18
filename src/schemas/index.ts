@@ -133,6 +133,15 @@ export const GenerationTraceSchema = z
 		error: z.string().min(1).optional(),
 	})
 	.superRefine((trace, context) => {
+		const expectedSourcePacketPath = `data/source-packets/${trace.sourcePacketId}.json`;
+		if (trace.input.sourcePacketPath !== expectedSourcePacketPath) {
+			context.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: "Trace input sourcePacketPath must match trace sourcePacketId",
+				path: ["input", "sourcePacketPath"],
+			});
+		}
+
 		if (trace.output.caseId !== trace.caseId) {
 			context.addIssue({
 				code: z.ZodIssueCode.custom,

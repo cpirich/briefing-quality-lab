@@ -34,7 +34,7 @@
 		{
 			"label": "Latency ratio",
 			"value": "0.94x",
-			"delta": "-0.09x",
+			"delta": "-0.06x",
 			"status": "Faster than baseline",
 			"tone": "green"
 		}
