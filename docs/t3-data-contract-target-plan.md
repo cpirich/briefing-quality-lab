@@ -25,6 +25,8 @@ Move the dashboard from TypeScript-only demo constants to Zod-validated filesyst
 4. Add `mise exec -- bun run data:validate` to check all committed fixtures.
 5. Expose read-only tRPC procedures for source packets, eval cases, artifacts, and run comparison summaries.
 
+These steps create the data contract and starter fixtures only. The next phase should expand the synthetic eval set before live LLM generation/eval orchestration becomes the center of work: 8-12 cases, richer source packets, holdouts, seeded outputs, evaluator artifacts, and comparison data that can reveal real citation and synthesis failures.
+
 ## Guardrails
 
 - Keep fixture data synthetic and public-safe.
