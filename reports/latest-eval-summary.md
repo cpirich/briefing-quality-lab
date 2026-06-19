@@ -1,6 +1,6 @@
 # Latest Eval Summary
 
-This synthetic report compares `baseline-2026-06-10` with `candidate-citation-gates` on the expanded Phase 5 fixture set.
+This synthetic report compares `baseline-2026-06-10` with `candidate-citation-gates` on the expanded Phase 5 demo corpus.
 
 The dataset now contains 9 synthetic eval cases: 7 visible cases for demo walkthroughs and 2 holdout cases that stay out of the Genie product flow. Source packets now include 3-6 richer documents with distractors, overlapping evidence, caveats, and explicit citation traps.
 

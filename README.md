@@ -53,7 +53,7 @@ Initial target:
 Each eval case should include:
 
 - user request
-- source packet with 3-6 short source documents
+- source packet with 5-10 synthetic source documents
 - expected coverage points
 - known traps or ambiguities
 - acceptable citations
@@ -64,7 +64,7 @@ Each eval case should include:
 
 The preferred initial domain is a synthetic developer-tooling / AI-product strategy dataset. It is close enough to the Codex session to feel relevant, but abstracted enough to avoid production data, privacy, or benchmark claims.
 
-Dataset fixtures should be committed under `data/`, discovered from the filesystem, and validated with Zod before use. A seed command should create baseline run artifacts and sample traces so the lab can show useful states without live model calls.
+Dataset artifacts should be committed under `data/`, discovered from the filesystem, and validated with Zod before use. A seed command should create deterministic baseline/candidate run artifacts and sample traces so the lab can show useful states without live model calls. Once live LLM generation is available, those seeded baselines should be replaced by stored LLM-generated baseline runs and kept only as fallback demo data.
 
 ## Current Stack
 
@@ -90,6 +90,8 @@ Briefing Genie should log rich generation traces to the backend filesystem: inpu
 Evals run from the lab side. The same Briefing Genie generation code must be callable from the `/genie` UX and programmatically from lab/eval flows so the lab can run hands-free across many cases.
 
 Known tRPC entry points should control jobs and lab runs: list source packets, generate or start a briefing job, poll briefing job status, list eval cases, start eval runs, poll eval run status, compare runs, and list artifacts.
+
+The first live-generation milestone should define an explicit baseline variant, run it across the eval corpus, and persist generated baseline briefings, traces, evaluator outputs, and manifests under `runs/baseline-*`. Candidate runs should then compare against those generated baseline artifacts instead of the hand-authored seeded baseline.
 
 ## Planned Repo Shape
 
@@ -143,6 +145,7 @@ mise exec -- bun run eval:compare
 - Generation traces are file-backed and rich enough for the lab to inspect what happened.
 - Evals are run from the lab side and can trigger Briefing Genie programmatically.
 - Synthetic datasets are committed fixtures discovered from `data/`, validated with Zod, and seedable into baseline lab artifacts.
+- Seeded baseline artifacts are replaced by LLM-generated baseline run artifacts once generation is wired up.
 - Before/after comparisons include quality, cost, latency, and holdout-safety context.
 - Zod schemas define the boundary between probabilistic AI output, persisted artifacts, and typed product code.
 - The demo keeps human judgment visible: Codex can compress the loop, but the human decides whether the eval is valid and the product change is worth shipping.

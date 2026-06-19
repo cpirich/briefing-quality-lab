@@ -4,21 +4,17 @@ import { Badge } from "~/components/badge";
 import { Card, CardBody, CardHeader } from "~/components/card";
 import { api } from "~/trpc/server";
 import { LabActions } from "./lab-actions";
-import { LabGeniePanel } from "./lab-genie-panel";
 
 export const metadata: Metadata = {
 	title: "Briefing Genie Improvement Lab",
 };
 
 export default async function LabPage() {
-	const [runComparison, artifacts, evalCases, sourcePackets, briefingOutputs] =
-		await Promise.all([
-			api.lab.compareRuns(),
-			api.lab.listArtifacts(),
-			api.lab.listEvalCases(),
-			api.genie.listSourcePackets(),
-			api.genie.listSeededBriefingOutputs(),
-		]);
+	const [runComparison, artifacts, evalCases] = await Promise.all([
+		api.lab.compareRuns(),
+		api.lab.listArtifacts(),
+		api.lab.listEvalCases(),
+	]);
 	const { featuredCase, failureClusters } = runComparison;
 
 	return (
@@ -46,15 +42,17 @@ export default async function LabPage() {
 
 			<div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 xl:grid-cols-[minmax(0,1fr)_360px]">
 				<section className="grid min-w-0 gap-4">
-					<div className="grid gap-3 md:grid-cols-5">
+					<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
 						{runComparison.metrics.map((metric) => (
 							<Card className="min-h-32" key={metric.label}>
-								<CardBody className="space-y-3">
-									<div className="flex items-center justify-between gap-2">
-										<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
+								<CardBody className="space-y-3 p-3 xl:p-4">
+									<div className="grid min-h-8 grid-cols-[minmax(0,1fr)_auto] items-start gap-1.5 xl:gap-2">
+										<p className="min-w-0 font-medium text-[var(--muted-foreground)] text-xs uppercase leading-4">
 											{metric.label}
 										</p>
-										<Badge tone={metric.tone}>{metric.delta}</Badge>
+										<Badge className="justify-self-end" tone={metric.tone}>
+											{metric.delta}
+										</Badge>
 									</div>
 									<p className="font-semibold text-3xl">{metric.value}</p>
 									<p className="text-[var(--muted-foreground)] text-xs">
@@ -79,19 +77,21 @@ export default async function LabPage() {
 								</div>
 							</CardHeader>
 							<CardBody>
-								<div className="flex h-52 items-end gap-3 border-[var(--border)] border-b px-2">
+								<div className="grid h-52 grid-cols-4 gap-3 border-[var(--border)] border-b px-2">
 									{runComparison.trend.map((point) => (
 										<div
-											className="flex min-w-0 flex-1 flex-col items-center gap-2"
+											className="grid min-w-0 grid-rows-[1fr_auto] gap-2"
 											key={point.label}
 										>
-											<div
-												aria-label={`${point.label} score ${point.score}`}
-												className="w-full rounded-t-md bg-[var(--accent)]"
-												role="img"
-												style={{ height: `${point.score}%` }}
-											/>
-											<span className="font-medium text-[var(--muted-foreground)] text-xs">
+											<div className="flex h-full items-end">
+												<div
+													aria-label={`${point.label} score ${point.score}`}
+													className="mx-auto w-full max-w-16 rounded-t-md bg-[var(--accent)]"
+													role="img"
+													style={{ height: `${point.score}%` }}
+												/>
+											</div>
+											<span className="text-center font-medium text-[var(--muted-foreground)] text-xs">
 												{point.label}
 											</span>
 										</div>
@@ -143,9 +143,9 @@ export default async function LabPage() {
 							<CardBody className="space-y-3">
 								<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-3">
 									<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
-										Source excerpt
+										Source evidence
 									</p>
-									<p className="mt-1 text-sm">{featuredCase.sourceExcerpt}</p>
+									<p className="mt-1 text-sm">{featuredCase.sourceEvidence}</p>
 								</div>
 								<div className="grid gap-3 md:grid-cols-2">
 									<div className="rounded-md border border-[var(--danger-border)] bg-[var(--danger)] p-3">
@@ -253,11 +253,6 @@ export default async function LabPage() {
 				</section>
 
 				<aside className="grid min-w-0 content-start gap-4">
-					<LabGeniePanel
-						briefingOutputs={briefingOutputs}
-						sourcePackets={sourcePackets}
-					/>
-
 					<Card>
 						<CardHeader>
 							<h2 className="font-semibold text-base">Next Action</h2>

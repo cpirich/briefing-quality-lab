@@ -13,7 +13,7 @@
 		"Do not recommend blanket bot approvals.",
 		"Do not ignore post-merge incidents from cross-service fast-tracking."
 	],
-	"acceptedCitations": ["S1", "S2", "S3", "S4"],
+	"acceptedCitations": ["S1", "S2", "S3", "S4", "S5", "S6"],
 	"holdout": false,
 	"demoHighlight": true,
 	"failureTags": ["review-queue", "risk-labeling", "unsupported-automation"],

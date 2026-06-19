@@ -14,7 +14,7 @@
 		"Do not ignore the 1.34x retry-cost signal.",
 		"Do not expose holdout tuning labels as part of the Genie product surface."
 	],
-	"acceptedCitations": ["S1", "S2", "S3", "S4"],
+	"acceptedCitations": ["S1", "S2", "S3", "S4", "S5", "S6"],
 	"holdout": false,
 	"demoHighlight": true,
 	"failureTags": ["citation-grounding", "cost-guardrail", "holdout-boundary"],

@@ -7,26 +7,38 @@
 		{
 			"id": "S1",
 			"title": "Latency experiment",
-			"excerpt": "The smaller model answered routine summaries 42% faster with similar coverage on low-risk cases. It missed two caveats on high-risk recommendation cases where source documents contradicted each other.",
+			"body": "The smaller model answered routine summaries 42% faster with similar coverage on low-risk cases. It missed two caveats on high-risk recommendation cases where source documents contradicted each other.\n\nThe latency experiment split routine summaries from high-risk recommendations. The smaller model handled straightforward summaries quickly, but missed caveats when sources disagreed. The experiment owner warned that speed should not be averaged across cases with different risk profiles.",
 			"documentType": "experiment report"
 		},
 		{
 			"id": "S2",
 			"title": "Cost analysis",
-			"excerpt": "Routing low-risk summaries to the smaller model would reduce estimated demo-run cost by 18%. The savings disappear if high-risk cases require multiple retries after a missed caveat.",
+			"body": "Routing low-risk summaries to the smaller model would reduce estimated demo-run cost by 18%. The savings disappear if high-risk cases require multiple retries after a missed caveat.\n\nThe cost analysis estimates savings if low-risk summaries use the smaller model. The savings vanish when missed caveats trigger retries or human repair on high-risk recommendations. The finance note therefore treats routing as a risk decision, not simply a cost optimization.",
 			"documentType": "cost note"
 		},
 		{
 			"id": "S3",
 			"title": "Evaluator notes",
-			"excerpt": "Evaluator failures cluster around unsupported recommendations, not factual extraction. The routing policy should consider task risk and source disagreement rather than only packet length.",
+			"body": "Evaluator failures cluster around unsupported recommendations, not factual extraction. The routing policy should consider task risk and source disagreement rather than only packet length.\n\nEvaluator notes show that the worst failures came from unsupported recommendations rather than factual extraction errors. Packet length alone did not predict failure. Cases with source disagreement or customer-facing consequences needed stronger citation checks even when the packet was short.",
 			"documentType": "evaluator synthesis"
 		},
 		{
 			"id": "S4",
 			"title": "Product manager note",
-			"excerpt": "The PM wants a simple rule that can be explained in a demo: routine summaries may use the fast path, but recommendations that change release, customer, or compliance posture need the stronger model and citation checks.",
+			"body": "The PM wants a simple rule that can be explained in a demo: routine summaries may use the fast path, but recommendations that change release, customer, or compliance posture need the stronger model and citation checks.\n\nThe product manager wanted a rule that could be explained during a demo. Routine summaries may use the fast path. Recommendations that affect releases, customers, compliance, or governance should use the stronger model and preserve citation evidence for review.",
 			"documentType": "planning note"
+		},
+		{
+			"id": "S5",
+			"title": "Routing decision table",
+			"body": "The routing decision table marks routine summaries as eligible for the fast path when sources agree and the output is not customer-facing. It marks release, customer, compliance, and governance recommendations as strong-model cases. The table also requires escalation when sources contradict each other.",
+			"documentType": "decision table"
+		},
+		{
+			"id": "S6",
+			"title": "Failure review notes",
+			"body": "The failure review notes show that missed caveats were expensive because they triggered retries and manual correction. The reviewer concluded that a cheap first pass is not cheap when the task changes release posture. The note recommends routing by task risk and source disagreement rather than by packet length alone.",
+			"documentType": "failure review"
 		}
 	],
 	"metadata": {

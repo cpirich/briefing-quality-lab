@@ -30,7 +30,7 @@ const artifactPathSchema = z
 export const SourceDocumentSchema = z.object({
 	id: citationIdSchema,
 	title: z.string().min(1),
-	excerpt: z.string().min(1),
+	body: z.string().min(1),
 	documentType: z.string().min(1).optional(),
 });
 
@@ -261,7 +261,7 @@ export const RunComparisonSchema = z.object({
 	featuredCase: z.object({
 		id: fixtureIdSchema,
 		title: z.string().min(1),
-		sourceExcerpt: z.string().min(1),
+		sourceEvidence: z.string().min(1),
 		baseline: z.string().min(1),
 		candidate: z.string().min(1),
 		evaluatorNote: z.string().min(1),

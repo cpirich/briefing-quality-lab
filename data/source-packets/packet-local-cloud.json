@@ -7,26 +7,38 @@
 		{
 			"id": "S1",
 			"title": "Reliability review",
-			"excerpt": "Local operation keeps the demo inspectable and makes file-backed artifacts easy to explain. The tradeoff is setup fragility: dependency pinning, seed commands, and deterministic fixture validation must be boring before a live walkthrough.",
+			"body": "Local operation keeps the demo inspectable and makes file-backed artifacts easy to explain. The tradeoff is setup fragility: dependency pinning, seed commands, and deterministic fixture validation must be boring before a live walkthrough.\n\nThe reliability review favors local operation for the next demo because artifacts are easy to inspect in the repo. The risk is setup fragility: reviewers must have the pinned runtime, seed data, and validation commands working before the walkthrough. The note treats boring setup as a prerequisite, not a nice-to-have.",
 			"documentType": "reliability review"
 		},
 		{
 			"id": "S2",
 			"title": "Go-to-market note",
-			"excerpt": "Hosted previews reduce onboarding friction for reviewers who do not want to run the app locally. The current roadmap, however, has no production hosting plan and no owner for preview secrets, deploys, or data retention.",
+			"body": "Hosted previews reduce onboarding friction for reviewers who do not want to run the app locally. The current roadmap, however, has no production hosting plan and no owner for preview secrets, deploys, or data retention.\n\nThe go-to-market note says hosted previews would help reviewers who do not want local setup. It also records that no one owns preview secrets, deploys, or data retention yet. The note recommends not implying a production hosting plan until those responsibilities are assigned.",
 			"documentType": "planning note"
 		},
 		{
 			"id": "S3",
 			"title": "Security note",
-			"excerpt": "Public fixtures must avoid private planning paths, customer identifiers, and unreleased vendor data. Hosted previews would also need environment-variable review before anyone shares a link externally.",
+			"body": "Public fixtures must avoid private planning paths, customer identifiers, and unreleased vendor data. Hosted previews would also need environment-variable review before anyone shares a link externally.\n\nThe security note focuses on public fixture hygiene. It calls out private planning paths, customer identifiers, unreleased vendor data, and environment variables as review items before external sharing. Hosted previews add another review surface because secrets and retention settings become visible operational concerns.",
 			"documentType": "security review"
 		},
 		{
 			"id": "S4",
 			"title": "Demo rehearsal",
-			"excerpt": "The local demo failed once because a stale runtime used the wrong package manager. After mise pinned the runtime, the second rehearsal succeeded and reviewers valued seeing artifacts written directly into the repo.",
+			"body": "The local demo failed once because a stale runtime used the wrong package manager. After mise pinned the runtime, the second rehearsal succeeded and reviewers valued seeing artifacts written directly into the repo.\n\nThe rehearsal note explains why runtime pinning mattered. The first local run failed with the wrong package manager; after mise pinned the runtime, the second run succeeded. Reviewers liked seeing files written into the repo because it made the demo evidence tangible.",
 			"documentType": "rehearsal note"
+		},
+		{
+			"id": "S5",
+			"title": "Local setup checklist",
+			"body": "The local setup checklist records the commands needed before a live walkthrough: install the pinned runtime, seed the fixtures, validate the run store, and launch the local server. The owner wants the checklist rehearsed before inviting reviewers because a failed local setup undermines the inspectability benefit.",
+			"documentType": "setup checklist"
+		},
+		{
+			"id": "S6",
+			"title": "Preview ownership note",
+			"body": "The preview ownership note lists the unresolved owners for hosting, environment variables, deployment cadence, and retention settings. It says a preview can be useful later, but the next iteration should not imply hosted reliability until those responsibilities are assigned and public fixture safety has been reviewed.",
+			"documentType": "ownership note"
 		}
 	],
 	"metadata": {

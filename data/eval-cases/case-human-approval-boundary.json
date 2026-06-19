@@ -13,7 +13,7 @@
 		"Do not allow automated customer commitments.",
 		"Do not present generated recommendations as approved decisions."
 	],
-	"acceptedCitations": ["S1", "S2", "S3", "S4"],
+	"acceptedCitations": ["S1", "S2", "S3", "S4", "S5", "S6"],
 	"holdout": false,
 	"demoHighlight": false,
 	"failureTags": ["human-approval", "action-boundary"],

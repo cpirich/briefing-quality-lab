@@ -7,26 +7,38 @@
 		{
 			"id": "S1",
 			"title": "Queue analytics",
-			"excerpt": "Median review wait time improved from 19 hours to 13 hours after adding reviewer rotation. The 90th percentile is still 46 hours because complex changes often wait for the same two senior reviewers.",
+			"body": "Median review wait time improved from 19 hours to 13 hours after adding reviewer rotation. The 90th percentile is still 46 hours because complex changes often wait for the same two senior reviewers.\n\nThe queue report breaks out routine changes from cross-service changes. Documentation and configuration reviews moved quickly after rotation, but changes touching shared services still waited on scarce reviewers. The report recommends treating tail latency as an ownership-routing problem, not only a staffing problem.",
 			"documentType": "analytics digest"
 		},
 		{
 			"id": "S2",
 			"title": "Reviewer survey",
-			"excerpt": "Reviewers like auto-assignment for routine changes, but they distrust bot approvals when tests are flaky or ownership is unclear. Several asked for risk labels that explain why a change is safe to fast-track.",
+			"body": "Reviewers like auto-assignment for routine changes, but they distrust bot approvals when tests are flaky or ownership is unclear. Several asked for risk labels that explain why a change is safe to fast-track.\n\nSurvey comments supported automated assignment but were skeptical of automated approval. Reviewers wanted the bot to explain why a change looked low risk, including ownership metadata, test health, and file categories. Several comments said a fast-track label would be useful only if it could be challenged before merge.",
 			"documentType": "survey summary"
 		},
 		{
 			"id": "S3",
 			"title": "Post-merge defect review",
-			"excerpt": "Defects did not rise for small documentation and config changes, but two incidents came from fast-tracking cross-service changes without the owning team. The review lead wants different treatment for low-risk and cross-boundary changes.",
+			"body": "Defects did not rise for small documentation and config changes, but two incidents came from fast-tracking cross-service changes without the owning team. The review lead wants different treatment for low-risk and cross-boundary changes.\n\nThe defect review found no measurable increase for low-risk docs and config changes. The incidents came from cross-service changes where the apparent owner was not the team responsible for runtime behavior. The review lead asked for a hard distinction between queue organization and approval authority.",
 			"documentType": "defect review"
 		},
 		{
 			"id": "S4",
 			"title": "Tooling proposal",
-			"excerpt": "The proposed queue helper can suggest reviewers, group similar low-risk changes, and surface missing ownership metadata. It cannot yet verify semantic ownership or override branch protection.",
+			"body": "The proposed queue helper can suggest reviewers, group similar low-risk changes, and surface missing ownership metadata. It cannot yet verify semantic ownership or override branch protection.\n\nThe tooling proposal describes a helper that can cluster changes, suggest reviewers, and flag missing ownership data. It explicitly says semantic ownership remains outside the helper's capability. Branch protection and required reviewers stay in force even when the helper marks a change as likely low risk.",
 			"documentType": "tooling note"
+		},
+		{
+			"id": "S5",
+			"title": "Ownership metadata audit",
+			"body": "The ownership metadata audit found that low-risk docs changes usually have clear owners, while shared service changes often inherit stale ownership entries. The audit recommends showing missing or conflicting ownership as a queue risk, not hiding it behind an auto-assignment. Reviewers asked for the helper to explain uncertainty before suggesting a faster path.",
+			"documentType": "metadata audit"
+		},
+		{
+			"id": "S6",
+			"title": "Branch protection policy note",
+			"body": "The branch protection policy note says automation may organize the queue and suggest reviewers, but it must not bypass required approvals. The policy owner approved fast-track labels for documentation and configuration changes when tests are healthy. Cross-service changes still require an owning-team reviewer even if the helper predicts low defect risk.",
+			"documentType": "policy note"
 		}
 	],
 	"metadata": {

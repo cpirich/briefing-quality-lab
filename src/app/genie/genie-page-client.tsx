@@ -106,7 +106,7 @@ export function GeniePageClient({
 										<Badge>{source.id}</Badge>
 									</div>
 									<p className="mt-2 text-[var(--muted-foreground)] text-sm">
-										{source.excerpt}
+										{source.body}
 									</p>
 								</div>
 							))}
