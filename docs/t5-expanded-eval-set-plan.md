@@ -24,12 +24,20 @@ The current three source packets remain useful as golden UI fixtures and schema 
 - 8-12 total eval cases
 - 3-4 demo-highlight cases suitable for live walkthroughs
 - 1-2 holdout cases with visible summaries but hidden tuning labels
-- 3-6 source documents per source packet
-- source documents long enough to require selection, synthesis, and citation judgment
+- 5-10 source documents per source packet, with a target of at least 6 documents in the first implementation pass
+- fuller synthetic source documents than the Phase 4 smoke fixtures; each packet should contain enough text that a good answer has to select, synthesize, and cite rather than copy every sentence
 - seeded baseline and candidate outputs for every visible case
 - evaluator outputs and comparison artifacts that show at least one concrete failure cluster
 
 This phase should stay intentionally small enough to review carefully in one PR. It proves the richer packet shape, seeded artifact flow, holdout filtering, and dashboard evidence density.
+
+## Source Packet Scenario
+
+The intended product scenario is that a source packet contains authored, synthetic source documents. Briefing Genie reads those documents and decides which evidence matters for the requested briefing.
+
+This phase should not introduce a hidden upstream process that scans longer documents and pre-selects excerpts. That would make the eval target ambiguous: it would be unclear whether the lab is evaluating Briefing Genie, the excerpt-selection process, or both.
+
+The current schema uses `sources[].excerpt` because Phase 4 treated each source as a compact displayable snippet. For Phase 5 planning, treat that field as the source document body unless and until the schema is renamed or extended. UI previews, truncation, document drawers, chunking, and readability affordances can be designed later; they should not drive the source-packet scenario.
 
 ## Follow-On Dataset Scale
 
@@ -49,6 +57,8 @@ Treat 25-40 cases as the demo-realistic tier for "real improvement work." Treat 
 
 Each source packet should include enough evidence complexity to make the lab useful:
 
+- 5-10 source documents, not just 3-4 short snippets
+- source documents with enough body text to include context, caveats, and decision boundaries
 - relevant facts mixed with distractor details
 - overlapping support across sources where citation choice matters
 - at least some source tension, stale evidence, missing data, or ambiguity
@@ -85,7 +95,9 @@ The visible cases should make quality problems legible in the dashboard. The hol
 - `mise exec -- bun run data:validate` passes.
 - `mise exec -- bun run check` passes.
 - The dataset has 8-12 synthetic eval cases.
-- Source packets use richer source documents than the Phase 4 smoke fixtures.
+- Every source packet has 5-10 source documents.
+- Source documents are treated as packet evidence, not pre-selected excerpts from an unstated upstream process.
+- Source documents are materially fuller than the Phase 4 smoke fixtures.
 - The lab shows meaningful before/after evidence across more than one visible case.
 - At least one failure cluster depends on citation grounding or unsupported synthesis, not just missing UI data.
 - Holdout cases are marked and do not expose tuning labels in the Genie product surface.
