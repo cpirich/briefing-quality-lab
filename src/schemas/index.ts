@@ -87,6 +87,16 @@ export const BriefingOutputSchema = z.object({
 	}),
 });
 
+export const GenerationVariantSchema = z.object({
+	id: fixtureIdSchema,
+	label: z.string().min(1),
+	provider: z.string().min(1),
+	model: z.string().min(1),
+	promptVersion: fixtureIdSchema,
+	temperature: z.number().min(0).optional(),
+	maxOutputTokens: z.number().int().positive().optional(),
+});
+
 export const ToolCallTraceSchema = z.object({
 	id: fixtureIdSchema,
 	toolName: z.string().min(1),
@@ -284,6 +294,7 @@ export const ArtifactEntrySchema = z.object({
 export type SourcePacket = z.infer<typeof SourcePacketSchema>;
 export type EvalCase = z.infer<typeof EvalCaseSchema>;
 export type BriefingOutput = z.infer<typeof BriefingOutputSchema>;
+export type GenerationVariant = z.infer<typeof GenerationVariantSchema>;
 export type GenerationTrace = z.infer<typeof GenerationTraceSchema>;
 export type EvaluatorOutput = z.infer<typeof EvaluatorOutputSchema>;
 export type RunManifest = z.infer<typeof RunManifestSchema>;

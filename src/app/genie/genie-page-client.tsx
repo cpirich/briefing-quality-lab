@@ -6,7 +6,8 @@ import { Badge } from "~/components/badge";
 import { Button } from "~/components/button";
 import { Card, CardBody, CardHeader } from "~/components/card";
 import { NativeSelect } from "~/components/native-select";
-import type { BriefingOutput, SourcePacket } from "~/schemas";
+import type { BriefingOutput, GenerationTrace, SourcePacket } from "~/schemas";
+import { api } from "~/trpc/react";
 
 type GeniePageClientProps = {
 	sourcePackets: SourcePacket[];
@@ -22,22 +23,49 @@ export function GeniePageClient({
 	const [generationStatus, setGenerationStatus] = useState(
 		"Seeded preview is ready.",
 	);
+	const [generatedBriefing, setGeneratedBriefing] = useState<BriefingOutput>();
+	const [generatedTrace, setGeneratedTrace] = useState<GenerationTrace>();
+	const generateBriefing = api.genie.generateBriefing.useMutation({
+		onSuccess: (result) => {
+			setGeneratedBriefing(result.briefing);
+			setGeneratedTrace(result.trace);
+			setGenerationStatus(
+				`Generated ${result.briefing.title} with ${result.trace.model.name}.`,
+			);
+		},
+		onError: (error) => {
+			setGenerationStatus(error.message);
+		},
+	});
 
 	const selectedPacket =
 		sourcePackets.find((packet) => packet.id === selectedPacketId) ??
 		fallbackPacket;
 	const fallbackBriefing = briefingOutputs[0];
-	const briefingPreview =
+	const seededBriefing =
 		briefingOutputs.find(
 			(output) => output.sourcePacketId === selectedPacket?.id,
 		) ?? fallbackBriefing;
+	const briefingPreview =
+		generatedBriefing?.sourcePacketId === selectedPacket?.id
+			? generatedBriefing
+			: seededBriefing;
+	const activeTrace =
+		generatedBriefing?.sourcePacketId === selectedPacket?.id
+			? generatedTrace
+			: undefined;
 
 	function generateSeededBriefing() {
-		setGenerationStatus(
-			selectedPacket
-				? `Seeded briefing refreshed for ${selectedPacket.title}.`
-				: "Seeded briefing refreshed.",
-		);
+		if (!selectedPacket) {
+			setGenerationStatus("Select a source packet before generating.");
+			return;
+		}
+
+		setGenerationStatus(`Generating briefing for ${selectedPacket.title}...`);
+		generateBriefing.mutate({
+			sourcePacketId: selectedPacket.id,
+			userRequest: `Generate a concise, citation-aware strategy briefing for ${selectedPacket.title}.`,
+		});
 	}
 
 	return (
@@ -83,7 +111,7 @@ export function GeniePageClient({
 								id="source-packet"
 								onChange={(event) => {
 									setSelectedPacketId(event.target.value);
-									setGenerationStatus("Seeded preview updated for selection.");
+									setGenerationStatus("Preview updated for selection.");
 								}}
 								value={selectedPacket?.id ?? ""}
 								wrapperClassName="mt-1"
@@ -113,18 +141,21 @@ export function GeniePageClient({
 						</div>
 						<Button
 							className="w-full"
+							disabled={generateBriefing.isPending}
 							onClick={generateSeededBriefing}
 							tone="accent"
 							type="button"
 						>
-							Generate seeded briefing
+							{generateBriefing.isPending
+								? "Generating..."
+								: "Generate briefing"}
 						</Button>
 						<p
 							aria-live="polite"
 							className="text-[var(--muted-foreground)] text-xs"
 						>
-							{generationStatus} The next runtime slice will persist a
-							Zod-validated trace for the lab.
+							{generationStatus} Generated previews return a Zod-validated
+							trace; persistence comes next in the lab runner.
 						</p>
 					</CardBody>
 				</Card>
@@ -141,7 +172,9 @@ export function GeniePageClient({
 										Seeded artifact for {selectedPacket?.caseId}
 									</p>
 								</div>
-								<Badge tone="blue">trace-ready shape</Badge>
+								<Badge tone={activeTrace ? "green" : "blue"}>
+									{activeTrace ? activeTrace.model.name : "seeded artifact"}
+								</Badge>
 							</div>
 						</CardHeader>
 						<CardBody className="space-y-5">

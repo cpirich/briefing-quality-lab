@@ -1,3 +1,6 @@
+import { z } from "zod";
+
+import { generateBriefing } from "~/genie/generate-briefing";
 import {
 	listBriefingOutputs,
 	listEvalCases,
@@ -43,4 +46,29 @@ export const genieRouter = createTRPCRouter({
 	listSeededBriefingOutputs: publicProcedure.query(() => {
 		return listPublicBriefingOutputs();
 	}),
+
+	generateBriefing: publicProcedure
+		.input(
+			z.object({
+				sourcePacketId: z.string().min(1),
+				userRequest: z.string().min(1).optional(),
+			}),
+		)
+		.mutation(async ({ input }) => {
+			const sourcePackets = await listPublicSourcePackets();
+			const sourcePacket = sourcePackets.find(
+				(packet) => packet.id === input.sourcePacketId,
+			);
+
+			if (!sourcePacket) {
+				throw new Error(`Unknown public source packet ${input.sourcePacketId}`);
+			}
+
+			return generateBriefing({
+				sourcePacket,
+				userRequest:
+					input.userRequest ??
+					`Generate a concise strategy briefing for ${sourcePacket.title}.`,
+			});
+		}),
 });
