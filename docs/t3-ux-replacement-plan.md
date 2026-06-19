@@ -147,7 +147,7 @@ The `/lab` route should show:
 - Metric strip for overall quality, citation grounding, coverage, cost ratio, and latency ratio.
 - Run comparison table with baseline versus latest variant.
 - Failure cluster list with short evaluator evidence.
-- Featured case diff showing source packet excerpts, baseline briefing, variant briefing, and evaluator notes.
+- Featured case diff showing source evidence from the packet, baseline briefing, variant briefing, and evaluator notes. The UI may show previews or excerpts for readability, but the product scenario is that Briefing Genie evaluates source documents in the packet, not pre-selected excerpts from an unstated upstream process.
 - Artifact links that make it obvious where the evidence lives on disk.
 
 ## Genie First View Layout
@@ -257,8 +257,9 @@ The meaningful boundary is between probabilistic LLM communication and determini
 5. Expanded synthetic eval set
    - Treat the Phase 4 run-store fixtures as smoke fixtures, not the final eval set.
    - Add reviewed fixture files for 8-12 synthetic eval cases with 3-4 highlighted cases and 1-2 holdout cases.
-   - Expand source packets beyond the current three-snippet shape so they contain 3-6 richer source documents with distractors, overlaps, ambiguity, and citation traps.
+   - Expand source packets beyond the current three-snippet shape so they contain 5-10 richer source documents with distractors, overlaps, ambiguity, and citation traps.
    - Add or refresh seeded baseline/candidate briefing outputs, evaluator outputs, traces, and comparisons so the lab shows meaningful before/after evidence without live model calls.
+   - Treat seeded baseline/candidate outputs as deterministic stand-ins for stored run artifacts, not as the final evidence for product improvement claims.
    - Keep holdout summaries visible, but keep tuning labels and expected answers out of the Genie product surface.
    - Validate the expanded dataset with Zod before wiring it into any live generation or eval-run path.
 
@@ -274,11 +275,15 @@ The meaningful boundary is between probabilistic LLM communication and determini
    - Add tRPC entry points for synchronous generation, job start, and job status.
    - Integrate at least one current LLM API with structured output and tool-call support.
    - Log generation traces to the backend filesystem so the lab can inspect inputs, outputs, tools, model metadata, costs, latency, and available provider traces.
+   - Define a baseline variant with explicit model, prompt, generation settings, and artifact metadata.
+   - Run the baseline variant through the same source packets and eval cases, then replace the seeded baseline briefing outputs with stored LLM-generated baseline run artifacts.
+   - Keep the seeded baselines available only as deterministic fallback/demo fixtures after real baseline runs exist.
 
 8. Dataset commands and artifact path
    - Add dataset indexes and any seed metadata needed for deterministic discovery.
    - Add seed data, sample generation traces, and baseline artifacts.
-   - Add commands for seed, baseline eval, latest eval, and compare.
+   - Add commands for seed, baseline generation/eval, latest generation/eval, and compare.
+   - Ensure `eval:baseline` writes a new `runs/baseline-*` directory with generated briefings, traces, evaluator outputs, manifest metadata, and comparison-ready artifact paths.
    - Make dashboard states work with both fixture data and generated run artifacts.
 
 9. Lab eval runner and experiment-loop affordances

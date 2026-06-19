@@ -7,26 +7,38 @@
 		{
 			"id": "S1",
 			"title": "Support incident recap",
-			"excerpt": "A failed installer release caused 31 setup tickets in two days. The highest-friction users had partial installs: they could not tell whether to rerun setup, clear credentials, or wait for a patched CLI.",
+			"body": "A failed installer release caused 31 setup tickets in two days. The highest-friction users had partial installs: they could not tell whether to rerun setup, clear credentials, or wait for a patched CLI.\n\nThe support recap lists partial installs as the biggest source of confusion. Users were unsure whether rerunning setup would corrupt local state or clear credentials. Agents asked for a recovery message that starts with symptoms and then gives one safe next action.",
 			"documentType": "support recap"
 		},
 		{
 			"id": "S2",
 			"title": "Status page draft",
-			"excerpt": "The draft status update says the issue is resolved, but engineering has only verified recovery on macOS and Linux. Windows recovery steps are still being validated by the tooling team.",
+			"body": "The draft status update says the issue is resolved, but engineering has only verified recovery on macOS and Linux. Windows recovery steps are still being validated by the tooling team.\n\nThe status draft was written before Windows recovery validation finished. Engineering confirmed macOS and Linux, but the Windows path still had an unresolved credential-cache issue. The draft's word 'resolved' was flagged as too broad unless the environment caveat stayed visible.",
 			"documentType": "status draft"
 		},
 		{
 			"id": "S3",
 			"title": "Customer success guidance",
-			"excerpt": "Customer success wants a concise message that separates who is affected, what action they should take, and which environments are still pending validation. They specifically asked not to claim universal resolution until Windows is verified.",
+			"body": "Customer success wants a concise message that separates who is affected, what action they should take, and which environments are still pending validation. They specifically asked not to claim universal resolution until Windows is verified.\n\nCustomer success asked for a message that separates affected users, recommended action, and pending validation. They wanted the Windows caveat in the first paragraph rather than a footnote. Their concern was that customers would forward the status update internally as proof of universal recovery.",
 			"documentType": "customer guidance"
 		},
 		{
 			"id": "S4",
 			"title": "Engineering fix note",
-			"excerpt": "The patched CLI adds a recovery command that checks stale credentials and cleans partial install state. The command is available in the release candidate, but docs screenshots still show the old installer flow.",
+			"body": "The patched CLI adds a recovery command that checks stale credentials and cleans partial install state. The command is available in the release candidate, but docs screenshots still show the old installer flow.\n\nThe engineering note says the recovery command handles stale credentials and partial install cleanup. The command is available in the release candidate, while screenshots and public docs still show the old installer path. Engineering asked docs to update before broad promotion.",
 			"documentType": "engineering note"
+		},
+		{
+			"id": "S5",
+			"title": "Docs update checklist",
+			"body": "The docs update checklist requires the new recovery command, credential cleanup instructions, and screenshots for the patched installer path. The docs owner marked Windows screenshots as pending. The checklist says customer communication should not point users to the old installer flow once the release candidate is promoted.",
+			"documentType": "docs checklist"
+		},
+		{
+			"id": "S6",
+			"title": "Support macro draft",
+			"body": "The support macro draft separates users into verified macOS, verified Linux, and pending Windows recovery paths. It gives partial-install users one safe command and tells Windows users that validation is still in progress. Support asked for the same segmentation to appear in any generated incident briefing.",
+			"documentType": "support macro"
 		}
 	],
 	"metadata": {

@@ -65,8 +65,8 @@
 				"sourcePacketId": "packet-cost-latency"
 			},
 			"result": {
-				"sourceCount": 4,
-				"sourceIds": ["S1", "S2", "S3", "S4"]
+				"sourceCount": 6,
+				"sourceIds": ["S1", "S2", "S3", "S4", "S5", "S6"]
 			},
 			"status": "success",
 			"startedAt": "2026-06-18T17:45:00.000Z",
@@ -74,11 +74,11 @@
 		}
 	],
 	"cost": {
-		"inputTokens": 2280,
+		"inputTokens": 2520,
 		"outputTokens": 420,
 		"estimatedUsd": 0.014
 	},
-	"latencyMs": 7680,
+	"latencyMs": 7920,
 	"artifactPaths": [
 		"data/source-packets/packet-cost-latency.json",
 		"runs/candidate-citation-gates/briefings/packet-cost-latency.json",

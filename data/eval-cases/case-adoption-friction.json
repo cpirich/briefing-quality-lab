@@ -14,7 +14,7 @@
 		"Do not omit citation traceability when making product recommendations.",
 		"Do not cite the analytics improvement as evidence that setup is solved."
 	],
-	"acceptedCitations": ["S1", "S2", "S3", "S4"],
+	"acceptedCitations": ["S1", "S2", "S3", "S4", "S5", "S6"],
 	"holdout": false,
 	"demoHighlight": true,
 	"failureTags": ["setup-recovery", "citation-grounding"],

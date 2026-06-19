@@ -126,7 +126,7 @@
 	"featuredCase": {
 		"id": "case-release-note-drift",
 		"title": "Release note drift briefing",
-		"sourceExcerpt": "The generated notes covered 83% of merged changes, but 14% of entries described behavior that changed after final QA.",
+		"sourceEvidence": "The generated notes covered 83% of merged changes, but 14% of entries described behavior that changed after final QA.",
 		"baseline": "Publish generated release notes after a lightweight spot review because coverage is high and customers prefer concise notes.",
 		"candidate": "Gate generated notes on drift review for changed or removed claims, and require explicit approval for sensitive customer-facing statements.",
 		"evaluatorNote": "Candidate keeps the coverage benefit while grounding the shipping gate in stale-source drift and compliance evidence."

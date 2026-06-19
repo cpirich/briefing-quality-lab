@@ -7,26 +7,38 @@
 		{
 			"id": "S1",
 			"title": "Docs analytics",
-			"excerpt": "Quickstart completion rose from 44% to 58% after the copy refresh, and the first API call step now has fewer exits. The biggest remaining drop happens during local setup and credential configuration, where users bounce after seeing environment-specific errors.",
+			"body": "Quickstart completion rose from 44% to 58% after the copy refresh, and the first API call step now has fewer exits. The biggest remaining drop happens during local setup and credential configuration, where users bounce after seeing environment-specific errors.\n\nThe analytics pull covers the two weeks after the docs refresh. Completion improved most for users who already had a valid token, while new users without a configured environment still hit the same setup wall. The team noted that the success metric should not be presented as an end-to-end onboarding win until credential setup has its own recovery path.",
 			"documentType": "analytics digest"
 		},
 		{
 			"id": "S2",
 			"title": "Support digest",
-			"excerpt": "Most new tickets mention environment drift, stale CLI versions, and unclear recovery steps after failed installs. Several teams found the right command only after support pasted an internal checklist, which is not yet reflected in public docs.",
+			"body": "Most new tickets mention environment drift, stale CLI versions, and unclear recovery steps after failed installs. Several teams found the right command only after support pasted an internal checklist, which is not yet reflected in public docs.\n\nSupport agents grouped the tickets into stale CLI installs, missing environment variables, and credentials copied from the wrong workspace. The internal checklist resolved most cases, but it relied on steps that public docs do not mention. Several tickets reopened when users repeated the quickstart from the top and reproduced the same failed state.",
 			"documentType": "support summary"
 		},
 		{
 			"id": "S3",
 			"title": "Pilot interviews",
-			"excerpt": "Senior engineers said they trust generated recommendations only when each claim points back to source snippets they can inspect. They were less concerned about prose polish than about knowing whether a recommendation came from analytics, support, or interview evidence.",
+			"body": "Senior engineers said they trust generated recommendations only when each claim points back to source snippets they can inspect. They were less concerned about prose polish than about knowing whether a recommendation came from analytics, support, or interview evidence.\n\nInterviewees said they could tolerate a terse recommendation if the evidence trail was clear. One senior engineer said a confident recommendation without source links would be treated as a draft opinion, not a decision input. The strongest trust signal was seeing analytics, support tickets, and interview evidence separated rather than blended into one generic rationale.",
 			"documentType": "interview synthesis"
 		},
 		{
 			"id": "S4",
 			"title": "Pilot expansion note",
-			"excerpt": "Two additional teams are available for a pilot next month, but the launch owner flagged setup recovery as the visible failure that would make the demo feel brittle. The note recommends expanding only after failed-install guidance and citation checks are observable in the lab.",
+			"body": "Two additional teams are available for a pilot next month, but the launch owner flagged setup recovery as the visible failure that would make the demo feel brittle. The note recommends expanding only after failed-install guidance and citation checks are observable in the lab.\n\nThe launch owner wants the next pilot to feel calm in front of observers. The note lists failed install recovery, credential reset copy, and trace-backed recommendations as prerequisites. It does not cancel the pilot expansion; it says expansion should wait until the most visible recovery failure has a documented path.",
 			"documentType": "planning note"
+		},
+		{
+			"id": "S5",
+			"title": "Onboarding triage notes",
+			"body": "The onboarding triage notes summarize a working session between docs, support, and developer relations. The group agreed that the quickstart copy is clearer than before, but the failure mode after a partial setup still feels like a dead end. Support wants a public recovery checklist for stale CLI versions, credential mismatches, and repeated setup attempts. Developer relations wants the pilot expansion message to say that recovery guidance is being hardened before more teams are added.",
+			"documentType": "triage notes"
+		},
+		{
+			"id": "S6",
+			"title": "Pilot readiness checklist",
+			"body": "The pilot readiness checklist lists three gates for adding teams: the failed-install path must have public recovery steps, generated recommendations must show source citations, and the lab must expose whether a recommendation came from analytics, support, or interviews. The owner marked two teams as ready to participate but blocked scheduling until the setup recovery path can be demonstrated without support pasting an internal checklist.",
+			"documentType": "readiness checklist"
 		}
 	],
 	"metadata": {

@@ -27,6 +27,8 @@ This phase intentionally seeds only a tiny starter dataset. Those source packets
 - `runs/comparisons/baseline-2026-06-10__candidate-citation-gates.json`: seeded run comparison backing the dashboard.
 - `reports/latest-eval-summary.md`: human-readable synthetic summary linked from artifacts.
 
+Note: Source packet fixtures use `sources[].body` for the synthetic source text available to Briefing Genie. That field should be understood as packet evidence, not as evidence selected by a separate hidden excerpting pipeline. Later phases may add preview-specific UI fields if the document bodies become too long for direct display.
+
 ## Schema Fields
 
 `SourcePacket`
@@ -35,7 +37,7 @@ This phase intentionally seeds only a tiny starter dataset. Those source packets
 - `title`
 - `summary`
 - `caseId`
-- `sources[]` with `id`, `title`, `excerpt`, and optional `documentType`
+- `sources[]` with `id`, `title`, `body`, and optional `documentType`
 - `metadata` with `theme`, `synthetic`, `publicSafe`, and optional `createdBy`
 
 `EvalCase`

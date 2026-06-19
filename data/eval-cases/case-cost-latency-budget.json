@@ -13,7 +13,7 @@
 		"Do not optimize cost by deleting traces reviewers need for grounding failures.",
 		"Do not ignore the 1.15x cost threshold."
 	],
-	"acceptedCitations": ["S1", "S2", "S3", "S4"],
+	"acceptedCitations": ["S1", "S2", "S3", "S4", "S5", "S6"],
 	"holdout": false,
 	"demoHighlight": false,
 	"failureTags": ["cost-guardrail", "trace-usability", "latency"],

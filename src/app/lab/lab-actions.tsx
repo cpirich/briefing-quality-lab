@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Button } from "~/components/button";
 
 export function LabActions() {
-	const [status, setStatus] = useState("Seeded lab view loaded.");
+	const [status, setStatus] = useState("Seeded artifacts loaded.");
 
 	return (
 		<div className="grid gap-2">
@@ -17,12 +17,6 @@ export function LabActions() {
 				>
 					Open Genie
 				</Link>
-				<Button
-					onClick={() => setStatus("Seed artifacts are already loaded.")}
-					type="button"
-				>
-					Seed
-				</Button>
 				<Button
 					onClick={() =>
 						setStatus("Seeded eval run preview refreshed for latest variant.")
