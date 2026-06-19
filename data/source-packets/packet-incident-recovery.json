@@ -7,38 +7,38 @@
 		{
 			"id": "S1",
 			"title": "Support incident recap",
-			"body": "A failed installer release caused 31 setup tickets in two days. The highest-friction users had partial installs: they could not tell whether to rerun setup, clear credentials, or wait for a patched CLI.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the incident communication case. The strongest signal for the requested briefing is: Partial installs created unclear recovery choices. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: The issue is not universally resolved until Windows recovery is validated.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not say the incident is fully resolved across all environments. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
+			"body": "A failed installer release caused 31 setup tickets in two days. The highest-friction users had partial installs: they could not tell whether to rerun setup, clear credentials, or wait for a patched CLI.\n\nThe support recap lists partial installs as the biggest source of confusion. Users were unsure whether rerunning setup would corrupt local state or clear credentials. Agents asked for a recovery message that starts with symptoms and then gives one safe next action.",
 			"documentType": "support recap"
 		},
 		{
 			"id": "S2",
 			"title": "Status page draft",
-			"body": "The draft status update says the issue is resolved, but engineering has only verified recovery on macOS and Linux. Windows recovery steps are still being validated by the tooling team.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the incident communication case. The strongest signal for the requested briefing is: The issue is not universally resolved until Windows recovery is validated. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Customer communication should separate affected users, recommended action, and pending environments.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not omit the Windows validation caveat. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
+			"body": "The draft status update says the issue is resolved, but engineering has only verified recovery on macOS and Linux. Windows recovery steps are still being validated by the tooling team.\n\nThe status draft was written before Windows recovery validation finished. Engineering confirmed macOS and Linux, but the Windows path still had an unresolved credential-cache issue. The draft's word 'resolved' was flagged as too broad unless the environment caveat stayed visible.",
 			"documentType": "status draft"
 		},
 		{
 			"id": "S3",
 			"title": "Customer success guidance",
-			"body": "Customer success wants a concise message that separates who is affected, what action they should take, and which environments are still pending validation. They specifically asked not to claim universal resolution until Windows is verified.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the incident communication case. The strongest signal for the requested briefing is: Customer communication should separate affected users, recommended action, and pending environments. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Docs need updates for the patched recovery command.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not say the incident is fully resolved across all environments. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
+			"body": "Customer success wants a concise message that separates who is affected, what action they should take, and which environments are still pending validation. They specifically asked not to claim universal resolution until Windows is verified.\n\nCustomer success asked for a message that separates affected users, recommended action, and pending validation. They wanted the Windows caveat in the first paragraph rather than a footnote. Their concern was that customers would forward the status update internally as proof of universal recovery.",
 			"documentType": "customer guidance"
 		},
 		{
 			"id": "S4",
 			"title": "Engineering fix note",
-			"body": "The patched CLI adds a recovery command that checks stale credentials and cleans partial install state. The command is available in the release candidate, but docs screenshots still show the old installer flow.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the incident communication case. The strongest signal for the requested briefing is: Docs need updates for the patched recovery command. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Partial installs created unclear recovery choices.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not omit the Windows validation caveat. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
+			"body": "The patched CLI adds a recovery command that checks stale credentials and cleans partial install state. The command is available in the release candidate, but docs screenshots still show the old installer flow.\n\nThe engineering note says the recovery command handles stale credentials and partial install cleanup. The command is available in the release candidate, while screenshots and public docs still show the old installer path. Engineering asked docs to update before broad promotion.",
 			"documentType": "engineering note"
 		},
 		{
 			"id": "S5",
-			"title": "Reviewer calibration document",
-			"body": "Reviewers use this calibration document to decide whether the briefing selected the right evidence from the packet. The expected coverage points for this case are: Partial installs created unclear recovery choices. The issue is not universally resolved until Windows recovery is validated. Customer communication should separate affected users, recommended action, and pending environments. Docs need updates for the patched recovery command.\n\nThe calibration note is intentionally not a model answer. It gives the evaluator enough context to distinguish direct support from plausible synthesis. A strong briefing should still rely on the source-specific operational notes above when making claims, and it should use this document only to understand how the packet will be judged.\n\nThe repeated failure modes under review are setup-recovery, stale-source, customer-claim-risk. When a generated briefing cites sources broadly without connecting the claim to a concrete caveat, gate, or decision boundary, reviewers should mark the citation as weak even if the source is topically related.",
-			"documentType": "review calibration"
+			"title": "Docs update checklist",
+			"body": "The docs update checklist requires the new recovery command, credential cleanup instructions, and screenshots for the patched installer path. The docs owner marked Windows screenshots as pending. The checklist says customer communication should not point users to the old installer flow once the release candidate is promoted.",
+			"documentType": "docs checklist"
 		},
 		{
 			"id": "S6",
-			"title": "Risk and distractor document",
-			"body": "This document records traps that make the packet realistic for eval work. Known traps include: Do not say the incident is fully resolved across all environments. Do not omit the Windows validation caveat.\n\nSeveral details in the packet are deliberately adjacent to the user request but not sufficient for a shipping recommendation. For example, a metric improvement should not automatically become a rollout recommendation, a faster path should not automatically become the default path, and a draft or generated recommendation should not be treated as an approved action.\n\nThe intended task is: Recommend how Briefing Genie should summarize recovery work after a setup incident. A good answer should prioritize the evidence that changes the recommendation, identify caveats that block overconfident claims, and leave open questions where the packet does not contain enough information.",
-			"documentType": "risk log"
+			"title": "Support macro draft",
+			"body": "The support macro draft separates users into verified macOS, verified Linux, and pending Windows recovery paths. It gives partial-install users one safe command and tells Windows users that validation is still in progress. Support asked for the same segmentation to appear in any generated incident briefing.",
+			"documentType": "support macro"
 		}
 	],
 	"metadata": {

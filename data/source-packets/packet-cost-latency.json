@@ -7,38 +7,38 @@
 		{
 			"id": "S1",
 			"title": "Run telemetry",
-			"body": "The candidate prompt reduced unsupported claims but increased median token usage by 11%. Latency improved by 6% because fewer generations needed manual reruns, even though each retained trace is longer.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the cost latency tradeoff case. The strongest signal for the requested briefing is: Candidate cost increased but stays within the 1.15x guardrail. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Latency improved because fewer manual reruns were needed.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not optimize cost by deleting traces reviewers need for grounding failures. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
+			"body": "The candidate prompt reduced unsupported claims but increased median token usage by 11%. Latency improved by 6% because fewer generations needed manual reruns, even though each retained trace is longer.\n\nTelemetry compares the candidate prompt with the baseline over the visible eval set. Token usage rose because the candidate retained more claim-level evidence, but fewer outputs needed manual reruns. The latency improvement came from fewer repeated attempts, not from shorter single generations.",
 			"documentType": "telemetry report"
 		},
 		{
 			"id": "S2",
 			"title": "Finance guidance",
-			"body": "Finance approved up to a 1.15x cost ratio for demo-quality eval runs if the report shows why extra tokens reduce review time. Anything above that threshold needs a smaller case batch or stricter retry cap.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the cost latency tradeoff case. The strongest signal for the requested briefing is: Latency improved because fewer manual reruns were needed. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Long traces need claim-level summaries, not raw payloads alone.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not ignore the 1.15x cost threshold. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
+			"body": "Finance approved up to a 1.15x cost ratio for demo-quality eval runs if the report shows why extra tokens reduce review time. Anything above that threshold needs a smaller case batch or stricter retry cap.\n\nFinance accepted a 1.15x ceiling for demo-quality runs because better traces can reduce reviewer time. The approval is conditional: if the run exceeds the threshold, the team should reduce batch size, cap retries, or summarize traces more aggressively. The note does not approve unlimited trace retention.",
 			"documentType": "finance note"
 		},
 		{
 			"id": "S3",
 			"title": "Reviewer feedback",
-			"body": "Reviewers said long traces are useful only when they are summarized next to the claim that failed. Raw provider payloads alone slowed review because people had to search for the relevant evidence.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the cost latency tradeoff case. The strongest signal for the requested briefing is: Long traces need claim-level summaries, not raw payloads alone. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Single-briefing UX should stay under 10 seconds while eval runs show progress.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not optimize cost by deleting traces reviewers need for grounding failures. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
+			"body": "Reviewers said long traces are useful only when they are summarized next to the claim that failed. Raw provider payloads alone slowed review because people had to search for the relevant evidence.\n\nReviewers liked traces when they were attached to the failed claim and cited source. Raw payload dumps slowed them down because they had to search for the relevant turn. The requested improvement is a short trace summary near each evaluator finding.",
 			"documentType": "reviewer feedback"
 		},
 		{
 			"id": "S4",
 			"title": "Demo rehearsal",
-			"body": "The live demo felt responsive when single briefings finished under 10 seconds and eval progress showed the current case. Stakeholders were tolerant of longer full runs if progress and artifact paths updated continuously.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the cost latency tradeoff case. The strongest signal for the requested briefing is: Single-briefing UX should stay under 10 seconds while eval runs show progress. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Candidate cost increased but stays within the 1.15x guardrail.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not ignore the 1.15x cost threshold. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
+			"body": "The live demo felt responsive when single briefings finished under 10 seconds and eval progress showed the current case. Stakeholders were tolerant of longer full runs if progress and artifact paths updated continuously.\n\nThe rehearsal note separates product responsiveness from lab-run duration. A single briefing felt live-demo safe under 10 seconds. Full eval runs could take longer if the UI showed the current case, elapsed time, and artifact path so observers understood progress.",
 			"documentType": "rehearsal note"
 		},
 		{
 			"id": "S5",
-			"title": "Reviewer calibration document",
-			"body": "Reviewers use this calibration document to decide whether the briefing selected the right evidence from the packet. The expected coverage points for this case are: Candidate cost increased but stays within the 1.15x guardrail. Latency improved because fewer manual reruns were needed. Long traces need claim-level summaries, not raw payloads alone. Single-briefing UX should stay under 10 seconds while eval runs show progress.\n\nThe calibration note is intentionally not a model answer. It gives the evaluator enough context to distinguish direct support from plausible synthesis. A strong briefing should still rely on the source-specific operational notes above when making claims, and it should use this document only to understand how the packet will be judged.\n\nThe repeated failure modes under review are cost-guardrail, trace-usability, latency. When a generated briefing cites sources broadly without connecting the claim to a concrete caveat, gate, or decision boundary, reviewers should mark the citation as weak even if the source is topically related.",
-			"documentType": "review calibration"
+			"title": "Retry policy draft",
+			"body": "The retry policy draft proposes a small retry cap for demo eval runs. It allows one automatic retry for transient provider errors and requires a manifest entry when retries change cost or latency. The policy rejects silent repeated generations because they make cost harder to explain during review.",
+			"documentType": "policy draft"
 		},
 		{
 			"id": "S6",
-			"title": "Risk and distractor document",
-			"body": "This document records traps that make the packet realistic for eval work. Known traps include: Do not optimize cost by deleting traces reviewers need for grounding failures. Do not ignore the 1.15x cost threshold.\n\nSeveral details in the packet are deliberately adjacent to the user request but not sufficient for a shipping recommendation. For example, a metric improvement should not automatically become a rollout recommendation, a faster path should not automatically become the default path, and a draft or generated recommendation should not be treated as an approved action.\n\nThe intended task is: Recommend how much tracing and retry behavior to keep for the next demo run. A good answer should prioritize the evidence that changes the recommendation, identify caveats that block overconfident claims, and leave open questions where the packet does not contain enough information.",
-			"documentType": "risk log"
+			"title": "Trace summary mock",
+			"body": "The trace summary mock shows a short explanation beside each failed claim: selected source ids, missing evidence, retry count, and final output path. Reviewers preferred that mock to raw provider payloads. The mock keeps detailed traces on disk while making the dashboard readable during a live demo.",
+			"documentType": "trace mock"
 		}
 	],
 	"metadata": {

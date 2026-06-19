@@ -29,7 +29,7 @@ The current three source packets remain useful as golden UI fixtures and schema 
 - seeded baseline and candidate outputs for every visible case
 - evaluator outputs and comparison artifacts that show at least one concrete failure cluster
 
-This phase should stay intentionally small enough to review carefully in one PR. It proves the richer packet shape, seeded artifact flow, holdout filtering, and dashboard evidence density.
+This phase should stay intentionally small enough to review carefully in one PR. It proves the richer packet shape, seeded artifact flow, holdout filtering, and dashboard evidence density. The seeded baseline/candidate outputs are deterministic stand-ins for stored run artifacts; they should be replaced by real LLM-generated baseline and candidate run outputs once live generation is available.
 
 ## Source Packet Scenario
 
@@ -52,6 +52,18 @@ The follow-on expansion should:
 - refresh seeded baseline/candidate outputs, traces, evaluator outputs, comparison data, and the latest report
 
 Treat 25-40 cases as the demo-realistic tier for "real improvement work." Treat 60-100 cases as a later hardening tier once live generation, evaluator reliability, runtime cost, and run duration are stable.
+
+## Seeded Outputs And Live Baselines
+
+The Phase 5 seeded baseline and candidate outputs exist so the app can demonstrate the improvement loop before live LLM generation is wired into the repo. They should be plausible stored run artifacts, but they are not the final evidence for model or prompt improvement.
+
+Once live generation exists, the next runtime slice should:
+
+- define an explicit baseline variant with model, prompt, generation settings, and git/runtime metadata
+- run that baseline variant across the visible eval cases and write generated outputs to a new `runs/baseline-*` directory
+- store baseline traces, evaluator outputs, manifest metadata, and artifact paths with the same schemas used by the seeded artifacts
+- compare candidate runs against that generated baseline rather than the hand-authored seeded baseline
+- keep seeded baseline/candidate artifacts only as deterministic fallback data for demos, tests, or offline UI work
 
 ## Packet Requirements
 
@@ -85,7 +97,7 @@ The visible cases should make quality problems legible in the dashboard. The hol
 2. Draft 8-12 synthetic cases in the developer-tooling / AI-product strategy domain.
 3. Author richer source packets under `data/source-packets/`.
 4. Author matching eval cases under `data/eval-cases/`.
-5. Refresh seeded baseline/candidate briefing outputs under `runs/*/briefings/`.
+5. Refresh seeded baseline/candidate briefing outputs under `runs/*/briefings/` as deterministic stand-ins for stored run artifacts.
 6. Refresh seeded traces, evaluator outputs, run manifests, comparison artifacts, and latest report text.
 7. Run fixture validation and the project checks.
 8. Verify `/genie` still feels fast and focused while `/lab` has enough evidence density to explain the eval story.

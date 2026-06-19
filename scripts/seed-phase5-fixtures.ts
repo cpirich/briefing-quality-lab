@@ -1130,62 +1130,221 @@ function evaluationId(caseId: string) {
 	return `evaluation-${caseId.replace(/^case-/, "")}-candidate`;
 }
 
-function sourceId(index: number) {
-	return `S${index + 1}`;
-}
+const sourceBodyAdditions: Record<string, Record<string, string>> = {
+	"case-adoption-friction": {
+		S1: "The analytics pull covers the two weeks after the docs refresh. Completion improved most for users who already had a valid token, while new users without a configured environment still hit the same setup wall. The team noted that the success metric should not be presented as an end-to-end onboarding win until credential setup has its own recovery path.",
+		S2: "Support agents grouped the tickets into stale CLI installs, missing environment variables, and credentials copied from the wrong workspace. The internal checklist resolved most cases, but it relied on steps that public docs do not mention. Several tickets reopened when users repeated the quickstart from the top and reproduced the same failed state.",
+		S3: "Interviewees said they could tolerate a terse recommendation if the evidence trail was clear. One senior engineer said a confident recommendation without source links would be treated as a draft opinion, not a decision input. The strongest trust signal was seeing analytics, support tickets, and interview evidence separated rather than blended into one generic rationale.",
+		S4: "The launch owner wants the next pilot to feel calm in front of observers. The note lists failed install recovery, credential reset copy, and trace-backed recommendations as prerequisites. It does not cancel the pilot expansion; it says expansion should wait until the most visible recovery failure has a documented path.",
+	},
+	"case-eval-loop": {
+		S1: "The memo compares a broad dry run with a smaller reviewed batch. The broad run produced more scores, but reviewers spent extra time rediscovering whether each failure was new. The smaller batch made repeated citation issues easier to group and produced more actionable prompt changes.",
+		S2: "The guardrail note came from a release review where the candidate covered more requested points but attached weak citations to several claims. Reviewers agreed that coverage and grounding must be tracked separately. A candidate can look better in aggregate and still be blocked if unsupported claims reach customer-facing recommendations.",
+		S3: "The cost review separates trace usefulness from retry sprawl. Long traces helped diagnose why a claim failed, but retries created duplicate traces that nobody read. Finance accepted keeping detailed traces when the run manifest shows retry count, cost ratio, and a short explanation of what the trace helped resolve.",
+		S4: "The holdout protocol distinguishes dashboard visibility from tuning visibility. Aggregate holdout scores may appear in the lab so reviewers know the set exists, but labels and expected answers should not appear in prompt-editing screens. The goal is to catch overfitting to the visible demo cases.",
+	},
+	"case-code-review-queues": {
+		S1: "The queue report breaks out routine changes from cross-service changes. Documentation and configuration reviews moved quickly after rotation, but changes touching shared services still waited on scarce reviewers. The report recommends treating tail latency as an ownership-routing problem, not only a staffing problem.",
+		S2: "Survey comments supported automated assignment but were skeptical of automated approval. Reviewers wanted the bot to explain why a change looked low risk, including ownership metadata, test health, and file categories. Several comments said a fast-track label would be useful only if it could be challenged before merge.",
+		S3: "The defect review found no measurable increase for low-risk docs and config changes. The incidents came from cross-service changes where the apparent owner was not the team responsible for runtime behavior. The review lead asked for a hard distinction between queue organization and approval authority.",
+		S4: "The tooling proposal describes a helper that can cluster changes, suggest reviewers, and flag missing ownership data. It explicitly says semantic ownership remains outside the helper's capability. Branch protection and required reviewers stay in force even when the helper marks a change as likely low risk.",
+	},
+	"case-release-note-drift": {
+		S1: "The audit sampled generated notes against merged pull requests and final QA records. Most missing items were minor, but stale PR descriptions created the riskiest drift because the generated note described behavior that had been cut or renamed. The audit recommends checking final QA deltas before customer publication.",
+		S2: "Customer success highlighted that concise notes work only when the remaining claims are accurate. The escalated admin-toggle example caused confusion because customers planned rollout steps around a feature that was removed. The team asked for migration warnings and compatibility caveats to be treated as higher risk than routine polish items.",
+		S3: "The workflow memo says engineers will tag final-release deltas during QA if the queue is lightweight. They will not maintain a parallel changelog. The proposed review queue should show changed, removed, or sensitive claims so authors only review the parts most likely to drift.",
+		S4: "Compliance reviewers are less concerned with grammatical quality than with claims that imply security, retention, or access-control guarantees. They want an explicit approval record for those categories. The note says speed is useful only if sensitive statements are easy to find before publishing.",
+	},
+	"case-human-approval-boundary": {
+		S1: "Workshop participants drew a boundary between preparation and authority. Drafting, summarizing, and linking artifacts were acceptable because a human could inspect them before action. Policy changes, customer commitments, and release blocking were rejected because they change obligations or stop work without accountable approval.",
+		S2: "The incident note describes an automation that posted a recommendation in a channel where readers assumed it was an approved decision. Two teams paused rollout work before anyone confirmed the recommendation. The incident owner asked for status labels that distinguish draft analysis from approved action.",
+		S3: "Analytics showed higher acceptance when evidence, recommendation, and action controls were visually separated. Sessions with a combined recommendation-and-action cluster produced more cancellations and clarification clicks. The product team interpreted that as a sign that users need time to inspect evidence before acting.",
+		S4: "Legal approved generated internal drafts because they remain advisory. The same review rejected automated customer-facing commitments without an accountable reviewer. The legal note asks the product to make it impossible to confuse generated summaries with final commitments.",
+	},
+	"case-cost-latency-budget": {
+		S1: "Telemetry compares the candidate prompt with the baseline over the visible eval set. Token usage rose because the candidate retained more claim-level evidence, but fewer outputs needed manual reruns. The latency improvement came from fewer repeated attempts, not from shorter single generations.",
+		S2: "Finance accepted a 1.15x ceiling for demo-quality runs because better traces can reduce reviewer time. The approval is conditional: if the run exceeds the threshold, the team should reduce batch size, cap retries, or summarize traces more aggressively. The note does not approve unlimited trace retention.",
+		S3: "Reviewers liked traces when they were attached to the failed claim and cited source. Raw payload dumps slowed them down because they had to search for the relevant turn. The requested improvement is a short trace summary near each evaluator finding.",
+		S4: "The rehearsal note separates product responsiveness from lab-run duration. A single briefing felt live-demo safe under 10 seconds. Full eval runs could take longer if the UI showed the current case, elapsed time, and artifact path so observers understood progress.",
+	},
+	"case-incident-recovery-comms": {
+		S1: "The support recap lists partial installs as the biggest source of confusion. Users were unsure whether rerunning setup would corrupt local state or clear credentials. Agents asked for a recovery message that starts with symptoms and then gives one safe next action.",
+		S2: "The status draft was written before Windows recovery validation finished. Engineering confirmed macOS and Linux, but the Windows path still had an unresolved credential-cache issue. The draft's word 'resolved' was flagged as too broad unless the environment caveat stayed visible.",
+		S3: "Customer success asked for a message that separates affected users, recommended action, and pending validation. They wanted the Windows caveat in the first paragraph rather than a footnote. Their concern was that customers would forward the status update internally as proof of universal recovery.",
+		S4: "The engineering note says the recovery command handles stale credentials and partial install cleanup. The command is available in the release candidate, while screenshots and public docs still show the old installer path. Engineering asked docs to update before broad promotion.",
+	},
+	"case-runtime-choice": {
+		S1: "The reliability review favors local operation for the next demo because artifacts are easy to inspect in the repo. The risk is setup fragility: reviewers must have the pinned runtime, seed data, and validation commands working before the walkthrough. The note treats boring setup as a prerequisite, not a nice-to-have.",
+		S2: "The go-to-market note says hosted previews would help reviewers who do not want local setup. It also records that no one owns preview secrets, deploys, or data retention yet. The note recommends not implying a production hosting plan until those responsibilities are assigned.",
+		S3: "The security note focuses on public fixture hygiene. It calls out private planning paths, customer identifiers, unreleased vendor data, and environment variables as review items before external sharing. Hosted previews add another review surface because secrets and retention settings become visible operational concerns.",
+		S4: "The rehearsal note explains why runtime pinning mattered. The first local run failed with the wrong package manager; after mise pinned the runtime, the second run succeeded. Reviewers liked seeing files written into the repo because it made the demo evidence tangible.",
+	},
+	"case-model-routing-policy": {
+		S1: "The latency experiment split routine summaries from high-risk recommendations. The smaller model handled straightforward summaries quickly, but missed caveats when sources disagreed. The experiment owner warned that speed should not be averaged across cases with different risk profiles.",
+		S2: "The cost analysis estimates savings if low-risk summaries use the smaller model. The savings vanish when missed caveats trigger retries or human repair on high-risk recommendations. The finance note therefore treats routing as a risk decision, not simply a cost optimization.",
+		S3: "Evaluator notes show that the worst failures came from unsupported recommendations rather than factual extraction errors. Packet length alone did not predict failure. Cases with source disagreement or customer-facing consequences needed stronger citation checks even when the packet was short.",
+		S4: "The product manager wanted a rule that could be explained during a demo. Routine summaries may use the fast path. Recommendations that affect releases, customers, compliance, or governance should use the stronger model and preserve citation evidence for review.",
+	},
+};
+
+const supplementalSourcesByCase: Record<string, SourcePacket["sources"]> = {
+	"case-adoption-friction": [
+		{
+			id: "S5",
+			title: "Onboarding triage notes",
+			body: "The onboarding triage notes summarize a working session between docs, support, and developer relations. The group agreed that the quickstart copy is clearer than before, but the failure mode after a partial setup still feels like a dead end. Support wants a public recovery checklist for stale CLI versions, credential mismatches, and repeated setup attempts. Developer relations wants the pilot expansion message to say that recovery guidance is being hardened before more teams are added.",
+			documentType: "triage notes",
+		},
+		{
+			id: "S6",
+			title: "Pilot readiness checklist",
+			body: "The pilot readiness checklist lists three gates for adding teams: the failed-install path must have public recovery steps, generated recommendations must show source citations, and the lab must expose whether a recommendation came from analytics, support, or interviews. The owner marked two teams as ready to participate but blocked scheduling until the setup recovery path can be demonstrated without support pasting an internal checklist.",
+			documentType: "readiness checklist",
+		},
+	],
+	"case-eval-loop": [
+		{
+			id: "S5",
+			title: "Reviewer retro notes",
+			body: "The reviewer retro says the last eval review felt slower than expected because failures were not grouped by pattern. Reviewers asked for a dashboard that clusters unsupported claims, weak citations, cost regressions, and holdout concerns separately. They preferred fewer cases with clearer evidence over a larger run where every row required manual interpretation.",
+			documentType: "retro notes",
+		},
+		{
+			id: "S6",
+			title: "Experiment proposal",
+			body: "The experiment proposal recommends one more visible batch before live orchestration. It asks the team to hold citation support as a shipping gate, keep retry counts in the manifest, and report holdout performance only in aggregate. The proposal frames expansion as acceptable only if the next candidate improves grounding without exceeding the cost guardrail.",
+			documentType: "experiment proposal",
+		},
+	],
+	"case-code-review-queues": [
+		{
+			id: "S5",
+			title: "Ownership metadata audit",
+			body: "The ownership metadata audit found that low-risk docs changes usually have clear owners, while shared service changes often inherit stale ownership entries. The audit recommends showing missing or conflicting ownership as a queue risk, not hiding it behind an auto-assignment. Reviewers asked for the helper to explain uncertainty before suggesting a faster path.",
+			documentType: "metadata audit",
+		},
+		{
+			id: "S6",
+			title: "Branch protection policy note",
+			body: "The branch protection policy note says automation may organize the queue and suggest reviewers, but it must not bypass required approvals. The policy owner approved fast-track labels for documentation and configuration changes when tests are healthy. Cross-service changes still require an owning-team reviewer even if the helper predicts low defect risk.",
+			documentType: "policy note",
+		},
+	],
+	"case-release-note-drift": [
+		{
+			id: "S5",
+			title: "QA delta log",
+			body: "The QA delta log lists changes that landed after pull-request descriptions were written. Two feature names changed, one admin toggle was removed, and one migration warning was added late. QA asked generated release notes to compare against this log before publication because stale PR text is no longer reliable after scope cuts.",
+			documentType: "qa log",
+		},
+		{
+			id: "S6",
+			title: "Release editor checklist",
+			body: "The release editor checklist asks reviewers to inspect generated notes for changed claims, removed features, sensitive categories, and compatibility warnings. Editors are not expected to rewrite every note manually. They should focus on claims that customers could treat as commitments or migration instructions.",
+			documentType: "editor checklist",
+		},
+	],
+	"case-human-approval-boundary": [
+		{
+			id: "S5",
+			title: "Action taxonomy draft",
+			body: "The action taxonomy draft divides Genie behavior into generated drafts, recommendations, approved actions, and blocked actions. Drafting and artifact linking are listed as safe defaults. Release blocks, customer commitments, policy changes, and external messages require an approver recorded in the artifact trail.",
+			documentType: "taxonomy draft",
+		},
+		{
+			id: "S6",
+			title: "Interface review notes",
+			body: "The interface review notes warn against placing an execution button directly beside an AI recommendation. Reviewers want the evidence panel, recommendation panel, and action controls separated so users understand what is generated and what has been approved. The note recommends a visible status label before any action can be taken.",
+			documentType: "interface review",
+		},
+	],
+	"case-cost-latency-budget": [
+		{
+			id: "S5",
+			title: "Retry policy draft",
+			body: "The retry policy draft proposes a small retry cap for demo eval runs. It allows one automatic retry for transient provider errors and requires a manifest entry when retries change cost or latency. The policy rejects silent repeated generations because they make cost harder to explain during review.",
+			documentType: "policy draft",
+		},
+		{
+			id: "S6",
+			title: "Trace summary mock",
+			body: "The trace summary mock shows a short explanation beside each failed claim: selected source ids, missing evidence, retry count, and final output path. Reviewers preferred that mock to raw provider payloads. The mock keeps detailed traces on disk while making the dashboard readable during a live demo.",
+			documentType: "trace mock",
+		},
+	],
+	"case-incident-recovery-comms": [
+		{
+			id: "S5",
+			title: "Docs update checklist",
+			body: "The docs update checklist requires the new recovery command, credential cleanup instructions, and screenshots for the patched installer path. The docs owner marked Windows screenshots as pending. The checklist says customer communication should not point users to the old installer flow once the release candidate is promoted.",
+			documentType: "docs checklist",
+		},
+		{
+			id: "S6",
+			title: "Support macro draft",
+			body: "The support macro draft separates users into verified macOS, verified Linux, and pending Windows recovery paths. It gives partial-install users one safe command and tells Windows users that validation is still in progress. Support asked for the same segmentation to appear in any generated incident briefing.",
+			documentType: "support macro",
+		},
+	],
+	"case-runtime-choice": [
+		{
+			id: "S5",
+			title: "Local setup checklist",
+			body: "The local setup checklist records the commands needed before a live walkthrough: install the pinned runtime, seed the fixtures, validate the run store, and launch the local server. The owner wants the checklist rehearsed before inviting reviewers because a failed local setup undermines the inspectability benefit.",
+			documentType: "setup checklist",
+		},
+		{
+			id: "S6",
+			title: "Preview ownership note",
+			body: "The preview ownership note lists the unresolved owners for hosting, environment variables, deployment cadence, and retention settings. It says a preview can be useful later, but the next iteration should not imply hosted reliability until those responsibilities are assigned and public fixture safety has been reviewed.",
+			documentType: "ownership note",
+		},
+	],
+	"case-model-routing-policy": [
+		{
+			id: "S5",
+			title: "Routing decision table",
+			body: "The routing decision table marks routine summaries as eligible for the fast path when sources agree and the output is not customer-facing. It marks release, customer, compliance, and governance recommendations as strong-model cases. The table also requires escalation when sources contradict each other.",
+			documentType: "decision table",
+		},
+		{
+			id: "S6",
+			title: "Failure review notes",
+			body: "The failure review notes show that missed caveats were expensive because they triggered retries and manual correction. The reviewer concluded that a cheap first pass is not cheap when the task changes release posture. The note recommends routing by task risk and source disagreement rather than by packet length alone.",
+			documentType: "failure review",
+		},
+	],
+};
 
 function sourceBodyFor(
 	fixture: CaseFixture,
 	source: SourcePacket["sources"][number],
-	index: number,
 ) {
-	const primaryCoverage =
-		fixture.expectedCoverage[index % fixture.expectedCoverage.length];
-	const adjacentCoverage =
-		fixture.expectedCoverage[(index + 1) % fixture.expectedCoverage.length];
-	const citationTrap = fixture.traps[index % fixture.traps.length];
+	const addition = sourceBodyAdditions[fixture.caseId]?.[source.id];
+	if (!addition) {
+		throw new Error(
+			`Missing source body addition for ${fixture.caseId} ${source.id}`,
+		);
+	}
 
 	return `${source.body}
 
-Briefing relevance: This document is part of the authored synthetic source packet for the ${fixture.theme} case. The strongest signal for the requested briefing is: ${primaryCoverage} A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: ${adjacentCoverage}
-
-Decision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: ${citationTrap} If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.`;
+${addition}`;
 }
 
 function supplementalSourcesFor(fixture: CaseFixture) {
-	const firstSupplementalIndex = fixture.sources.length;
-	const coverageText = fixture.expectedCoverage.join(" ");
-	const trapText = fixture.traps.join(" ");
-	const failureTagText = fixture.failureTags.join(", ");
+	const supplementalSources = supplementalSourcesByCase[fixture.caseId];
+	if (!supplementalSources) {
+		throw new Error(`Missing supplemental sources for ${fixture.caseId}`);
+	}
 
-	return [
-		{
-			id: sourceId(firstSupplementalIndex),
-			title: "Reviewer calibration document",
-			body: `Reviewers use this calibration document to decide whether the briefing selected the right evidence from the packet. The expected coverage points for this case are: ${coverageText}
-
-The calibration note is intentionally not a model answer. It gives the evaluator enough context to distinguish direct support from plausible synthesis. A strong briefing should still rely on the source-specific operational notes above when making claims, and it should use this document only to understand how the packet will be judged.
-
-The repeated failure modes under review are ${failureTagText}. When a generated briefing cites sources broadly without connecting the claim to a concrete caveat, gate, or decision boundary, reviewers should mark the citation as weak even if the source is topically related.`,
-			documentType: "review calibration",
-		},
-		{
-			id: sourceId(firstSupplementalIndex + 1),
-			title: "Risk and distractor document",
-			body: `This document records traps that make the packet realistic for eval work. Known traps include: ${trapText}
-
-Several details in the packet are deliberately adjacent to the user request but not sufficient for a shipping recommendation. For example, a metric improvement should not automatically become a rollout recommendation, a faster path should not automatically become the default path, and a draft or generated recommendation should not be treated as an approved action.
-
-The intended task is: ${fixture.task} A good answer should prioritize the evidence that changes the recommendation, identify caveats that block overconfident claims, and leave open questions where the packet does not contain enough information.`,
-			documentType: "risk log",
-		},
-	] satisfies SourcePacket["sources"];
+	return supplementalSources;
 }
 
 function sourcesFor(fixture: CaseFixture) {
-	const authoredSources = fixture.sources.map((source, index) => ({
+	const authoredSources = fixture.sources.map((source) => ({
 		...source,
-		body: sourceBodyFor(fixture, source, index),
+		body: sourceBodyFor(fixture, source),
 	}));
 	const minimumSourceCount = 6;
 
@@ -1664,7 +1823,7 @@ async function main() {
 			"reports/latest-eval-summary.md",
 			`# Latest Eval Summary
 
-This synthetic report compares \`${baselineRunId}\` with \`${candidateRunId}\` on the expanded Phase 5 fixture set.
+This synthetic report compares \`${baselineRunId}\` with \`${candidateRunId}\` on the expanded Phase 5 demo corpus.
 
 The dataset now contains 9 synthetic eval cases: 7 visible cases for demo walkthroughs and 2 holdout cases that stay out of the Genie product flow. Source packets now include 3-6 richer documents with distractors, overlapping evidence, caveats, and explicit citation traps.
 

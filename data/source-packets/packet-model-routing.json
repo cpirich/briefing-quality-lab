@@ -7,38 +7,38 @@
 		{
 			"id": "S1",
 			"title": "Latency experiment",
-			"body": "The smaller model answered routine summaries 42% faster with similar coverage on low-risk cases. It missed two caveats on high-risk recommendation cases where source documents contradicted each other.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the model routing case. The strongest signal for the requested briefing is: Smaller models are faster for low-risk summaries. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: High-risk recommendation cases need stronger models when sources conflict.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not route solely by source-packet length. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
+			"body": "The smaller model answered routine summaries 42% faster with similar coverage on low-risk cases. It missed two caveats on high-risk recommendation cases where source documents contradicted each other.\n\nThe latency experiment split routine summaries from high-risk recommendations. The smaller model handled straightforward summaries quickly, but missed caveats when sources disagreed. The experiment owner warned that speed should not be averaged across cases with different risk profiles.",
 			"documentType": "experiment report"
 		},
 		{
 			"id": "S2",
 			"title": "Cost analysis",
-			"body": "Routing low-risk summaries to the smaller model would reduce estimated demo-run cost by 18%. The savings disappear if high-risk cases require multiple retries after a missed caveat.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the model routing case. The strongest signal for the requested briefing is: High-risk recommendation cases need stronger models when sources conflict. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Cost savings disappear if missed caveats cause retries.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not send release, customer, or compliance recommendations through the fast path without checks. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
+			"body": "Routing low-risk summaries to the smaller model would reduce estimated demo-run cost by 18%. The savings disappear if high-risk cases require multiple retries after a missed caveat.\n\nThe cost analysis estimates savings if low-risk summaries use the smaller model. The savings vanish when missed caveats trigger retries or human repair on high-risk recommendations. The finance note therefore treats routing as a risk decision, not simply a cost optimization.",
 			"documentType": "cost note"
 		},
 		{
 			"id": "S3",
 			"title": "Evaluator notes",
-			"body": "Evaluator failures cluster around unsupported recommendations, not factual extraction. The routing policy should consider task risk and source disagreement rather than only packet length.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the model routing case. The strongest signal for the requested briefing is: Cost savings disappear if missed caveats cause retries. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Routing should consider task risk and source disagreement, not only packet length.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not route solely by source-packet length. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
+			"body": "Evaluator failures cluster around unsupported recommendations, not factual extraction. The routing policy should consider task risk and source disagreement rather than only packet length.\n\nEvaluator notes show that the worst failures came from unsupported recommendations rather than factual extraction errors. Packet length alone did not predict failure. Cases with source disagreement or customer-facing consequences needed stronger citation checks even when the packet was short.",
 			"documentType": "evaluator synthesis"
 		},
 		{
 			"id": "S4",
 			"title": "Product manager note",
-			"body": "The PM wants a simple rule that can be explained in a demo: routine summaries may use the fast path, but recommendations that change release, customer, or compliance posture need the stronger model and citation checks.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the model routing case. The strongest signal for the requested briefing is: Routing should consider task risk and source disagreement, not only packet length. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Smaller models are faster for low-risk summaries.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not send release, customer, or compliance recommendations through the fast path without checks. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
+			"body": "The PM wants a simple rule that can be explained in a demo: routine summaries may use the fast path, but recommendations that change release, customer, or compliance posture need the stronger model and citation checks.\n\nThe product manager wanted a rule that could be explained during a demo. Routine summaries may use the fast path. Recommendations that affect releases, customers, compliance, or governance should use the stronger model and preserve citation evidence for review.",
 			"documentType": "planning note"
 		},
 		{
 			"id": "S5",
-			"title": "Reviewer calibration document",
-			"body": "Reviewers use this calibration document to decide whether the briefing selected the right evidence from the packet. The expected coverage points for this case are: Smaller models are faster for low-risk summaries. High-risk recommendation cases need stronger models when sources conflict. Cost savings disappear if missed caveats cause retries. Routing should consider task risk and source disagreement, not only packet length.\n\nThe calibration note is intentionally not a model answer. It gives the evaluator enough context to distinguish direct support from plausible synthesis. A strong briefing should still rely on the source-specific operational notes above when making claims, and it should use this document only to understand how the packet will be judged.\n\nThe repeated failure modes under review are model-routing, cost-guardrail, citation-grounding. When a generated briefing cites sources broadly without connecting the claim to a concrete caveat, gate, or decision boundary, reviewers should mark the citation as weak even if the source is topically related.",
-			"documentType": "review calibration"
+			"title": "Routing decision table",
+			"body": "The routing decision table marks routine summaries as eligible for the fast path when sources agree and the output is not customer-facing. It marks release, customer, compliance, and governance recommendations as strong-model cases. The table also requires escalation when sources contradict each other.",
+			"documentType": "decision table"
 		},
 		{
 			"id": "S6",
-			"title": "Risk and distractor document",
-			"body": "This document records traps that make the packet realistic for eval work. Known traps include: Do not route solely by source-packet length. Do not send release, customer, or compliance recommendations through the fast path without checks.\n\nSeveral details in the packet are deliberately adjacent to the user request but not sufficient for a shipping recommendation. For example, a metric improvement should not automatically become a rollout recommendation, a faster path should not automatically become the default path, and a draft or generated recommendation should not be treated as an approved action.\n\nThe intended task is: Recommend a model-routing policy for low-risk summaries versus high-risk recommendations. A good answer should prioritize the evidence that changes the recommendation, identify caveats that block overconfident claims, and leave open questions where the packet does not contain enough information.",
-			"documentType": "risk log"
+			"title": "Failure review notes",
+			"body": "The failure review notes show that missed caveats were expensive because they triggered retries and manual correction. The reviewer concluded that a cheap first pass is not cheap when the task changes release posture. The note recommends routing by task risk and source disagreement rather than by packet length alone.",
+			"documentType": "failure review"
 		}
 	],
 	"metadata": {
