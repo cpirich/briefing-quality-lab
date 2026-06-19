@@ -7,26 +7,38 @@
 		{
 			"id": "S1",
 			"title": "Queue analytics",
-			"excerpt": "Median review wait time improved from 19 hours to 13 hours after adding reviewer rotation. The 90th percentile is still 46 hours because complex changes often wait for the same two senior reviewers.",
+			"body": "Median review wait time improved from 19 hours to 13 hours after adding reviewer rotation. The 90th percentile is still 46 hours because complex changes often wait for the same two senior reviewers.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the code review operations case. The strongest signal for the requested briefing is: Median wait improved but tail latency remains high for complex changes. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Fast-tracking should be limited to low-risk changes with clear ownership and healthy tests.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not recommend blanket bot approvals. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
 			"documentType": "analytics digest"
 		},
 		{
 			"id": "S2",
 			"title": "Reviewer survey",
-			"excerpt": "Reviewers like auto-assignment for routine changes, but they distrust bot approvals when tests are flaky or ownership is unclear. Several asked for risk labels that explain why a change is safe to fast-track.",
+			"body": "Reviewers like auto-assignment for routine changes, but they distrust bot approvals when tests are flaky or ownership is unclear. Several asked for risk labels that explain why a change is safe to fast-track.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the code review operations case. The strongest signal for the requested briefing is: Fast-tracking should be limited to low-risk changes with clear ownership and healthy tests. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Cross-service changes need owning-team review.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not ignore post-merge incidents from cross-service fast-tracking. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
 			"documentType": "survey summary"
 		},
 		{
 			"id": "S3",
 			"title": "Post-merge defect review",
-			"excerpt": "Defects did not rise for small documentation and config changes, but two incidents came from fast-tracking cross-service changes without the owning team. The review lead wants different treatment for low-risk and cross-boundary changes.",
+			"body": "Defects did not rise for small documentation and config changes, but two incidents came from fast-tracking cross-service changes without the owning team. The review lead wants different treatment for low-risk and cross-boundary changes.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the code review operations case. The strongest signal for the requested briefing is: Cross-service changes need owning-team review. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: The helper should suggest and label risk, not replace branch protection.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not recommend blanket bot approvals. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
 			"documentType": "defect review"
 		},
 		{
 			"id": "S4",
 			"title": "Tooling proposal",
-			"excerpt": "The proposed queue helper can suggest reviewers, group similar low-risk changes, and surface missing ownership metadata. It cannot yet verify semantic ownership or override branch protection.",
+			"body": "The proposed queue helper can suggest reviewers, group similar low-risk changes, and surface missing ownership metadata. It cannot yet verify semantic ownership or override branch protection.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the code review operations case. The strongest signal for the requested briefing is: The helper should suggest and label risk, not replace branch protection. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Median wait improved but tail latency remains high for complex changes.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not ignore post-merge incidents from cross-service fast-tracking. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
 			"documentType": "tooling note"
+		},
+		{
+			"id": "S5",
+			"title": "Reviewer calibration document",
+			"body": "Reviewers use this calibration document to decide whether the briefing selected the right evidence from the packet. The expected coverage points for this case are: Median wait improved but tail latency remains high for complex changes. Fast-tracking should be limited to low-risk changes with clear ownership and healthy tests. Cross-service changes need owning-team review. The helper should suggest and label risk, not replace branch protection.\n\nThe calibration note is intentionally not a model answer. It gives the evaluator enough context to distinguish direct support from plausible synthesis. A strong briefing should still rely on the source-specific operational notes above when making claims, and it should use this document only to understand how the packet will be judged.\n\nThe repeated failure modes under review are review-queue, risk-labeling, unsupported-automation. When a generated briefing cites sources broadly without connecting the claim to a concrete caveat, gate, or decision boundary, reviewers should mark the citation as weak even if the source is topically related.",
+			"documentType": "review calibration"
+		},
+		{
+			"id": "S6",
+			"title": "Risk and distractor document",
+			"body": "This document records traps that make the packet realistic for eval work. Known traps include: Do not recommend blanket bot approvals. Do not ignore post-merge incidents from cross-service fast-tracking.\n\nSeveral details in the packet are deliberately adjacent to the user request but not sufficient for a shipping recommendation. For example, a metric improvement should not automatically become a rollout recommendation, a faster path should not automatically become the default path, and a draft or generated recommendation should not be treated as an approved action.\n\nThe intended task is: Recommend how to reduce code review queue time without increasing low-quality merges. A good answer should prioritize the evidence that changes the recommendation, identify caveats that block overconfident claims, and leave open questions where the packet does not contain enough information.",
+			"documentType": "risk log"
 		}
 	],
 	"metadata": {

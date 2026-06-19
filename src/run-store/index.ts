@@ -24,6 +24,9 @@ import {
 const repoRoot = process.cwd();
 const defaultCandidateRunId = "candidate-citation-gates";
 const defaultComparisonId = "baseline-2026-06-10-candidate-citation-gates";
+const phase5MinSourceDocuments = 5;
+const phase5MaxSourceDocuments = 10;
+const phase5MinSourceBodyCharacters = 240;
 
 type FixtureCounts = {
 	sourcePackets: number;
@@ -478,6 +481,17 @@ export async function validateRunStore(): Promise<FixtureCounts> {
 	);
 
 	for (const sourcePacket of sourcePackets) {
+		assertFixtureReference(
+			sourcePacket.sources.length >= phase5MinSourceDocuments &&
+				sourcePacket.sources.length <= phase5MaxSourceDocuments,
+			`Source packet ${sourcePacket.id} has ${sourcePacket.sources.length} source documents; expected ${phase5MinSourceDocuments}-${phase5MaxSourceDocuments}`,
+		);
+		for (const source of sourcePacket.sources) {
+			assertFixtureReference(
+				source.body.length >= phase5MinSourceBodyCharacters,
+				`Source ${source.id} in packet ${sourcePacket.id} is too short for Phase 5 (${source.body.length} characters); expected at least ${phase5MinSourceBodyCharacters}`,
+			);
+		}
 		assertFixtureReference(
 			evalCaseById.has(sourcePacket.caseId),
 			`Source packet ${sourcePacket.id} references missing eval case ${sourcePacket.caseId}`,

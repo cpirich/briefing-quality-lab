@@ -7,26 +7,38 @@
 		{
 			"id": "S1",
 			"title": "Docs analytics",
-			"excerpt": "Quickstart completion rose from 44% to 58% after the copy refresh, and the first API call step now has fewer exits. The biggest remaining drop happens during local setup and credential configuration, where users bounce after seeing environment-specific errors.",
+			"body": "Quickstart completion rose from 44% to 58% after the copy refresh, and the first API call step now has fewer exits. The biggest remaining drop happens during local setup and credential configuration, where users bounce after seeing environment-specific errors.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the developer adoption case. The strongest signal for the requested briefing is: Quickstart completion is improving but setup remains a drop-off point. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Environment drift, stale CLI versions, and credential recovery drive support volume.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not claim pilot expansion is safe without addressing setup recovery. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
 			"documentType": "analytics digest"
 		},
 		{
 			"id": "S2",
 			"title": "Support digest",
-			"excerpt": "Most new tickets mention environment drift, stale CLI versions, and unclear recovery steps after failed installs. Several teams found the right command only after support pasted an internal checklist, which is not yet reflected in public docs.",
+			"body": "Most new tickets mention environment drift, stale CLI versions, and unclear recovery steps after failed installs. Several teams found the right command only after support pasted an internal checklist, which is not yet reflected in public docs.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the developer adoption case. The strongest signal for the requested briefing is: Environment drift, stale CLI versions, and credential recovery drive support volume. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Senior reviewers require traceable recommendations tied to source snippets.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not omit citation traceability when making product recommendations. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
 			"documentType": "support summary"
 		},
 		{
 			"id": "S3",
 			"title": "Pilot interviews",
-			"excerpt": "Senior engineers said they trust generated recommendations only when each claim points back to source snippets they can inspect. They were less concerned about prose polish than about knowing whether a recommendation came from analytics, support, or interview evidence.",
+			"body": "Senior engineers said they trust generated recommendations only when each claim points back to source snippets they can inspect. They were less concerned about prose polish than about knowing whether a recommendation came from analytics, support, or interview evidence.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the developer adoption case. The strongest signal for the requested briefing is: Senior reviewers require traceable recommendations tied to source snippets. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Pilot expansion should wait for failed-install recovery and citation checks.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not cite the analytics improvement as evidence that setup is solved. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
 			"documentType": "interview synthesis"
 		},
 		{
 			"id": "S4",
 			"title": "Pilot expansion note",
-			"excerpt": "Two additional teams are available for a pilot next month, but the launch owner flagged setup recovery as the visible failure that would make the demo feel brittle. The note recommends expanding only after failed-install guidance and citation checks are observable in the lab.",
+			"body": "Two additional teams are available for a pilot next month, but the launch owner flagged setup recovery as the visible failure that would make the demo feel brittle. The note recommends expanding only after failed-install guidance and citation checks are observable in the lab.\n\nBriefing relevance: This document is part of the authored synthetic source packet for the developer adoption case. The strongest signal for the requested briefing is: Pilot expansion should wait for failed-install recovery and citation checks. A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: Quickstart completion is improving but setup remains a drop-off point.\n\nDecision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: Do not claim pilot expansion is safe without addressing setup recovery. If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.",
 			"documentType": "planning note"
+		},
+		{
+			"id": "S5",
+			"title": "Reviewer calibration document",
+			"body": "Reviewers use this calibration document to decide whether the briefing selected the right evidence from the packet. The expected coverage points for this case are: Quickstart completion is improving but setup remains a drop-off point. Environment drift, stale CLI versions, and credential recovery drive support volume. Senior reviewers require traceable recommendations tied to source snippets. Pilot expansion should wait for failed-install recovery and citation checks.\n\nThe calibration note is intentionally not a model answer. It gives the evaluator enough context to distinguish direct support from plausible synthesis. A strong briefing should still rely on the source-specific operational notes above when making claims, and it should use this document only to understand how the packet will be judged.\n\nThe repeated failure modes under review are setup-recovery, citation-grounding. When a generated briefing cites sources broadly without connecting the claim to a concrete caveat, gate, or decision boundary, reviewers should mark the citation as weak even if the source is topically related.",
+			"documentType": "review calibration"
+		},
+		{
+			"id": "S6",
+			"title": "Risk and distractor document",
+			"body": "This document records traps that make the packet realistic for eval work. Known traps include: Do not claim pilot expansion is safe without addressing setup recovery. Do not omit citation traceability when making product recommendations. Do not cite the analytics improvement as evidence that setup is solved.\n\nSeveral details in the packet are deliberately adjacent to the user request but not sufficient for a shipping recommendation. For example, a metric improvement should not automatically become a rollout recommendation, a faster path should not automatically become the default path, and a draft or generated recommendation should not be treated as an approved action.\n\nThe intended task is: Summarize adoption risks and recommend the next product-quality improvement for pilot expansion. A good answer should prioritize the evidence that changes the recommendation, identify caveats that block overconfident claims, and leave open questions where the packet does not contain enough information.",
+			"documentType": "risk log"
 		}
 	],
 	"metadata": {

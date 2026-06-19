@@ -13,7 +13,7 @@
 		"Do not treat 83% coverage as proof the notes are safe to publish.",
 		"Do not omit human approval for security, data-retention, or access-control claims."
 	],
-	"acceptedCitations": ["S1", "S2", "S3", "S4"],
+	"acceptedCitations": ["S1", "S2", "S3", "S4", "S5", "S6"],
 	"holdout": false,
 	"demoHighlight": true,
 	"failureTags": ["stale-source", "human-approval", "customer-claim-risk"],

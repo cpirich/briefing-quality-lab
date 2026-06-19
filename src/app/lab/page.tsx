@@ -143,9 +143,9 @@ export default async function LabPage() {
 							<CardBody className="space-y-3">
 								<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-3">
 									<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
-										Source excerpt
+										Source evidence
 									</p>
-									<p className="mt-1 text-sm">{featuredCase.sourceExcerpt}</p>
+									<p className="mt-1 text-sm">{featuredCase.sourceEvidence}</p>
 								</div>
 								<div className="grid gap-3 md:grid-cols-2">
 									<div className="rounded-md border border-[var(--danger-border)] bg-[var(--danger)] p-3">

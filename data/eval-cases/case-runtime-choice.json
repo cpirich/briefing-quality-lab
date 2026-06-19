@@ -14,7 +14,7 @@
 		"Do not treat public fixture safety as optional.",
 		"Do not expose holdout tuning labels in the product UI."
 	],
-	"acceptedCitations": ["S1", "S2", "S3", "S4"],
+	"acceptedCitations": ["S1", "S2", "S3", "S4", "S5", "S6"],
 	"holdout": true,
 	"demoHighlight": false,
 	"failureTags": ["runtime-choice", "public-data-safety"],

@@ -37,7 +37,7 @@ The intended product scenario is that a source packet contains authored, synthet
 
 This phase should not introduce a hidden upstream process that scans longer documents and pre-selects excerpts. That would make the eval target ambiguous: it would be unclear whether the lab is evaluating Briefing Genie, the excerpt-selection process, or both.
 
-The current schema uses `sources[].excerpt` because Phase 4 treated each source as a compact displayable snippet. For Phase 5 planning, treat that field as the source document body unless and until the schema is renamed or extended. UI previews, truncation, document drawers, chunking, and readability affordances can be designed later; they should not drive the source-packet scenario.
+The source schema uses `sources[].body` for the source document text. UI previews, truncation, document drawers, chunking, and readability affordances can be designed later; they should not drive the source-packet scenario.
 
 ## Follow-On Dataset Scale
 

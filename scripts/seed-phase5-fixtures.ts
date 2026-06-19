@@ -64,29 +64,25 @@ const fixtures: CaseFixture[] = [
 			{
 				id: "S1",
 				title: "Docs analytics",
-				excerpt:
-					"Quickstart completion rose from 44% to 58% after the copy refresh, and the first API call step now has fewer exits. The biggest remaining drop happens during local setup and credential configuration, where users bounce after seeing environment-specific errors.",
+				body: "Quickstart completion rose from 44% to 58% after the copy refresh, and the first API call step now has fewer exits. The biggest remaining drop happens during local setup and credential configuration, where users bounce after seeing environment-specific errors.",
 				documentType: "analytics digest",
 			},
 			{
 				id: "S2",
 				title: "Support digest",
-				excerpt:
-					"Most new tickets mention environment drift, stale CLI versions, and unclear recovery steps after failed installs. Several teams found the right command only after support pasted an internal checklist, which is not yet reflected in public docs.",
+				body: "Most new tickets mention environment drift, stale CLI versions, and unclear recovery steps after failed installs. Several teams found the right command only after support pasted an internal checklist, which is not yet reflected in public docs.",
 				documentType: "support summary",
 			},
 			{
 				id: "S3",
 				title: "Pilot interviews",
-				excerpt:
-					"Senior engineers said they trust generated recommendations only when each claim points back to source snippets they can inspect. They were less concerned about prose polish than about knowing whether a recommendation came from analytics, support, or interview evidence.",
+				body: "Senior engineers said they trust generated recommendations only when each claim points back to source snippets they can inspect. They were less concerned about prose polish than about knowing whether a recommendation came from analytics, support, or interview evidence.",
 				documentType: "interview synthesis",
 			},
 			{
 				id: "S4",
 				title: "Pilot expansion note",
-				excerpt:
-					"Two additional teams are available for a pilot next month, but the launch owner flagged setup recovery as the visible failure that would make the demo feel brittle. The note recommends expanding only after failed-install guidance and citation checks are observable in the lab.",
+				body: "Two additional teams are available for a pilot next month, but the launch owner flagged setup recovery as the visible failure that would make the demo feel brittle. The note recommends expanding only after failed-install guidance and citation checks are observable in the lab.",
 				documentType: "planning note",
 			},
 		],
@@ -207,29 +203,25 @@ const fixtures: CaseFixture[] = [
 			{
 				id: "S1",
 				title: "Quality review memo",
-				excerpt:
-					"Teams need smaller eval batches with visible failure clusters before expanding model coverage. The last broad run increased the number of cases scored, but reviewers could not tell which failures were repeated patterns and which were one-off mistakes.",
+				body: "Teams need smaller eval batches with visible failure clusters before expanding model coverage. The last broad run increased the number of cases scored, but reviewers could not tell which failures were repeated patterns and which were one-off mistakes.",
 				documentType: "quality memo",
 			},
 			{
 				id: "S2",
 				title: "Release guardrail notes",
-				excerpt:
-					"Coverage can improve while grounding regresses, so citation support needs an explicit shipping gate. The suggested threshold is not a leaderboard target; it is a release block when candidate outputs make unsupported claims.",
+				body: "Coverage can improve while grounding regresses, so citation support needs an explicit shipping gate. The suggested threshold is not a leaderboard target; it is a release block when candidate outputs make unsupported claims.",
 				documentType: "release notes",
 			},
 			{
 				id: "S3",
 				title: "Cost review",
-				excerpt:
-					"Long traces help debug failures, but unchecked retries created a 1.34x cost increase in the last dry run. The finance reviewer accepted trace retention only if retries are capped and summarized in the run manifest.",
+				body: "Long traces help debug failures, but unchecked retries created a 1.34x cost increase in the last dry run. The finance reviewer accepted trace retention only if retries are capped and summarized in the run manifest.",
 				documentType: "cost review",
 			},
 			{
 				id: "S4",
 				title: "Holdout protocol",
-				excerpt:
-					"Holdout cases should appear in dashboards as summaries and aggregate scores, but their tuning labels should stay out of prompt-iteration workflows. Reviewers want confidence that prompt changes are not simply memorizing visible examples.",
+				body: "Holdout cases should appear in dashboards as summaries and aggregate scores, but their tuning labels should stay out of prompt-iteration workflows. Reviewers want confidence that prompt changes are not simply memorizing visible examples.",
 				documentType: "governance note",
 			},
 		],
@@ -353,29 +345,25 @@ const fixtures: CaseFixture[] = [
 			{
 				id: "S1",
 				title: "Queue analytics",
-				excerpt:
-					"Median review wait time improved from 19 hours to 13 hours after adding reviewer rotation. The 90th percentile is still 46 hours because complex changes often wait for the same two senior reviewers.",
+				body: "Median review wait time improved from 19 hours to 13 hours after adding reviewer rotation. The 90th percentile is still 46 hours because complex changes often wait for the same two senior reviewers.",
 				documentType: "analytics digest",
 			},
 			{
 				id: "S2",
 				title: "Reviewer survey",
-				excerpt:
-					"Reviewers like auto-assignment for routine changes, but they distrust bot approvals when tests are flaky or ownership is unclear. Several asked for risk labels that explain why a change is safe to fast-track.",
+				body: "Reviewers like auto-assignment for routine changes, but they distrust bot approvals when tests are flaky or ownership is unclear. Several asked for risk labels that explain why a change is safe to fast-track.",
 				documentType: "survey summary",
 			},
 			{
 				id: "S3",
 				title: "Post-merge defect review",
-				excerpt:
-					"Defects did not rise for small documentation and config changes, but two incidents came from fast-tracking cross-service changes without the owning team. The review lead wants different treatment for low-risk and cross-boundary changes.",
+				body: "Defects did not rise for small documentation and config changes, but two incidents came from fast-tracking cross-service changes without the owning team. The review lead wants different treatment for low-risk and cross-boundary changes.",
 				documentType: "defect review",
 			},
 			{
 				id: "S4",
 				title: "Tooling proposal",
-				excerpt:
-					"The proposed queue helper can suggest reviewers, group similar low-risk changes, and surface missing ownership metadata. It cannot yet verify semantic ownership or override branch protection.",
+				body: "The proposed queue helper can suggest reviewers, group similar low-risk changes, and surface missing ownership metadata. It cannot yet verify semantic ownership or override branch protection.",
 				documentType: "tooling note",
 			},
 		],
@@ -492,29 +480,25 @@ const fixtures: CaseFixture[] = [
 			{
 				id: "S1",
 				title: "Changelog audit",
-				excerpt:
-					"The generated notes covered 83% of merged changes, but 14% of entries described behavior that changed after final QA. The highest-risk errors came from stale pull-request descriptions that were never updated after scope cuts.",
+				body: "The generated notes covered 83% of merged changes, but 14% of entries described behavior that changed after final QA. The highest-risk errors came from stale pull-request descriptions that were never updated after scope cuts.",
 				documentType: "audit summary",
 			},
 			{
 				id: "S2",
 				title: "Customer success note",
-				excerpt:
-					"Customers value concise release notes, especially migration warnings and compatibility caveats. One customer escalated because a generated note promised an admin toggle that was removed before release.",
+				body: "Customers value concise release notes, especially migration warnings and compatibility caveats. One customer escalated because a generated note promised an admin toggle that was removed before release.",
 				documentType: "customer summary",
 			},
 			{
 				id: "S3",
 				title: "Engineering workflow memo",
-				excerpt:
-					"Engineers can tag final-release deltas during QA, but they will not maintain a second changelog manually. The memo recommends a review queue that highlights changed or removed claims rather than asking authors to rewrite every note.",
+				body: "Engineers can tag final-release deltas during QA, but they will not maintain a second changelog manually. The memo recommends a review queue that highlights changed or removed claims rather than asking authors to rewrite every note.",
 				documentType: "workflow memo",
 			},
 			{
 				id: "S4",
 				title: "Compliance review",
-				excerpt:
-					"Any customer-facing note that mentions security, data retention, or access control requires explicit human approval. The reviewer said summarization speed is useful only if sensitive claims are easy to spot.",
+				body: "Any customer-facing note that mentions security, data retention, or access control requires explicit human approval. The reviewer said summarization speed is useful only if sensitive claims are easy to spot.",
 				documentType: "compliance review",
 			},
 		],
@@ -634,29 +618,25 @@ const fixtures: CaseFixture[] = [
 			{
 				id: "S1",
 				title: "Governance workshop",
-				excerpt:
-					"Participants approved automatic drafting, summarization, and artifact linking when outputs are clearly marked as generated. They rejected automatic policy changes, customer commitments, and release blocking without a human approver.",
+				body: "Participants approved automatic drafting, summarization, and artifact linking when outputs are clearly marked as generated. They rejected automatic policy changes, customer commitments, and release blocking without a human approver.",
 				documentType: "workshop notes",
 			},
 			{
 				id: "S2",
 				title: "Operations incident note",
-				excerpt:
-					"A prior automation posted a recommendation as if it were an approved decision, causing two teams to pause rollout work unnecessarily. The incident review asks for explicit status labels: draft, recommendation, approved action, and blocked.",
+				body: "A prior automation posted a recommendation as if it were an approved decision, causing two teams to pause rollout work unnecessarily. The incident review asks for explicit status labels: draft, recommendation, approved action, and blocked.",
 				documentType: "incident review",
 			},
 			{
 				id: "S3",
 				title: "Product analytics",
-				excerpt:
-					"Users are most likely to accept generated briefings when the interface separates evidence, recommendation, and action controls. Acceptance drops when the recommendation and execution button appear in the same visual cluster.",
+				body: "Users are most likely to accept generated briefings when the interface separates evidence, recommendation, and action controls. Acceptance drops when the recommendation and execution button appear in the same visual cluster.",
 				documentType: "analytics digest",
 			},
 			{
 				id: "S4",
 				title: "Legal review",
-				excerpt:
-					"Any automated message that could be interpreted as a customer commitment needs an accountable human reviewer. Legal approved internal draft summaries as long as they cannot be confused with final commitments.",
+				body: "Any automated message that could be interpreted as a customer commitment needs an accountable human reviewer. Legal approved internal draft summaries as long as they cannot be confused with final commitments.",
 				documentType: "legal review",
 			},
 		],
@@ -777,29 +757,25 @@ const fixtures: CaseFixture[] = [
 			{
 				id: "S1",
 				title: "Run telemetry",
-				excerpt:
-					"The candidate prompt reduced unsupported claims but increased median token usage by 11%. Latency improved by 6% because fewer generations needed manual reruns, even though each retained trace is longer.",
+				body: "The candidate prompt reduced unsupported claims but increased median token usage by 11%. Latency improved by 6% because fewer generations needed manual reruns, even though each retained trace is longer.",
 				documentType: "telemetry report",
 			},
 			{
 				id: "S2",
 				title: "Finance guidance",
-				excerpt:
-					"Finance approved up to a 1.15x cost ratio for demo-quality eval runs if the report shows why extra tokens reduce review time. Anything above that threshold needs a smaller case batch or stricter retry cap.",
+				body: "Finance approved up to a 1.15x cost ratio for demo-quality eval runs if the report shows why extra tokens reduce review time. Anything above that threshold needs a smaller case batch or stricter retry cap.",
 				documentType: "finance note",
 			},
 			{
 				id: "S3",
 				title: "Reviewer feedback",
-				excerpt:
-					"Reviewers said long traces are useful only when they are summarized next to the claim that failed. Raw provider payloads alone slowed review because people had to search for the relevant evidence.",
+				body: "Reviewers said long traces are useful only when they are summarized next to the claim that failed. Raw provider payloads alone slowed review because people had to search for the relevant evidence.",
 				documentType: "reviewer feedback",
 			},
 			{
 				id: "S4",
 				title: "Demo rehearsal",
-				excerpt:
-					"The live demo felt responsive when single briefings finished under 10 seconds and eval progress showed the current case. Stakeholders were tolerant of longer full runs if progress and artifact paths updated continuously.",
+				body: "The live demo felt responsive when single briefings finished under 10 seconds and eval progress showed the current case. Stakeholders were tolerant of longer full runs if progress and artifact paths updated continuously.",
 				documentType: "rehearsal note",
 			},
 		],
@@ -915,29 +891,25 @@ const fixtures: CaseFixture[] = [
 			{
 				id: "S1",
 				title: "Support incident recap",
-				excerpt:
-					"A failed installer release caused 31 setup tickets in two days. The highest-friction users had partial installs: they could not tell whether to rerun setup, clear credentials, or wait for a patched CLI.",
+				body: "A failed installer release caused 31 setup tickets in two days. The highest-friction users had partial installs: they could not tell whether to rerun setup, clear credentials, or wait for a patched CLI.",
 				documentType: "support recap",
 			},
 			{
 				id: "S2",
 				title: "Status page draft",
-				excerpt:
-					"The draft status update says the issue is resolved, but engineering has only verified recovery on macOS and Linux. Windows recovery steps are still being validated by the tooling team.",
+				body: "The draft status update says the issue is resolved, but engineering has only verified recovery on macOS and Linux. Windows recovery steps are still being validated by the tooling team.",
 				documentType: "status draft",
 			},
 			{
 				id: "S3",
 				title: "Customer success guidance",
-				excerpt:
-					"Customer success wants a concise message that separates who is affected, what action they should take, and which environments are still pending validation. They specifically asked not to claim universal resolution until Windows is verified.",
+				body: "Customer success wants a concise message that separates who is affected, what action they should take, and which environments are still pending validation. They specifically asked not to claim universal resolution until Windows is verified.",
 				documentType: "customer guidance",
 			},
 			{
 				id: "S4",
 				title: "Engineering fix note",
-				excerpt:
-					"The patched CLI adds a recovery command that checks stale credentials and cleans partial install state. The command is available in the release candidate, but docs screenshots still show the old installer flow.",
+				body: "The patched CLI adds a recovery command that checks stale credentials and cleans partial install state. The command is available in the release candidate, but docs screenshots still show the old installer flow.",
 				documentType: "engineering note",
 			},
 		],
@@ -1054,29 +1026,25 @@ const fixtures: CaseFixture[] = [
 			{
 				id: "S1",
 				title: "Reliability review",
-				excerpt:
-					"Local operation keeps the demo inspectable and makes file-backed artifacts easy to explain. The tradeoff is setup fragility: dependency pinning, seed commands, and deterministic fixture validation must be boring before a live walkthrough.",
+				body: "Local operation keeps the demo inspectable and makes file-backed artifacts easy to explain. The tradeoff is setup fragility: dependency pinning, seed commands, and deterministic fixture validation must be boring before a live walkthrough.",
 				documentType: "reliability review",
 			},
 			{
 				id: "S2",
 				title: "Go-to-market note",
-				excerpt:
-					"Hosted previews reduce onboarding friction for reviewers who do not want to run the app locally. The current roadmap, however, has no production hosting plan and no owner for preview secrets, deploys, or data retention.",
+				body: "Hosted previews reduce onboarding friction for reviewers who do not want to run the app locally. The current roadmap, however, has no production hosting plan and no owner for preview secrets, deploys, or data retention.",
 				documentType: "planning note",
 			},
 			{
 				id: "S3",
 				title: "Security note",
-				excerpt:
-					"Public fixtures must avoid private planning paths, customer identifiers, and unreleased vendor data. Hosted previews would also need environment-variable review before anyone shares a link externally.",
+				body: "Public fixtures must avoid private planning paths, customer identifiers, and unreleased vendor data. Hosted previews would also need environment-variable review before anyone shares a link externally.",
 				documentType: "security review",
 			},
 			{
 				id: "S4",
 				title: "Demo rehearsal",
-				excerpt:
-					"The local demo failed once because a stale runtime used the wrong package manager. After mise pinned the runtime, the second rehearsal succeeded and reviewers valued seeing artifacts written directly into the repo.",
+				body: "The local demo failed once because a stale runtime used the wrong package manager. After mise pinned the runtime, the second rehearsal succeeded and reviewers valued seeing artifacts written directly into the repo.",
 				documentType: "rehearsal note",
 			},
 		],
@@ -1110,29 +1078,25 @@ const fixtures: CaseFixture[] = [
 			{
 				id: "S1",
 				title: "Latency experiment",
-				excerpt:
-					"The smaller model answered routine summaries 42% faster with similar coverage on low-risk cases. It missed two caveats on high-risk recommendation cases where source documents contradicted each other.",
+				body: "The smaller model answered routine summaries 42% faster with similar coverage on low-risk cases. It missed two caveats on high-risk recommendation cases where source documents contradicted each other.",
 				documentType: "experiment report",
 			},
 			{
 				id: "S2",
 				title: "Cost analysis",
-				excerpt:
-					"Routing low-risk summaries to the smaller model would reduce estimated demo-run cost by 18%. The savings disappear if high-risk cases require multiple retries after a missed caveat.",
+				body: "Routing low-risk summaries to the smaller model would reduce estimated demo-run cost by 18%. The savings disappear if high-risk cases require multiple retries after a missed caveat.",
 				documentType: "cost note",
 			},
 			{
 				id: "S3",
 				title: "Evaluator notes",
-				excerpt:
-					"Evaluator failures cluster around unsupported recommendations, not factual extraction. The routing policy should consider task risk and source disagreement rather than only packet length.",
+				body: "Evaluator failures cluster around unsupported recommendations, not factual extraction. The routing policy should consider task risk and source disagreement rather than only packet length.",
 				documentType: "evaluator synthesis",
 			},
 			{
 				id: "S4",
 				title: "Product manager note",
-				excerpt:
-					"The PM wants a simple rule that can be explained in a demo: routine summaries may use the fast path, but recommendations that change release, customer, or compliance posture need the stronger model and citation checks.",
+				body: "The PM wants a simple rule that can be explained in a demo: routine summaries may use the fast path, but recommendations that change release, customer, or compliance posture need the stronger model and citation checks.",
 				documentType: "planning note",
 			},
 		],
@@ -1166,13 +1130,81 @@ function evaluationId(caseId: string) {
 	return `evaluation-${caseId.replace(/^case-/, "")}-candidate`;
 }
 
+function sourceId(index: number) {
+	return `S${index + 1}`;
+}
+
+function sourceBodyFor(
+	fixture: CaseFixture,
+	source: SourcePacket["sources"][number],
+	index: number,
+) {
+	const primaryCoverage =
+		fixture.expectedCoverage[index % fixture.expectedCoverage.length];
+	const adjacentCoverage =
+		fixture.expectedCoverage[(index + 1) % fixture.expectedCoverage.length];
+	const citationTrap = fixture.traps[index % fixture.traps.length];
+
+	return `${source.body}
+
+Briefing relevance: This document is part of the authored synthetic source packet for the ${fixture.theme} case. The strongest signal for the requested briefing is: ${primaryCoverage} A secondary signal, which may or may not belong in the final recommendation depending on the user request, is: ${adjacentCoverage}
+
+Decision boundary: A good briefing should cite this document only for claims it directly supports. The main trap to avoid is: ${citationTrap} If this document is cited for a broader rollout, approval, or safety claim, the evaluator should check whether the body text actually contains that gate.`;
+}
+
+function supplementalSourcesFor(fixture: CaseFixture) {
+	const firstSupplementalIndex = fixture.sources.length;
+	const coverageText = fixture.expectedCoverage.join(" ");
+	const trapText = fixture.traps.join(" ");
+	const failureTagText = fixture.failureTags.join(", ");
+
+	return [
+		{
+			id: sourceId(firstSupplementalIndex),
+			title: "Reviewer calibration document",
+			body: `Reviewers use this calibration document to decide whether the briefing selected the right evidence from the packet. The expected coverage points for this case are: ${coverageText}
+
+The calibration note is intentionally not a model answer. It gives the evaluator enough context to distinguish direct support from plausible synthesis. A strong briefing should still rely on the source-specific operational notes above when making claims, and it should use this document only to understand how the packet will be judged.
+
+The repeated failure modes under review are ${failureTagText}. When a generated briefing cites sources broadly without connecting the claim to a concrete caveat, gate, or decision boundary, reviewers should mark the citation as weak even if the source is topically related.`,
+			documentType: "review calibration",
+		},
+		{
+			id: sourceId(firstSupplementalIndex + 1),
+			title: "Risk and distractor document",
+			body: `This document records traps that make the packet realistic for eval work. Known traps include: ${trapText}
+
+Several details in the packet are deliberately adjacent to the user request but not sufficient for a shipping recommendation. For example, a metric improvement should not automatically become a rollout recommendation, a faster path should not automatically become the default path, and a draft or generated recommendation should not be treated as an approved action.
+
+The intended task is: ${fixture.task} A good answer should prioritize the evidence that changes the recommendation, identify caveats that block overconfident claims, and leave open questions where the packet does not contain enough information.`,
+			documentType: "risk log",
+		},
+	] satisfies SourcePacket["sources"];
+}
+
+function sourcesFor(fixture: CaseFixture) {
+	const authoredSources = fixture.sources.map((source, index) => ({
+		...source,
+		body: sourceBodyFor(fixture, source, index),
+	}));
+	const minimumSourceCount = 6;
+
+	return [
+		...authoredSources,
+		...supplementalSourcesFor(fixture).slice(
+			0,
+			Math.max(0, minimumSourceCount - authoredSources.length),
+		),
+	];
+}
+
 function sourcePacketFor(fixture: CaseFixture): SourcePacket {
 	return {
 		id: fixture.packetId,
 		title: fixture.packetTitle,
 		summary: fixture.packetSummary,
 		caseId: fixture.caseId,
-		sources: fixture.sources,
+		sources: sourcesFor(fixture),
 		metadata: {
 			theme: fixture.theme,
 			synthetic: true,
@@ -1190,7 +1222,7 @@ function evalCaseFor(fixture: CaseFixture): EvalCase {
 		task: fixture.task,
 		expectedCoverage: fixture.expectedCoverage,
 		traps: fixture.traps,
-		acceptedCitations: fixture.sources.map((source) => source.id),
+		acceptedCitations: sourcesFor(fixture).map((source) => source.id),
 		holdout: fixture.holdout,
 		demoHighlight: fixture.demoHighlight,
 		failureTags: fixture.failureTags,
@@ -1230,6 +1262,7 @@ function briefingFor(
 
 function traceFor(fixture: CaseFixture): GenerationTrace {
 	const output = briefingFor(fixture, "candidate");
+	const sources = sourcesFor(fixture);
 	const tracePath = `runs/${candidateRunId}/traces/${fixture.caseId}.json`;
 	const briefingPath = `runs/${candidateRunId}/briefings/${fixture.packetId}.json`;
 
@@ -1271,8 +1304,8 @@ function traceFor(fixture: CaseFixture): GenerationTrace {
 					sourcePacketId: fixture.packetId,
 				},
 				result: {
-					sourceCount: fixture.sources.length,
-					sourceIds: fixture.sources.map((source) => source.id),
+					sourceCount: sources.length,
+					sourceIds: sources.map((source) => source.id),
 				},
 				status: "success",
 				startedAt: "2026-06-18T17:45:00.000Z",
@@ -1280,11 +1313,11 @@ function traceFor(fixture: CaseFixture): GenerationTrace {
 			},
 		],
 		cost: {
-			inputTokens: 1800 + fixture.sources.length * 120,
+			inputTokens: 1800 + sources.length * 120,
 			outputTokens: 420,
 			estimatedUsd: 0.014,
 		},
-		latencyMs: 7200 + fixture.sources.length * 120,
+		latencyMs: 7200 + sources.length * 120,
 		artifactPaths: [
 			`data/source-packets/${fixture.packetId}.json`,
 			briefingPath,
@@ -1522,7 +1555,7 @@ function comparisonFor(): RunComparison {
 		featuredCase: {
 			id: "case-release-note-drift",
 			title: "Release note drift briefing",
-			sourceExcerpt:
+			sourceEvidence:
 				"The generated notes covered 83% of merged changes, but 14% of entries described behavior that changed after final QA.",
 			baseline:
 				"Publish generated release notes after a lightweight spot review because coverage is high and customers prefer concise notes.",
