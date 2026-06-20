@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { getEvalRun, startEvalRun } from "~/lab/eval-runs";
 import { compareRuns, listArtifacts, listEvalCases } from "~/run-store";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
@@ -47,5 +48,29 @@ export const labRouter = createTRPCRouter({
 		)
 		.query(({ input }) => {
 			return compareRuns(input);
+		}),
+
+	startEvalRun: publicProcedure
+		.input(
+			z
+				.object({
+					caseIds: z.array(z.string().min(1)).optional(),
+					includeHoldouts: z.boolean().optional(),
+					provider: z.literal("local").optional(),
+				})
+				.optional(),
+		)
+		.mutation(({ input }) => {
+			return startEvalRun(input);
+		}),
+
+	getEvalRun: publicProcedure
+		.input(
+			z.object({
+				jobId: z.string().min(1),
+			}),
+		)
+		.query(({ input }) => {
+			return getEvalRun(input.jobId);
 		}),
 });

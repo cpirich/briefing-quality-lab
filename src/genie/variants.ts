@@ -7,7 +7,6 @@ export const localExtractiveVariant: GenerationVariant =
 		provider: "local",
 		model: "deterministic-extractive",
 		promptVersion: "briefing-genie-v1",
-		temperature: 0,
 		maxOutputTokens: 900,
 	});
 
@@ -18,7 +17,6 @@ export function openAIResponsesVariant(modelName: string): GenerationVariant {
 		provider: "openai",
 		model: modelName,
 		promptVersion: "briefing-genie-v1",
-		temperature: 0.2,
 		maxOutputTokens: 1200,
 	});
 }

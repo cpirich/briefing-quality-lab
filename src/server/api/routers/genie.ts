@@ -52,6 +52,7 @@ export const genieRouter = createTRPCRouter({
 			z.object({
 				sourcePacketId: z.string().min(1),
 				userRequest: z.string().min(1).optional(),
+				provider: z.enum(["auto", "local", "openai"]).optional(),
 			}),
 		)
 		.mutation(async ({ input }) => {
@@ -69,6 +70,7 @@ export const genieRouter = createTRPCRouter({
 				userRequest:
 					input.userRequest ??
 					`Generate a concise strategy briefing for ${sourcePacket.title}.`,
+				provider: input.provider,
 			});
 		}),
 });

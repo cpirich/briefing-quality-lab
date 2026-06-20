@@ -70,7 +70,7 @@ Add a provider adapter behind the shared service:
 
 - keep provider selection in a small adapter layer rather than route code
 - use structured output validated by Zod
-- log model name, provider, temperature, token counts, estimated cost, latency, tool calls, tool results, provider-exposed trace summaries, and errors
+- log model name, provider, generation settings exposed by the provider, token counts, estimated cost, latency, tool calls, tool results, provider-exposed trace summaries, and errors
 - fail closed with a clear error when required API environment variables are missing
 - preserve the deterministic local generator for offline demos and tests
 

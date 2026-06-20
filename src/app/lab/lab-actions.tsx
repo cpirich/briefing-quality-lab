@@ -4,9 +4,20 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "~/components/button";
+import { api } from "~/trpc/react";
 
 export function LabActions() {
 	const [status, setStatus] = useState("Seeded artifacts loaded.");
+	const startEvalRun = api.lab.startEvalRun.useMutation({
+		onSuccess: (job) => {
+			setStatus(
+				`Started ${job.provider} generation run ${job.runId}; writing ${job.totalCases || "visible"} cases to runs/.`,
+			);
+		},
+		onError: (error) => {
+			setStatus(error.message);
+		},
+	});
 
 	return (
 		<div className="grid gap-2">
@@ -18,12 +29,14 @@ export function LabActions() {
 					Open Genie
 				</Link>
 				<Button
-					onClick={() =>
-						setStatus("Seeded eval run preview refreshed for latest variant.")
-					}
+					disabled={startEvalRun.isPending}
+					onClick={() => {
+						setStatus("Starting local generation run...");
+						startEvalRun.mutate({ provider: "local" });
+					}}
 					type="button"
 				>
-					Run evals
+					{startEvalRun.isPending ? "Starting..." : "Run evals"}
 				</Button>
 				<Button
 					onClick={() =>

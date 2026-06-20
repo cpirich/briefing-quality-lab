@@ -8,6 +8,7 @@
 - Use the shadcn CLI, or a shadcn MCP server when it materially helps with browsing, searching, or installing registry components. Skip the MCP path when a simple local component or direct CLI command is faster.
 - For this app's dashboard UX, favor dense operational surfaces: tables, tabs, badges, metric summaries, diff views, source/eval artifact links, and clear action controls over marketing-style landing-page sections.
 - Keep the app TypeScript-only for the main demo path. Use Zod to make LLM communication, eval cases, evaluator outputs, and persisted artifacts type-safe at runtime and via `z.infer`.
+- Prefer `interface` for named object shapes in TypeScript. Use `type` for unions, intersections, mapped/conditional types, and `z.infer` aliases.
 - Keep the core app action fast: generating one briefing should feel quick and bounded. Spend the visual complexity on the lab views that show run progress, score deltas, failures, citations, and before/after evidence during a demo.
 - Use clear demo nomenclature: "Briefing Genie" is the fast briefing-generation product, and "Briefing Genie Improvement Lab" is the eval/experiment dashboard for improving that product.
 - Keep Briefing Genie and the Improvement Lab in the same repo/app, but separate them by route, page title, and visual treatment so they are easy to distinguish in browser tabs and during demos.

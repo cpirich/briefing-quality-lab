@@ -93,7 +93,6 @@ export const GenerationVariantSchema = z.object({
 	provider: z.string().min(1),
 	model: z.string().min(1),
 	promptVersion: fixtureIdSchema,
-	temperature: z.number().min(0).optional(),
 	maxOutputTokens: z.number().int().positive().optional(),
 });
 
@@ -207,7 +206,7 @@ export const RunManifestSchema = z.object({
 	status: z.enum(["seeded", "running", "complete", "failed"]),
 	gitRef: z.string().min(1),
 	command: z.string().min(1),
-	caseIds: z.array(fixtureIdSchema).min(1),
+	caseIds: z.array(fixtureIdSchema),
 	aggregateMetrics: z.object({
 		overall: z.number().min(0).max(1),
 		grounding: z.number().min(0).max(1),
@@ -228,6 +227,7 @@ export const RunManifestSchema = z.object({
 		}),
 	),
 	artifactPaths: z.array(artifactPathSchema).min(1),
+	error: z.string().min(1).optional(),
 });
 
 export const MetricToneSchema = z.enum(["green", "blue", "amber", "red"]);
