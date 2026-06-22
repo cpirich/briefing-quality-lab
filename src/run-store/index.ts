@@ -64,6 +64,25 @@ interface CaseScoreSummary {
 	artifactPath: string;
 }
 
+interface CaseArtifactDetail {
+	title: string;
+	summary: string;
+	claims: Array<{
+		text: string;
+		citations: string[];
+	}>;
+	openQuestions: string[];
+	recommendation: string;
+	rubricEvidence: string[];
+	citationSupport: Array<{
+		citation: string;
+		supported: boolean;
+		note: string;
+	}>;
+	evaluatorNote: string;
+	artifactPaths: string[];
+}
+
 export interface CaseBreakdownEntry {
 	caseId: string;
 	title: string;
@@ -79,6 +98,8 @@ export interface CaseBreakdownEntry {
 		baselineRecommendation: string;
 		candidateRecommendation: string;
 		evaluatorNote: string;
+		baselineDetail: CaseArtifactDetail | null;
+		candidateDetail: CaseArtifactDetail | null;
 	};
 }
 
@@ -406,6 +427,27 @@ function scoreDelta(
 	return Math.round((candidate[metric] - baseline[metric]) * 100) / 100;
 }
 
+function caseArtifactDetailFor(
+	briefing: BriefingOutput | undefined,
+	evaluatorOutput: EvaluatorOutput | undefined,
+): CaseArtifactDetail | null {
+	if (!briefing && !evaluatorOutput) {
+		return null;
+	}
+
+	return {
+		title: briefing?.title ?? "No briefing title available",
+		summary: briefing?.summary ?? "No briefing summary available.",
+		claims: briefing?.claims ?? [],
+		openQuestions: briefing?.openQuestions ?? [],
+		recommendation: briefing?.recommendation ?? "No recommendation available.",
+		rubricEvidence: evaluatorOutput?.rubricEvidence ?? [],
+		citationSupport: evaluatorOutput?.citationSupport ?? [],
+		evaluatorNote: evaluatorOutput?.notes ?? "No evaluator note available.",
+		artifactPaths: evaluatorOutput?.artifactPaths ?? [],
+	};
+}
+
 export async function listCaseBreakdown(input?: {
 	baselineRunId?: string;
 	candidateRunId?: string;
@@ -444,6 +486,8 @@ export async function listCaseBreakdown(input?: {
 		const evalCase = evalCaseById.get(caseId);
 		const baseline = caseScoreSummaryFor(baselineByCaseId.get(caseId));
 		const candidate = caseScoreSummaryFor(candidateByCaseId.get(caseId));
+		const baselineEvaluation = baselineByCaseId.get(caseId);
+		const candidateEvaluation = candidateByCaseId.get(caseId);
 		const baselineBriefing = baselineBriefingByCaseId.get(caseId);
 		const candidateBriefing = candidateBriefingByCaseId.get(caseId);
 
@@ -468,9 +512,17 @@ export async function listCaseBreakdown(input?: {
 					candidateBriefing?.recommendation ??
 					"No reference recommendation available.",
 				evaluatorNote:
-					candidateByCaseId.get(caseId)?.notes ??
-					baselineByCaseId.get(caseId)?.notes ??
+					candidateEvaluation?.notes ??
+					baselineEvaluation?.notes ??
 					"No evaluator note available.",
+				baselineDetail: caseArtifactDetailFor(
+					baselineBriefing,
+					baselineEvaluation,
+				),
+				candidateDetail: caseArtifactDetailFor(
+					candidateBriefing,
+					candidateEvaluation,
+				),
 			},
 		};
 	});
