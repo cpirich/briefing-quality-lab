@@ -52,6 +52,9 @@ export const genieRouter = createTRPCRouter({
 			z.object({
 				sourcePacketId: z.string().min(1),
 				userRequest: z.string().min(1).optional(),
+				// This demo app is scoped to local dev-mode runs. If this endpoint is
+				// exposed in a deployed environment, OpenAI-backed generation must move
+				// behind authentication and usage controls before accepting this input.
 				provider: z.enum(["auto", "local", "openai"]).optional(),
 			}),
 		)
