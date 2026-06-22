@@ -41,7 +41,9 @@ The source schema uses `sources[].body` for the source document text. UI preview
 
 ## Follow-On Dataset Scale
 
-After this Phase 5 PR is reviewed and merged, create a separate PR to grow the dataset to 25-40 cases before using the lab for serious prompt, model, or evaluator improvement claims.
+After this Phase 5 PR is reviewed and merged, use [t7-demo-realistic-eval-expansion-plan.md](./t7-demo-realistic-eval-expansion-plan.md) to decide whether and how to grow the dataset to 25-40 cases before using the lab for serious prompt, model, or evaluator improvement claims.
+
+The follow-on expansion is intentionally deferred until it is selected as the active slice. Do not bulk-generate placeholder cases just to hit the target count; new packets should match the realism and review bar of the current curated corpus.
 
 The follow-on expansion should:
 

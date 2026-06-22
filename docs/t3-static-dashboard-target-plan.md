@@ -12,7 +12,7 @@ Replace the stock T3 first screen with two route-specific surfaces that make the
 
 - `/` redirects to `/lab`.
 - `/lab` renders the Briefing Genie Improvement Lab with metric summaries, run comparison, failure clusters, featured case diff, artifact trail, and compact Genie action.
-- `/genie` renders the Briefing Genie product surface with a source-packet selector, source document previews, seeded briefing preview, citations, open questions, and recommendation.
+- `/genie` renders the Briefing Genie product surface with a source-packet selector, source document previews, a generate action, and a result panel that stays empty until a briefing is generated.
 - Shared fixture-shaped data lives in TypeScript so the next slice can migrate it to committed `data/` fixtures and Zod schemas without changing the page structure.
 - Route metadata distinguishes `Briefing Genie` from `Briefing Genie Improvement Lab`.
 
