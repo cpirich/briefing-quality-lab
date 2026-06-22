@@ -87,6 +87,15 @@ export const BriefingOutputSchema = z.object({
 	}),
 });
 
+export const GenerationVariantSchema = z.object({
+	id: fixtureIdSchema,
+	label: z.string().min(1),
+	provider: z.string().min(1),
+	model: z.string().min(1),
+	promptVersion: fixtureIdSchema,
+	maxOutputTokens: z.number().int().positive().optional(),
+});
+
 export const ToolCallTraceSchema = z.object({
 	id: fixtureIdSchema,
 	toolName: z.string().min(1),
@@ -126,7 +135,7 @@ export const GenerationTraceSchema = z
 		cost: z.object({
 			inputTokens: z.number().int().nonnegative(),
 			outputTokens: z.number().int().nonnegative(),
-			estimatedUsd: z.number().nonnegative(),
+			estimatedUsd: z.number().nonnegative().nullable(),
 		}),
 		latencyMs: z.number().int().nonnegative(),
 		artifactPaths: z.array(artifactPathSchema).min(1),
@@ -197,7 +206,7 @@ export const RunManifestSchema = z.object({
 	status: z.enum(["seeded", "running", "complete", "failed"]),
 	gitRef: z.string().min(1),
 	command: z.string().min(1),
-	caseIds: z.array(fixtureIdSchema).min(1),
+	caseIds: z.array(fixtureIdSchema),
 	aggregateMetrics: z.object({
 		overall: z.number().min(0).max(1),
 		grounding: z.number().min(0).max(1),
@@ -218,6 +227,7 @@ export const RunManifestSchema = z.object({
 		}),
 	),
 	artifactPaths: z.array(artifactPathSchema).min(1),
+	error: z.string().min(1).optional(),
 });
 
 export const MetricToneSchema = z.enum(["green", "blue", "amber", "red"]);
@@ -284,6 +294,7 @@ export const ArtifactEntrySchema = z.object({
 export type SourcePacket = z.infer<typeof SourcePacketSchema>;
 export type EvalCase = z.infer<typeof EvalCaseSchema>;
 export type BriefingOutput = z.infer<typeof BriefingOutputSchema>;
+export type GenerationVariant = z.infer<typeof GenerationVariantSchema>;
 export type GenerationTrace = z.infer<typeof GenerationTraceSchema>;
 export type EvaluatorOutput = z.infer<typeof EvaluatorOutputSchema>;
 export type RunManifest = z.infer<typeof RunManifestSchema>;
