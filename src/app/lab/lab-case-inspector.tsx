@@ -1,10 +1,10 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 
 import { Badge } from "~/components/badge";
 import { Card, CardBody, CardHeader } from "~/components/card";
-import { NativeSelect } from "~/components/native-select";
 import { cn } from "~/lib/utils";
 import type { CaseBreakdownEntry } from "~/run-store";
 
@@ -51,10 +51,6 @@ function changeTone(value: number | null, changeLabel: string) {
 	return changeLabel === "Gap" ? targetGapTone(value) : deltaTone(value);
 }
 
-function metricBadgeLabel(value: string, changeLabel: string) {
-	return changeLabel === "Gap" ? `gap ${value}` : value;
-}
-
 interface LabCaseInspectorProps {
 	baselineLabel: string;
 	candidateLabel: string;
@@ -96,192 +92,319 @@ function DetailList({ empty, items }: { empty: string; items: string[] }) {
 	);
 }
 
-function CaseArtifactPanel({
-	detail,
+function comparisonToneClasses(tone: "danger" | "success") {
+	return tone === "danger"
+		? {
+				border: "border-[var(--danger-border)]",
+				background: "bg-[var(--danger)]",
+				foreground: "text-[var(--danger-foreground)]",
+			}
+		: {
+				border: "border-[var(--success-border)]",
+				background: "bg-[var(--success)]",
+				foreground: "text-[var(--success-foreground)]",
+			};
+}
+
+function ComparisonCell({
+	children,
 	label,
 	tone,
 }: {
-	detail: CaseArtifactDetail | null;
+	children: ReactNode;
 	label: string;
 	tone: "danger" | "success";
 }) {
-	const toneClasses =
-		tone === "danger"
-			? {
-					border: "border-[var(--danger-border)]",
-					background: "bg-[var(--danger)]",
-					foreground: "text-[var(--danger-foreground)]",
-				}
-			: {
-					border: "border-[var(--success-border)]",
-					background: "bg-[var(--success)]",
-					foreground: "text-[var(--success-foreground)]",
-				};
-
-	if (!detail) {
-		return (
-			<div
-				className={cn(
-					"rounded-md border p-3",
-					toneClasses.border,
-					toneClasses.background,
-				)}
-			>
-				<p
-					className={cn(
-						"font-medium text-xs uppercase",
-						toneClasses.foreground,
-					)}
-				>
-					{label}
-				</p>
-				<p className="mt-2 text-sm">No case artifact detail available.</p>
-			</div>
-		);
-	}
+	const toneClasses = comparisonToneClasses(tone);
 
 	return (
 		<div
 			className={cn(
-				"space-y-3 rounded-md border p-3",
+				"rounded-md border p-3",
 				toneClasses.border,
 				toneClasses.background,
 			)}
 		>
-			<div>
-				<p
-					className={cn(
-						"font-medium text-xs uppercase",
-						toneClasses.foreground,
-					)}
-				>
-					{label}
-				</p>
-				<h3 className="mt-1 font-semibold text-sm">{detail.title}</h3>
-				<p className="mt-1 text-sm">{detail.summary}</p>
-			</div>
+			<p
+				className={cn("font-medium text-xs uppercase", toneClasses.foreground)}
+			>
+				{label}
+			</p>
+			<div className="mt-2">{children}</div>
+		</div>
+	);
+}
 
-			<div>
-				<p
-					className={cn(
-						"font-medium text-xs uppercase",
-						toneClasses.foreground,
-					)}
-				>
-					Recommendation
-				</p>
-				<p className="mt-1 text-sm">{detail.recommendation}</p>
+function BriefingComparisonSection({
+	baseline,
+	baselineLabel,
+	candidate,
+	candidateLabel,
+	children,
+	heading,
+}: {
+	baseline: CaseArtifactDetail | null;
+	baselineLabel: string;
+	candidate: CaseArtifactDetail | null;
+	candidateLabel: string;
+	children: (detail: CaseArtifactDetail | null) => ReactNode;
+	heading: string;
+}) {
+	return (
+		<section className="space-y-2">
+			<h3 className="font-semibold text-sm">{heading}</h3>
+			<div className="grid gap-3 lg:grid-cols-2">
+				<ComparisonCell label={baselineLabel} tone="danger">
+					{children(baseline)}
+				</ComparisonCell>
+				<ComparisonCell label={candidateLabel} tone="success">
+					{children(candidate)}
+				</ComparisonCell>
 			</div>
+		</section>
+	);
+}
 
-			<div>
-				<p
-					className={cn(
-						"font-medium text-xs uppercase",
-						toneClasses.foreground,
-					)}
+function ClaimsList({ detail }: { detail: CaseArtifactDetail | null }) {
+	if (!detail) {
+		return <p className="text-sm">No briefing artifact available.</p>;
+	}
+
+	if (detail.claims.length === 0) {
+		return (
+			<p className="text-[var(--muted-foreground)] text-xs">
+				No claims available.
+			</p>
+		);
+	}
+
+	return (
+		<div className="space-y-2">
+			{detail.claims.map((claim) => (
+				<div
+					className="rounded-md border border-[var(--border)] bg-[var(--card)] p-2"
+					key={`${claim.text}-${claim.citations.join("-")}`}
 				>
-					Claims and citations
-				</p>
-				<div className="mt-1 space-y-2">
-					{detail.claims.length === 0 ? (
-						<p className="text-[var(--muted-foreground)] text-xs">
-							No claims available.
-						</p>
-					) : (
-						detail.claims.map((claim) => (
-							<div
-								className="rounded-md border border-[var(--border)] bg-[var(--card)] p-2"
-								key={`${claim.text}-${claim.citations.join("-")}`}
-							>
-								<p className="text-sm">{claim.text}</p>
-								<CitationPills citations={claim.citations} />
-							</div>
-						))
-					)}
+					<p className="text-sm">{claim.text}</p>
+					<CitationPills citations={claim.citations} />
 				</div>
-			</div>
+			))}
+		</div>
+	);
+}
 
-			<div>
-				<p
-					className={cn(
-						"font-medium text-xs uppercase",
-						toneClasses.foreground,
-					)}
+function CitationSupportNotes({
+	detail,
+}: {
+	detail: CaseArtifactDetail | null;
+}) {
+	if (!detail) {
+		return <p className="text-sm">No evaluator artifact available.</p>;
+	}
+
+	if (detail.citationSupport.length === 0) {
+		return (
+			<p className="text-[var(--muted-foreground)] text-xs">
+				No citation support notes available.
+			</p>
+		);
+	}
+
+	return (
+		<div className="space-y-2">
+			{detail.citationSupport.map((support) => (
+				<div
+					className="rounded-md border border-[var(--border)] bg-[var(--card)] p-2"
+					key={`${support.citation}-${support.note}`}
 				>
-					Open questions
-				</p>
-				<div className="mt-1">
-					<DetailList
-						empty="No open questions available."
-						items={detail.openQuestions}
-					/>
+					<div className="flex flex-wrap items-center gap-2">
+						<span className="font-medium text-sm">{support.citation}</span>
+						<Badge tone={support.supported ? "green" : "amber"}>
+							{support.supported ? "accepted" : "not accepted"}
+						</Badge>
+					</div>
+					<p className="mt-1 text-sm">{support.note}</p>
 				</div>
-			</div>
+			))}
+		</div>
+	);
+}
 
+function ArtifactPathList({ detail }: { detail: CaseArtifactDetail | null }) {
+	if (!detail) {
+		return <p>No evaluator artifact available.</p>;
+	}
+
+	if (detail.artifactPaths.length === 0) {
+		return <p>No artifact paths available.</p>;
+	}
+
+	return (
+		<div className="space-y-1 font-mono text-[var(--muted-foreground)] text-xs">
+			{detail.artifactPaths.map((artifactPath) => (
+				<p key={artifactPath}>{artifactPath}</p>
+			))}
+		</div>
+	);
+}
+
+function EvaluatorOutputPanel({
+	baselineDetail,
+	baselineLabel,
+	candidateDetail,
+	candidateLabel,
+}: {
+	baselineDetail: CaseArtifactDetail | null;
+	baselineLabel: string;
+	candidateDetail: CaseArtifactDetail | null;
+	candidateLabel: string;
+}) {
+	return (
+		<div className="space-y-3">
 			<div>
-				<p
-					className={cn(
-						"font-medium text-xs uppercase",
-						toneClasses.foreground,
-					)}
-				>
+				<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
 					Evaluator evidence
 				</p>
-				<div className="mt-1">
-					<DetailList
-						empty="No evaluator evidence available."
-						items={detail.rubricEvidence}
-					/>
+				<div className="grid gap-3 lg:grid-cols-2">
+					<ComparisonCell label={baselineLabel} tone="danger">
+						<DetailList
+							empty="No evaluator evidence available."
+							items={baselineDetail?.rubricEvidence ?? []}
+						/>
+					</ComparisonCell>
+					<ComparisonCell label={candidateLabel} tone="success">
+						<DetailList
+							empty="No evaluator evidence available."
+							items={candidateDetail?.rubricEvidence ?? []}
+						/>
+					</ComparisonCell>
 				</div>
 			</div>
 
 			<div>
-				<p
-					className={cn(
-						"font-medium text-xs uppercase",
-						toneClasses.foreground,
-					)}
-				>
-					Citation support notes
+				<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
+					Citation support checks
 				</p>
-				<div className="mt-1 space-y-1.5">
-					{detail.citationSupport.length === 0 ? (
-						<p className="text-[var(--muted-foreground)] text-xs">
-							No citation support notes available.
-						</p>
-					) : (
-						detail.citationSupport.map((support) => (
-							<p
-								className="text-sm"
-								key={`${support.citation}-${support.note}`}
-							>
-								<span className="font-medium">{support.citation}</span>:{" "}
-								{support.note}
-							</p>
-						))
-					)}
+				<div className="grid gap-3 lg:grid-cols-2">
+					<ComparisonCell label={baselineLabel} tone="danger">
+						<CitationSupportNotes detail={baselineDetail} />
+					</ComparisonCell>
+					<ComparisonCell label={candidateLabel} tone="success">
+						<CitationSupportNotes detail={candidateDetail} />
+					</ComparisonCell>
 				</div>
 			</div>
+		</div>
+	);
+}
 
-			<div>
-				<p
-					className={cn(
-						"font-medium text-xs uppercase",
-						toneClasses.foreground,
-					)}
-				>
-					Artifacts
-				</p>
-				<div className="mt-1 space-y-1 font-mono text-[var(--muted-foreground)] text-xs">
-					{detail.artifactPaths.length === 0 ? (
-						<p>No artifact paths available.</p>
+function ArtifactComparisonPanel({
+	baselineDetail,
+	baselineLabel,
+	candidateDetail,
+	candidateLabel,
+}: {
+	baselineDetail: CaseArtifactDetail | null;
+	baselineLabel: string;
+	candidateDetail: CaseArtifactDetail | null;
+	candidateLabel: string;
+}) {
+	return (
+		<div className="grid gap-3 lg:grid-cols-2">
+			<ComparisonCell label={baselineLabel} tone="danger">
+				<ArtifactPathList detail={baselineDetail} />
+			</ComparisonCell>
+			<ComparisonCell label={candidateLabel} tone="success">
+				<ArtifactPathList detail={candidateDetail} />
+			</ComparisonCell>
+		</div>
+	);
+}
+
+function EmptyBriefingValue({ label }: { label: string }) {
+	return (
+		<p className="text-[var(--muted-foreground)] text-sm">
+			No {label} available.
+		</p>
+	);
+}
+
+function CaseArtifactPanel({
+	baselineDetail,
+	baselineLabel,
+	candidateDetail,
+	candidateLabel,
+}: {
+	baselineDetail: CaseArtifactDetail | null;
+	baselineLabel: string;
+	candidateDetail: CaseArtifactDetail | null;
+	candidateLabel: string;
+}) {
+	return (
+		<div className="space-y-4">
+			<BriefingComparisonSection
+				baseline={baselineDetail}
+				baselineLabel={baselineLabel}
+				candidate={candidateDetail}
+				candidateLabel={candidateLabel}
+				heading="Title and summary"
+			>
+				{(detail) =>
+					detail ? (
+						<div>
+							<h4 className="font-semibold text-sm">{detail.title}</h4>
+							<p className="mt-1 text-sm">{detail.summary}</p>
+						</div>
 					) : (
-						detail.artifactPaths.map((artifactPath) => (
-							<p key={artifactPath}>{artifactPath}</p>
-						))
-					)}
-				</div>
-			</div>
+						<EmptyBriefingValue label="briefing summary" />
+					)
+				}
+			</BriefingComparisonSection>
+
+			<BriefingComparisonSection
+				baseline={baselineDetail}
+				baselineLabel={baselineLabel}
+				candidate={candidateDetail}
+				candidateLabel={candidateLabel}
+				heading="Recommendation"
+			>
+				{(detail) =>
+					detail ? (
+						<p className="text-sm">{detail.recommendation}</p>
+					) : (
+						<EmptyBriefingValue label="recommendation" />
+					)
+				}
+			</BriefingComparisonSection>
+
+			<BriefingComparisonSection
+				baseline={baselineDetail}
+				baselineLabel={baselineLabel}
+				candidate={candidateDetail}
+				candidateLabel={candidateLabel}
+				heading="Claims and citations"
+			>
+				{(detail) => <ClaimsList detail={detail} />}
+			</BriefingComparisonSection>
+
+			<BriefingComparisonSection
+				baseline={baselineDetail}
+				baselineLabel={baselineLabel}
+				candidate={candidateDetail}
+				candidateLabel={candidateLabel}
+				heading="Open questions"
+			>
+				{(detail) =>
+					detail ? (
+						<DetailList
+							empty="No open questions available."
+							items={detail.openQuestions}
+						/>
+					) : (
+						<EmptyBriefingValue label="open questions" />
+					)
+				}
+			</BriefingComparisonSection>
 		</div>
 	);
 }
@@ -312,100 +435,9 @@ export function LabCaseInspector({
 		<div className="grid gap-4">
 			<Card>
 				<CardHeader>
-					<div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-center">
-						<div>
-							<h2 className="font-semibold text-base">Inspect Case</h2>
-							<p className="text-[var(--muted-foreground)] text-sm">
-								Use a case lens to inspect score variation, recommendations, and
-								per-case artifacts.
-							</p>
-						</div>
-						<label className="grid gap-1.5" htmlFor="lab-case-picker">
-							<span className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
-								Case
-							</span>
-							<NativeSelect
-								aria-label="Inspect case"
-								id="lab-case-picker"
-								onChange={(event) => setSelectedCaseId(event.target.value)}
-								value={selectedCase.caseId}
-							>
-								{caseBreakdown.map((entry) => (
-									<option key={entry.caseId} value={entry.caseId}>
-										{entry.title}
-									</option>
-								))}
-							</NativeSelect>
-						</label>
-					</div>
-				</CardHeader>
-				<CardBody>
-					<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-						<div className="rounded-md border border-[var(--border)] p-3">
-							<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
-								{baselineLabel} score
-							</p>
-							<p className="mt-2 font-semibold text-2xl">
-								{formatScore(selectedCase.baseline?.overall)}
-							</p>
-							<p className="text-[var(--muted-foreground)] text-xs">
-								citations {formatScore(selectedCase.baseline?.citationSupport)}
-							</p>
-						</div>
-						<div className="rounded-md border border-[var(--border)] p-3">
-							<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
-								{candidateLabel} score
-							</p>
-							<p className="mt-2 font-semibold text-2xl">
-								{formatScore(selectedCase.candidate?.overall)}
-							</p>
-							<p className="text-[var(--muted-foreground)] text-xs">
-								citations {formatScore(selectedCase.candidate?.citationSupport)}
-							</p>
-						</div>
-						<div className="rounded-md border border-[var(--border)] p-3">
-							<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
-								Overall {changeLabelLower}
-							</p>
-							<Badge
-								className="mt-2"
-								tone={changeTone(selectedCase.delta.overall, changeLabel)}
-							>
-								{metricBadgeLabel(
-									formatDelta(selectedCase.delta.overall),
-									changeLabel,
-								)}
-							</Badge>
-						</div>
-						<div className="rounded-md border border-[var(--border)] p-3">
-							<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
-								Citation {changeLabelLower}
-							</p>
-							<Badge
-								className="mt-2"
-								tone={changeTone(
-									selectedCase.delta.citationSupport,
-									changeLabel,
-								)}
-							>
-								{metricBadgeLabel(
-									formatDelta(selectedCase.delta.citationSupport),
-									changeLabel,
-								)}
-							</Badge>
-						</div>
-					</div>
-					<p className="mt-3 text-[var(--muted-foreground)] text-xs">
-						{selectedCase.failureTags.join(", ") || "No planned themes"}
-					</p>
-				</CardBody>
-			</Card>
-
-			<Card>
-				<CardHeader>
 					<h2 className="font-semibold text-base">Case Breakdown</h2>
 					<p className="text-[var(--muted-foreground)] text-sm">
-						Per-case evaluator scores from the compared run artifacts.
+						Select a row to inspect that case in the diff below.
 					</p>
 				</CardHeader>
 				<CardBody>
@@ -423,7 +455,6 @@ export function LabCaseInspector({
 									<th className="px-3 py-2 font-medium">
 										Citation {changeLabelLower}
 									</th>
-									<th className="px-3 py-2 font-medium">Evaluator artifacts</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -432,20 +463,25 @@ export function LabCaseInspector({
 
 									return (
 										<tr
+											aria-selected={isSelected}
 											className={cn(
-												"border-[var(--border)] border-t align-top",
+												"cursor-pointer border-[var(--border)] border-t align-top transition-colors hover:bg-[var(--muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ring)] focus-visible:outline-offset-[-2px]",
 												isSelected && "bg-[var(--info)]",
 											)}
 											key={entry.caseId}
+											onClick={() => setSelectedCaseId(entry.caseId)}
+											onKeyDown={(event) => {
+												if (event.key === "Enter" || event.key === " ") {
+													event.preventDefault();
+													setSelectedCaseId(entry.caseId);
+												}
+											}}
+											tabIndex={0}
 										>
 											<td className="max-w-56 px-3 py-2">
-												<button
-													className="text-left font-medium text-[var(--foreground)] underline-offset-2 hover:underline"
-													onClick={() => setSelectedCaseId(entry.caseId)}
-													type="button"
-												>
+												<p className="font-medium text-[var(--foreground)]">
 													{entry.title}
-												</button>
+												</p>
 												<p className="mt-1 font-mono text-[var(--muted-foreground)] text-xs">
 													{entry.caseId}
 												</p>
@@ -488,12 +524,6 @@ export function LabCaseInspector({
 													{formatDelta(entry.delta.citationSupport)}
 												</Badge>
 											</td>
-											<td className="max-w-72 px-3 py-2 font-mono text-[var(--muted-foreground)] text-xs">
-												<p>{entry.baseline?.artifactPath ?? "n/a"}</p>
-												<p className="mt-1">
-													{entry.candidate?.artifactPath ?? "n/a"}
-												</p>
-											</td>
 										</tr>
 									);
 								})}
@@ -507,35 +537,88 @@ export function LabCaseInspector({
 				<CardHeader>
 					<h2 className="font-semibold text-base">Case Diff</h2>
 					<p className="text-[var(--muted-foreground)] text-sm">
-						{selectedCase.title} briefing, claims, citations, evaluator
-						evidence, and artifacts.
+						{selectedCase.title} eval context first, then briefing output
+						differences by shared section.
 					</p>
 				</CardHeader>
-				<CardBody className="space-y-3">
-					<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-3">
-						<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
-							Source evidence
-						</p>
-						<p className="mt-1 text-sm">{selectedCase.sourceEvidence}</p>
-					</div>
-					<div className="grid gap-3 lg:grid-cols-2">
-						<CaseArtifactPanel
-							detail={selectedCase.diff.baselineDetail}
-							label={baselineLabel}
-							tone="danger"
+				<CardBody className="space-y-5">
+					<section className="space-y-3">
+						<div>
+							<h3 className="font-semibold text-sm">Eval context</h3>
+							<p className="text-[var(--muted-foreground)] text-sm">
+								Eval-case expectations and evaluator outputs used to score this
+								case.
+							</p>
+						</div>
+
+						<div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(220px,320px)]">
+							<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-3">
+								<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
+									Expected coverage point
+								</p>
+								<p className="mt-1 text-sm">{selectedCase.sourceEvidence}</p>
+							</div>
+							<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-3">
+								<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
+									Planned eval themes
+								</p>
+								<div className="mt-2 flex flex-wrap gap-1.5">
+									{selectedCase.failureTags.length === 0 ? (
+										<span className="text-[var(--muted-foreground)] text-xs">
+											No planned themes
+										</span>
+									) : (
+										selectedCase.failureTags.map((tag) => (
+											<Badge key={tag}>{tag}</Badge>
+										))
+									)}
+								</div>
+							</div>
+						</div>
+
+						<div className="rounded-md border border-[var(--info-border)] bg-[var(--info)] p-3">
+							<p className="font-medium text-[var(--info-foreground)] text-xs uppercase">
+								Comparison note
+							</p>
+							<p className="mt-1 text-sm">{selectedCase.diff.evaluatorNote}</p>
+						</div>
+
+						<EvaluatorOutputPanel
+							baselineDetail={selectedCase.diff.baselineDetail}
+							baselineLabel={baselineLabel}
+							candidateDetail={selectedCase.diff.candidateDetail}
+							candidateLabel={candidateLabel}
 						/>
-						<CaseArtifactPanel
-							detail={selectedCase.diff.candidateDetail}
-							label={candidateLabel}
-							tone="success"
-						/>
-					</div>
-					<div className="rounded-md border border-[var(--info-border)] bg-[var(--info)] p-3">
-						<p className="font-medium text-[var(--info-foreground)] text-xs uppercase">
-							Comparison note
+
+						<div>
+							<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
+								Per-case artifact paths
+							</p>
+							<ArtifactComparisonPanel
+								baselineDetail={selectedCase.diff.baselineDetail}
+								baselineLabel={baselineLabel}
+								candidateDetail={selectedCase.diff.candidateDetail}
+								candidateLabel={candidateLabel}
+							/>
+						</div>
+					</section>
+
+					<div className="border-[var(--border)] border-t" />
+
+					<div>
+						<h3 className="font-semibold text-sm">Briefing comparison</h3>
+						<p className="text-[var(--muted-foreground)] text-sm">
+							Briefing artifact content grouped by matching fields so the two
+							outputs can be compared directly.
 						</p>
-						<p className="mt-1 text-sm">{selectedCase.diff.evaluatorNote}</p>
 					</div>
+
+					<CaseArtifactPanel
+						baselineDetail={selectedCase.diff.baselineDetail}
+						baselineLabel={baselineLabel}
+						candidateDetail={selectedCase.diff.candidateDetail}
+						candidateLabel={candidateLabel}
+					/>
 				</CardBody>
 			</Card>
 		</div>

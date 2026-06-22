@@ -108,7 +108,7 @@ The dashboard should include a per-case breakdown for the compared runs. Aggrega
 
 The dashboard should also expose a selected-case lens near the top of the page. The picker should default to a walkthrough-friendly case while making it obvious that any compared case can be inspected. The selected case should drive the case snapshot, highlighted breakdown row, case diff, and eventually selected-case artifact emphasis. The selected-case flow should move from picker and score snapshot, to full-width case breakdown, to full-width case diff as the detailed drill-down.
 
-The selected case diff should show enough detail to support real inspection, not only a recommendation excerpt. The first pass should include source evidence, briefing summaries, recommendations, claims and citations, open questions, evaluator evidence, citation support notes, and per-case artifact paths for both sides of the comparison. Later passes should add judge-discovered strengths, weaknesses, unsupported-claim details, and claim-level diffs once the evaluator produces those fields.
+The selected case diff should show enough detail to support real inspection, not only a recommendation excerpt. The first pass should separate eval context from briefing content: put eval instructions/expectations, planned themes, evaluator notes, citation-support checks, and per-case artifact paths at the top, then compare briefing outputs under common headings such as title and summary, recommendation, claims and citations, and open questions. Later passes should add judge-discovered strengths, weaknesses, unsupported-claim details, and claim-level diffs once the evaluator produces those fields.
 
 ## Diagnostic Improvement Loop
 
