@@ -440,7 +440,7 @@ export function LabCaseInspector({
 						Select a row to inspect that case in the diff below.
 					</p>
 				</CardHeader>
-				<CardBody>
+				<CardBody className="space-y-5">
 					<div className="overflow-x-auto rounded-md border border-[var(--border)]">
 						<table className="w-full min-w-[920px] text-left text-sm">
 							<thead className="bg-[var(--muted)] text-[var(--muted-foreground)]">
@@ -530,95 +530,100 @@ export function LabCaseInspector({
 							</tbody>
 						</table>
 					</div>
-				</CardBody>
-			</Card>
-
-			<Card>
-				<CardHeader>
-					<h2 className="font-semibold text-base">Case Diff</h2>
-					<p className="text-[var(--muted-foreground)] text-sm">
-						{selectedCase.title} eval context first, then briefing output
-						differences by shared section.
-					</p>
-				</CardHeader>
-				<CardBody className="space-y-5">
-					<section className="space-y-3">
-						<div>
-							<h3 className="font-semibold text-sm">Eval context</h3>
+					<div className="space-y-5 rounded-md border border-[var(--border)] bg-[var(--muted)]/50 p-3">
+						<div className="border-[var(--border)] border-b pb-3">
+							<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
+								Selected case drill-down
+							</p>
+							<h3 className="mt-1 font-semibold text-sm">
+								{selectedCase.title}
+							</h3>
 							<p className="text-[var(--muted-foreground)] text-sm">
-								Eval-case expectations and evaluator outputs used to score this
-								case.
+								Eval context first, then briefing output differences by shared
+								section.
 							</p>
 						</div>
 
-						<div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(220px,320px)]">
-							<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-3">
-								<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
-									Expected coverage point
+						<section className="space-y-3">
+							<div>
+								<h3 className="font-semibold text-sm">Eval context</h3>
+								<p className="text-[var(--muted-foreground)] text-sm">
+									Eval-case expectations and evaluator outputs used to score
+									this case.
 								</p>
-								<p className="mt-1 text-sm">{selectedCase.sourceEvidence}</p>
 							</div>
-							<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-3">
-								<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
-									Planned eval themes
-								</p>
-								<div className="mt-2 flex flex-wrap gap-1.5">
-									{selectedCase.failureTags.length === 0 ? (
-										<span className="text-[var(--muted-foreground)] text-xs">
-											No planned themes
-										</span>
-									) : (
-										selectedCase.failureTags.map((tag) => (
-											<Badge key={tag}>{tag}</Badge>
-										))
-									)}
+
+							<div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(220px,320px)]">
+								<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-3">
+									<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
+										Expected coverage point
+									</p>
+									<p className="mt-1 text-sm">{selectedCase.sourceEvidence}</p>
+								</div>
+								<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-3">
+									<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
+										Planned eval themes
+									</p>
+									<div className="mt-2 flex flex-wrap gap-1.5">
+										{selectedCase.failureTags.length === 0 ? (
+											<span className="text-[var(--muted-foreground)] text-xs">
+												No planned themes
+											</span>
+										) : (
+											selectedCase.failureTags.map((tag) => (
+												<Badge key={tag}>{tag}</Badge>
+											))
+										)}
+									</div>
 								</div>
 							</div>
-						</div>
 
-						<div className="rounded-md border border-[var(--info-border)] bg-[var(--info)] p-3">
-							<p className="font-medium text-[var(--info-foreground)] text-xs uppercase">
-								Comparison note
-							</p>
-							<p className="mt-1 text-sm">{selectedCase.diff.evaluatorNote}</p>
-						</div>
+							<div className="rounded-md border border-[var(--info-border)] bg-[var(--info)] p-3">
+								<p className="font-medium text-[var(--info-foreground)] text-xs uppercase">
+									Comparison note
+								</p>
+								<p className="mt-1 text-sm">
+									{selectedCase.diff.evaluatorNote}
+								</p>
+							</div>
 
-						<EvaluatorOutputPanel
-							baselineDetail={selectedCase.diff.baselineDetail}
-							baselineLabel={baselineLabel}
-							candidateDetail={selectedCase.diff.candidateDetail}
-							candidateLabel={candidateLabel}
-						/>
-
-						<div>
-							<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
-								Per-case artifact paths
-							</p>
-							<ArtifactComparisonPanel
+							<EvaluatorOutputPanel
 								baselineDetail={selectedCase.diff.baselineDetail}
 								baselineLabel={baselineLabel}
 								candidateDetail={selectedCase.diff.candidateDetail}
 								candidateLabel={candidateLabel}
 							/>
+
+							<div>
+								<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
+									Per-case artifact paths
+								</p>
+								<ArtifactComparisonPanel
+									baselineDetail={selectedCase.diff.baselineDetail}
+									baselineLabel={baselineLabel}
+									candidateDetail={selectedCase.diff.candidateDetail}
+									candidateLabel={candidateLabel}
+								/>
+							</div>
+						</section>
+
+						<div className="border-[var(--border)] border-t" />
+
+						<div>
+							<h3 className="font-semibold text-sm">Briefing comparison</h3>
+							<p className="text-[var(--muted-foreground)] text-sm">
+								Briefing artifact content grouped by matching fields so the two
+								outputs can be compared directly.
+							</p>
 						</div>
-					</section>
 
-					<div className="border-[var(--border)] border-t" />
-
-					<div>
-						<h3 className="font-semibold text-sm">Briefing comparison</h3>
-						<p className="text-[var(--muted-foreground)] text-sm">
-							Briefing artifact content grouped by matching fields so the two
-							outputs can be compared directly.
-						</p>
+						<CaseArtifactPanel
+							baselineDetail={selectedCase.diff.baselineDetail}
+							baselineLabel={baselineLabel}
+							candidateDetail={selectedCase.diff.candidateDetail}
+							candidateLabel={candidateLabel}
+						/>
 					</div>
-
-					<CaseArtifactPanel
-						baselineDetail={selectedCase.diff.baselineDetail}
-						baselineLabel={baselineLabel}
-						candidateDetail={selectedCase.diff.candidateDetail}
-						candidateLabel={candidateLabel}
-					/>
 				</CardBody>
 			</Card>
 		</div>
