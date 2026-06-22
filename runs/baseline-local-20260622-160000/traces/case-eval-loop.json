@@ -1,0 +1,68 @@
+{
+	"id": "case-eval-loop-local-extractive-v1-trace",
+	"runId": "baseline-local-20260622-160000",
+	"caseId": "case-eval-loop",
+	"sourcePacketId": "packet-eval-loop",
+	"input": {
+		"userRequest": "Recommend whether to expand automated evals, balancing coverage, citation support, trace utility, and cost.",
+		"sourcePacketPath": "data/source-packets/packet-eval-loop.json"
+	},
+	"messages": [
+		{
+			"role": "system",
+			"content": "You are Briefing Genie. Return a short briefing with source citations."
+		},
+		{
+			"role": "user",
+			"content": "User request: Recommend whether to expand automated evals, balancing coverage, citation support, trace utility, and cost.\n\nSource packet: Eval Loop Strategy\n\nPacket summary: Notes comparing weekly human review, automated scoring, holdout cases, and release guardrails.\n\nSources:\n\n[S1] Quality review memo\nType: quality memo\nTeams need smaller eval batches with visible failure clusters before expanding model coverage. The last broad run increased the number of cases scored, but reviewers could not tell which failures were repeated patterns and which were one-off mistakes.\n\nThe memo compares a broad dry run with a smaller reviewed batch. The broad run produced more scores, but reviewers spent extra time rediscovering whether each failure was new. The smaller batch made repeated citation issues easier to group and produced more actionable prompt changes.\n\n[S2] Release guardrail notes\nType: release notes\nCoverage can improve while grounding regresses, so citation support needs an explicit shipping gate. The suggested threshold is not a leaderboard target; it is a release block when candidate outputs make unsupported claims.\n\nThe guardrail note came from a release review where the candidate covered more requested points but attached weak citations to several claims. Reviewers agreed that coverage and grounding must be tracked separately. A candidate can look better in aggregate and still be blocked if unsupported claims reach customer-facing recommendations.\n\n[S3] Cost review\nType: cost review\nLong traces help debug failures, but unchecked retries created a 1.34x cost increase in the last dry run. The finance reviewer accepted trace retention only if retries are capped and summarized in the run manifest.\n\nThe cost review separates trace usefulness from retry sprawl. Long traces helped diagnose why a claim failed, but retries created duplicate traces that nobody read. Finance accepted keeping detailed traces when the run manifest shows retry count, cost ratio, and a short explanation of what the trace helped resolve.\n\n[S4] Holdout protocol\nType: governance note\nHoldout cases should appear in dashboards as summaries and aggregate scores, but their tuning labels should stay out of prompt-iteration workflows. Reviewers want confidence that prompt changes are not simply memorizing visible examples.\n\nThe holdout protocol distinguishes dashboard visibility from tuning visibility. Aggregate holdout scores may appear in the lab so reviewers know the set exists, but labels and expected answers should not appear in prompt-editing screens. The goal is to catch overfitting to the visible demo cases.\n\n[S5] Reviewer retro notes\nType: retro notes\nThe reviewer retro says the last eval review felt slower than expected because failures were not grouped by pattern. Reviewers asked for a dashboard that clusters unsupported claims, weak citations, cost regressions, and holdout concerns separately. They preferred fewer cases with clearer evidence over a larger run where every row required manual interpretation.\n\n[S6] Experiment proposal\nType: experiment proposal\nThe experiment proposal recommends one more visible batch before live orchestration. It asks the team to hold citation support as a shipping gate, keep retry counts in the manifest, and report holdout performance only in aggregate. The proposal frames expansion as acceptable only if the next candidate improves grounding without exceeding the cost guardrail."
+		}
+	],
+	"model": {
+		"provider": "local",
+		"name": "deterministic-extractive"
+	},
+	"output": {
+		"id": "case-eval-loop-local-extractive-v1",
+		"sourcePacketId": "packet-eval-loop",
+		"caseId": "case-eval-loop",
+		"title": "Eval Loop Strategy Briefing",
+		"summary": "Notes comparing weekly human review, automated scoring, holdout cases, and release guardrails. Briefing focus: Recommend whether to expand automated evals, balancing coverage, citation support, trace utility, and cost.",
+		"claims": [
+			{
+				"text": "Quality review memo: Teams need smaller eval batches with visible failure clusters before expanding model coverage.",
+				"citations": ["S1"]
+			},
+			{
+				"text": "Release guardrail notes: Coverage can improve while grounding regresses, so citation support needs an explicit shipping gate.",
+				"citations": ["S2"]
+			},
+			{
+				"text": "Cost review: Long traces help debug failures, but unchecked retries created a 1.34x cost increase in the last dry run.",
+				"citations": ["S3"]
+			}
+		],
+		"openQuestions": [
+			"Confirm whether holdout protocol has newer follow-up data.",
+			"Confirm whether reviewer retro notes has newer follow-up data."
+		],
+		"recommendation": "Use this as a fast first pass, then inspect source tension and citation support in the lab before treating the recommendation as shippable.",
+		"metadata": {
+			"variant": "Local extractive baseline",
+			"runId": "baseline-local-20260622-160000",
+			"model": "deterministic-extractive"
+		}
+	},
+	"toolCalls": [],
+	"cost": {
+		"inputTokens": 862,
+		"outputTokens": 317,
+		"estimatedUsd": 0
+	},
+	"latencyMs": 1,
+	"artifactPaths": [
+		"data/source-packets/packet-eval-loop.json",
+		"runs/baseline-local-20260622-160000/briefings/case-eval-loop.json",
+		"runs/baseline-local-20260622-160000/traces/case-eval-loop.json",
+		"runs/baseline-local-20260622-160000/evaluations/case-eval-loop.json"
+	]
+}

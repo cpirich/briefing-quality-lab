@@ -75,9 +75,7 @@ export function LabActions() {
 					{startEvalRun.isPending ? "Starting..." : "Run evals"}
 				</Button>
 				<Button
-					onClick={() =>
-						setStatus("Showing seeded baseline versus candidate comparison.")
-					}
+					onClick={() => setStatus("Showing the current run comparison.")}
 					tone="accent"
 					type="button"
 				>

@@ -2,20 +2,86 @@ import type { Metadata } from "next";
 
 import { Badge } from "~/components/badge";
 import { Card, CardBody, CardHeader } from "~/components/card";
+import { cn } from "~/lib/utils";
 import { api } from "~/trpc/server";
 import { LabActions } from "./lab-actions";
+import { LabCaseInspector } from "./lab-case-inspector";
 
 export const metadata: Metadata = {
 	title: "Briefing Genie Improvement Lab",
 };
 
+function comparisonSideLabel(runId: string) {
+	if (runId.startsWith("baseline-local-")) {
+		return "Generated baseline";
+	}
+	if (runId.startsWith("baseline-openai-")) {
+		return "OpenAI baseline";
+	}
+	if (runId.startsWith("candidate-local-")) {
+		return "Generated candidate";
+	}
+	if (runId.startsWith("candidate-openai-")) {
+		return "OpenAI candidate";
+	}
+	if (runId === "candidate-citation-gates") {
+		return "Reference target";
+	}
+	if (runId.startsWith("baseline-")) {
+		return "Seeded baseline";
+	}
+
+	return runId;
+}
+
+function usesReferenceTarget(candidateRunId: string) {
+	return candidateRunId === "candidate-citation-gates";
+}
+
+function metricBadgeLabel(value: string, changeLabel: string) {
+	return changeLabel === "Gap" ? `gap ${value}` : value;
+}
+
+function comparisonBarClass(label: string, baselineLabel: string) {
+	return label === baselineLabel
+		? "bg-[var(--muted-foreground)]"
+		: "bg-[var(--accent)]";
+}
+
+function changeTextClass(value: string, changeLabel: string) {
+	if (changeLabel !== "Gap") {
+		return "text-[var(--success-foreground)]";
+	}
+	if (value.startsWith("+")) {
+		return "text-[var(--warning-foreground)]";
+	}
+	if (value.startsWith("-")) {
+		return "text-[var(--success-foreground)]";
+	}
+	return "text-[var(--muted-foreground)]";
+}
+
 export default async function LabPage() {
-	const [runComparison, artifacts, evalCases] = await Promise.all([
+	const [runComparison, artifacts, caseBreakdown] = await Promise.all([
 		api.lab.compareRuns(),
 		api.lab.listArtifacts(),
-		api.lab.listEvalCases(),
+		api.lab.listCaseBreakdown(),
 	]);
-	const { featuredCase, failureClusters } = runComparison;
+	const { failureClusters } = runComparison;
+	const baselineLabel =
+		runComparison.baselineLabel ??
+		comparisonSideLabel(runComparison.baselineRunId);
+	const candidateLabel =
+		runComparison.candidateLabel ??
+		comparisonSideLabel(runComparison.candidateRunId);
+	const changeLabel = usesReferenceTarget(runComparison.candidateRunId)
+		? "Gap"
+		: "Delta";
+	const comparedCaseCount =
+		Number(
+			runComparison.comparisonRows.find((row) => row.metric === "Eval cases")
+				?.candidate,
+		) || new Set(failureClusters.flatMap((cluster) => cluster.cases)).size;
 
 	return (
 		<main className="lab-route min-h-screen bg-[var(--background)] text-[var(--foreground)]">
@@ -23,8 +89,8 @@ export default async function LabPage() {
 				<div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
 					<div>
 						<div className="flex flex-wrap items-center gap-2">
-							<Badge tone="blue">{runComparison.candidateRunId}</Badge>
-							<Badge>{runComparison.baselineRunId}</Badge>
+							<Badge>{baselineLabel}</Badge>
+							<Badge tone="blue">{candidateLabel}</Badge>
 						</div>
 						<h1 className="mt-2 font-semibold text-2xl tracking-tight">
 							Briefing Genie Improvement Lab
@@ -42,142 +108,131 @@ export default async function LabPage() {
 
 			<div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 xl:grid-cols-[minmax(0,1fr)_360px]">
 				<section className="grid min-w-0 gap-4">
-					<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-						{runComparison.metrics.map((metric) => (
-							<Card className="min-h-32" key={metric.label}>
-								<CardBody className="space-y-3 p-3 xl:p-4">
-									<div className="grid min-h-8 grid-cols-[minmax(0,1fr)_auto] items-start gap-1.5 xl:gap-2">
-										<p className="min-w-0 font-medium text-[var(--muted-foreground)] text-xs uppercase leading-4">
-											{metric.label}
-										</p>
-										<Badge className="justify-self-end" tone={metric.tone}>
-											{metric.delta}
-										</Badge>
-									</div>
-									<p className="font-semibold text-3xl">{metric.value}</p>
-									<p className="text-[var(--muted-foreground)] text-xs">
-										{metric.status}
-									</p>
-								</CardBody>
-							</Card>
-						))}
-					</div>
-
-					<div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
-						<Card>
-							<CardHeader>
-								<div className="flex items-center justify-between gap-3">
-									<div>
-										<h2 className="font-semibold text-base">Run Score Trend</h2>
-										<p className="text-[var(--muted-foreground)] text-sm">
-											Overall score across seeded experiment snapshots.
-										</p>
-									</div>
-									<Badge tone="green">ship candidate</Badge>
-								</div>
-							</CardHeader>
-							<CardBody>
-								<div className="grid h-52 grid-cols-4 gap-3 border-[var(--border)] border-b px-2">
-									{runComparison.trend.map((point) => (
-										<div
-											className="grid min-w-0 grid-rows-[1fr_auto] gap-2"
-											key={point.label}
-										>
-											<div className="flex h-full items-end">
-												<div
-													aria-label={`${point.label} score ${point.score}`}
-													className="mx-auto w-full max-w-16 rounded-t-md bg-[var(--accent)]"
-													role="img"
-													style={{ height: `${point.score}%` }}
-												/>
-											</div>
-											<span className="text-center font-medium text-[var(--muted-foreground)] text-xs">
-												{point.label}
-											</span>
+					<div className="grid gap-2">
+						<div>
+							<h2 className="font-semibold text-base">
+								Reference Target Summary
+							</h2>
+							<p className="text-[var(--muted-foreground)] text-sm">
+								Large values are reference target metrics; badges show the gap
+								from generated baseline.
+							</p>
+						</div>
+						<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+							{runComparison.metrics.map((metric) => (
+								<Card className="min-h-32" key={metric.label}>
+									<CardBody className="space-y-3 p-3 xl:p-4">
+										<div className="grid min-h-8 grid-cols-[minmax(0,1fr)_auto] items-start gap-1.5 xl:gap-2">
+											<p className="min-w-0 font-medium text-[var(--muted-foreground)] text-xs uppercase leading-4">
+												{metric.label}
+											</p>
+											<Badge className="justify-self-end" tone={metric.tone}>
+												{metricBadgeLabel(metric.delta, changeLabel)}
+											</Badge>
 										</div>
-									))}
-								</div>
-								<div className="mt-4 overflow-x-auto rounded-md border border-[var(--border)]">
-									<table className="w-full text-left text-sm">
-										<thead className="bg-[var(--muted)] text-[var(--muted-foreground)]">
-											<tr>
-												<th className="px-3 py-2 font-medium">Metric</th>
-												<th className="px-3 py-2 font-medium">Baseline</th>
-												<th className="px-3 py-2 font-medium">Candidate</th>
-												<th className="px-3 py-2 font-medium">Delta</th>
-											</tr>
-										</thead>
-										<tbody>
-											{runComparison.comparisonRows.map((row) => (
-												<tr
-													className="border-[var(--border)] border-t"
-													key={row.metric}
-												>
-													<td className="px-3 py-2 font-medium">
-														{row.metric}
-													</td>
-													<td className="px-3 py-2 text-[var(--muted-foreground)]">
-														{row.baseline}
-													</td>
-													<td className="px-3 py-2 text-[var(--foreground)]">
-														{row.candidate}
-													</td>
-													<td className="px-3 py-2 font-medium text-[var(--success-foreground)]">
-														{row.delta}
-													</td>
-												</tr>
-											))}
-										</tbody>
-									</table>
-								</div>
-							</CardBody>
-						</Card>
-
-						<Card>
-							<CardHeader>
-								<h2 className="font-semibold text-base">Featured Case Diff</h2>
-								<p className="text-[var(--muted-foreground)] text-sm">
-									{featuredCase.title}
-								</p>
-							</CardHeader>
-							<CardBody className="space-y-3">
-								<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-3">
-									<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
-										Source evidence
-									</p>
-									<p className="mt-1 text-sm">{featuredCase.sourceEvidence}</p>
-								</div>
-								<div className="grid gap-3 md:grid-cols-2">
-									<div className="rounded-md border border-[var(--danger-border)] bg-[var(--danger)] p-3">
-										<p className="font-medium text-[var(--danger-foreground)] text-xs uppercase">
-											Baseline
+										<p className="font-semibold text-3xl">{metric.value}</p>
+										<p className="text-[var(--muted-foreground)] text-xs">
+											{metric.status}
 										</p>
-										<p className="mt-1 text-sm">{featuredCase.baseline}</p>
-									</div>
-									<div className="rounded-md border border-[var(--success-border)] bg-[var(--success)] p-3">
-										<p className="font-medium text-[var(--success-foreground)] text-xs uppercase">
-											Candidate
-										</p>
-										<p className="mt-1 text-sm">{featuredCase.candidate}</p>
-									</div>
-								</div>
-								<div className="rounded-md border border-[var(--info-border)] bg-[var(--info)] p-3">
-									<p className="font-medium text-[var(--info-foreground)] text-xs uppercase">
-										Evaluator note
-									</p>
-									<p className="mt-1 text-sm">{featuredCase.evaluatorNote}</p>
-								</div>
-							</CardBody>
-						</Card>
+									</CardBody>
+								</Card>
+							))}
+						</div>
 					</div>
+
+					<Card>
+						<CardHeader>
+							<div className="flex items-center justify-between gap-3">
+								<div>
+									<h2 className="font-semibold text-base">Run Score Trend</h2>
+									<p className="text-[var(--muted-foreground)] text-sm">
+										Overall score for the compared run artifacts.
+									</p>
+								</div>
+								<Badge tone={runComparison.recommendation.tone}>
+									{runComparison.recommendation.label}
+								</Badge>
+							</div>
+						</CardHeader>
+						<CardBody>
+							<div className="grid h-52 grid-cols-4 gap-3 border-[var(--border)] border-b px-2">
+								{runComparison.trend.map((point) => (
+									<div
+										className="grid min-w-0 grid-rows-[1fr_auto] gap-2"
+										key={point.label}
+									>
+										<div className="flex h-full items-end">
+											<div
+												aria-label={`${point.label} score ${point.score}`}
+												className={cn(
+													"mx-auto w-full max-w-16 rounded-t-md",
+													comparisonBarClass(point.label, baselineLabel),
+												)}
+												role="img"
+												style={{ height: `${point.score}%` }}
+											/>
+										</div>
+										<span className="text-center font-medium text-[var(--muted-foreground)] text-xs">
+											{point.label}
+										</span>
+									</div>
+								))}
+							</div>
+							<div className="overflow-x-auto rounded-md border border-[var(--border)]">
+								<table className="w-full text-left text-sm">
+									<thead className="bg-[var(--muted)] text-[var(--muted-foreground)]">
+										<tr>
+											<th className="px-3 py-2 font-medium">Metric</th>
+											<th className="px-3 py-2 font-medium">{baselineLabel}</th>
+											<th className="px-3 py-2 font-medium">
+												{candidateLabel}
+											</th>
+											<th className="px-3 py-2 font-medium">{changeLabel}</th>
+										</tr>
+									</thead>
+									<tbody>
+										{runComparison.comparisonRows.map((row) => (
+											<tr
+												className="border-[var(--border)] border-t"
+												key={row.metric}
+											>
+												<td className="px-3 py-2 font-medium">{row.metric}</td>
+												<td className="px-3 py-2 text-[var(--muted-foreground)]">
+													{row.baseline}
+												</td>
+												<td className="px-3 py-2 text-[var(--foreground)]">
+													{row.candidate}
+												</td>
+												<td
+													className={cn(
+														"px-3 py-2 font-medium",
+														changeTextClass(row.delta, changeLabel),
+													)}
+												>
+													{row.delta}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						</CardBody>
+					</Card>
+
+					<LabCaseInspector
+						baselineLabel={baselineLabel}
+						candidateLabel={candidateLabel}
+						caseBreakdown={caseBreakdown}
+						changeLabel={changeLabel}
+					/>
 
 					<div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
 						<Card>
 							<CardHeader>
-								<h2 className="font-semibold text-base">Failure Clusters</h2>
+								<h2 className="font-semibold text-base">Failure Themes</h2>
 								<p className="text-[var(--muted-foreground)] text-sm">
-									Ranked evaluator findings across {evalCases.length} validated
-									cases.
+									Case-tag themes from file-backed evaluator outputs across{" "}
+									{comparedCaseCount} compared cases.
 								</p>
 							</CardHeader>
 							<CardBody className="space-y-3">
@@ -213,8 +268,8 @@ export default async function LabPage() {
 							<CardHeader>
 								<h2 className="font-semibold text-base">Artifact Trail</h2>
 								<p className="text-[var(--muted-foreground)] text-sm">
-									File-backed evidence the lab will validate and expose through
-									tRPC.
+									File-backed paths for the current comparison, including local
+									generated artifacts and seeded fallback artifacts.
 								</p>
 							</CardHeader>
 							<CardBody>
@@ -255,7 +310,7 @@ export default async function LabPage() {
 				<aside className="grid min-w-0 content-start gap-4">
 					<Card>
 						<CardHeader>
-							<h2 className="font-semibold text-base">Next Action</h2>
+							<h2 className="font-semibold text-base">Evidence Status</h2>
 						</CardHeader>
 						<CardBody className="space-y-3">
 							<Badge tone={runComparison.recommendation.tone}>

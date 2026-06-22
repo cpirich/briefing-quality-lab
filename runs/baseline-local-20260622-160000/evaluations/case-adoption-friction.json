@@ -1,0 +1,38 @@
+{
+	"id": "evaluation-baseline-local-20260622-160000-case-adoption-friction",
+	"runId": "baseline-local-20260622-160000",
+	"caseId": "case-adoption-friction",
+	"scores": {
+		"overall": 0.67,
+		"grounding": 0.6,
+		"coverage": 0.72,
+		"citationSupport": 0.7
+	},
+	"failureTags": ["setup-recovery", "citation-grounding"],
+	"rubricEvidence": [
+		"Coverage heuristic score: 0.72.",
+		"Citation support heuristic score: 0.70."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "S1 is accepted evidence for case-adoption-friction."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "S2 is accepted evidence for case-adoption-friction."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "S3 is accepted evidence for case-adoption-friction."
+		}
+	],
+	"notes": "Deterministic local evaluator output for baseline-run artifact generation. Replace or augment with stronger evaluator logic before making production quality claims.",
+	"artifactPaths": [
+		"runs/baseline-local-20260622-160000/evaluations/case-adoption-friction.json",
+		"runs/baseline-local-20260622-160000/briefings/case-adoption-friction.json"
+	]
+}

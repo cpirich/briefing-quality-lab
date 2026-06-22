@@ -1,0 +1,67 @@
+{
+	"runId": "baseline-local-20260622-160000",
+	"createdAt": "2026-06-22T16:58:04.872Z",
+	"variantLabel": "local generated baseline",
+	"status": "complete",
+	"gitRef": "local-worktree",
+	"command": "bun run eval:baseline",
+	"caseIds": [
+		"case-adoption-friction",
+		"case-code-review-queues",
+		"case-cost-latency-budget",
+		"case-eval-loop",
+		"case-human-approval-boundary",
+		"case-incident-recovery-comms",
+		"case-release-note-drift"
+	],
+	"aggregateMetrics": {
+		"overall": 0.65,
+		"grounding": 0.56,
+		"coverage": 0.7,
+		"citationSupport": 0.68,
+		"unsupportedClaims": 14,
+		"medianLatencyMs": 1,
+		"costRatio": 1,
+		"latencyRatio": 1
+	},
+	"guardrails": [
+		{
+			"id": "citation-support",
+			"label": "Citation support",
+			"status": "warn",
+			"value": "0.68",
+			"threshold": ">= 0.72"
+		},
+		{
+			"id": "cost-ratio",
+			"label": "Cost ratio",
+			"status": "pass",
+			"value": "1.00x",
+			"threshold": "<= 1.15x"
+		}
+	],
+	"artifactPaths": [
+		"runs/baseline-local-20260622-160000/manifest.json",
+		"runs/baseline-local-20260622-160000/briefings/case-adoption-friction.json",
+		"runs/baseline-local-20260622-160000/traces/case-adoption-friction.json",
+		"runs/baseline-local-20260622-160000/evaluations/case-adoption-friction.json",
+		"runs/baseline-local-20260622-160000/briefings/case-code-review-queues.json",
+		"runs/baseline-local-20260622-160000/traces/case-code-review-queues.json",
+		"runs/baseline-local-20260622-160000/evaluations/case-code-review-queues.json",
+		"runs/baseline-local-20260622-160000/briefings/case-cost-latency-budget.json",
+		"runs/baseline-local-20260622-160000/traces/case-cost-latency-budget.json",
+		"runs/baseline-local-20260622-160000/evaluations/case-cost-latency-budget.json",
+		"runs/baseline-local-20260622-160000/briefings/case-eval-loop.json",
+		"runs/baseline-local-20260622-160000/traces/case-eval-loop.json",
+		"runs/baseline-local-20260622-160000/evaluations/case-eval-loop.json",
+		"runs/baseline-local-20260622-160000/briefings/case-human-approval-boundary.json",
+		"runs/baseline-local-20260622-160000/traces/case-human-approval-boundary.json",
+		"runs/baseline-local-20260622-160000/evaluations/case-human-approval-boundary.json",
+		"runs/baseline-local-20260622-160000/briefings/case-incident-recovery-comms.json",
+		"runs/baseline-local-20260622-160000/traces/case-incident-recovery-comms.json",
+		"runs/baseline-local-20260622-160000/evaluations/case-incident-recovery-comms.json",
+		"runs/baseline-local-20260622-160000/briefings/case-release-note-drift.json",
+		"runs/baseline-local-20260622-160000/traces/case-release-note-drift.json",
+		"runs/baseline-local-20260622-160000/evaluations/case-release-note-drift.json"
+	]
+}

@@ -1,7 +1,12 @@
 import { z } from "zod";
 
 import { getEvalRun, startEvalRun } from "~/lab/eval-runs";
-import { compareRuns, listArtifacts, listEvalCases } from "~/run-store";
+import {
+	compareRuns,
+	listArtifacts,
+	listCaseBreakdown,
+	listEvalCases,
+} from "~/run-store";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 async function listPublicEvalCases() {
@@ -36,6 +41,19 @@ export const labRouter = createTRPCRouter({
 	listArtifacts: publicProcedure.query(() => {
 		return listArtifacts();
 	}),
+
+	listCaseBreakdown: publicProcedure
+		.input(
+			z
+				.object({
+					baselineRunId: z.string().min(1).optional(),
+					candidateRunId: z.string().min(1).optional(),
+				})
+				.optional(),
+		)
+		.query(({ input }) => {
+			return listCaseBreakdown(input);
+		}),
 
 	compareRuns: publicProcedure
 		.input(

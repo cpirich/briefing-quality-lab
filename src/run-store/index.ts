@@ -24,6 +24,12 @@ import {
 const repoRoot = process.cwd();
 const defaultCandidateRunId = "candidate-citation-gates";
 const defaultComparisonId = "baseline-2026-06-10-candidate-citation-gates";
+const generatedRunPrefixes = [
+	"baseline-local-",
+	"baseline-openai-",
+	"candidate-local-",
+	"candidate-openai-",
+] as const;
 const phase5MinSourceDocuments = 5;
 const phase5MaxSourceDocuments = 10;
 const phase5MinSourceBodyCharacters = 240;
@@ -49,6 +55,32 @@ type FixtureCounts = {
 	runComparisons: number;
 	artifacts: number;
 };
+
+interface CaseScoreSummary {
+	overall: number;
+	grounding: number;
+	coverage: number;
+	citationSupport: number;
+	artifactPath: string;
+}
+
+export interface CaseBreakdownEntry {
+	caseId: string;
+	title: string;
+	sourceEvidence: string;
+	failureTags: string[];
+	baseline: CaseScoreSummary | null;
+	candidate: CaseScoreSummary | null;
+	delta: {
+		overall: number | null;
+		citationSupport: number | null;
+	};
+	diff: {
+		baselineRecommendation: string;
+		candidateRecommendation: string;
+		evaluatorNote: string;
+	};
+}
 
 function absolutePath(relativePath: string) {
 	return path.join(repoRoot, relativePath);
@@ -174,11 +206,24 @@ function artifactTypeForPath(artifactPath: string) {
 }
 
 function artifactLabelForPath(artifactPath: string) {
+	const manifestMatch = artifactPath.match(/^runs\/([^/]+)\/manifest\.json$/);
+	if (manifestMatch?.[1]?.startsWith("baseline-local-")) {
+		return "Generated baseline manifest";
+	}
+	if (manifestMatch?.[1]?.startsWith("baseline-openai-")) {
+		return "OpenAI baseline manifest";
+	}
+	if (manifestMatch?.[1]?.startsWith("candidate-local-")) {
+		return "Generated candidate manifest";
+	}
+	if (manifestMatch?.[1]?.startsWith("candidate-openai-")) {
+		return "OpenAI candidate manifest";
+	}
 	if (artifactPath === "runs/baseline-2026-06-10/manifest.json") {
-		return "Baseline manifest";
+		return "Seeded baseline manifest";
 	}
 	if (artifactPath === "runs/candidate-citation-gates/manifest.json") {
-		return "Latest candidate";
+		return "Reference target manifest";
 	}
 	if (artifactPath.includes("/traces/")) {
 		return "Featured trace";
@@ -264,19 +309,32 @@ export async function listRunComparisons(): Promise<RunComparison[]> {
 	return sortById(comparisons);
 }
 
+function isGeneratedComparison(runComparison: RunComparison) {
+	return generatedRunPrefixes.some(
+		(prefix) =>
+			runComparison.baselineRunId.startsWith(prefix) ||
+			runComparison.candidateRunId.startsWith(prefix),
+	);
+}
+
 export async function compareRuns(input?: {
 	baselineRunId?: string;
 	candidateRunId?: string;
 }): Promise<RunComparison> {
 	const comparisons = await listRunComparisons();
 	const comparison =
-		comparisons.find(
-			(candidateComparison) =>
-				(!input?.baselineRunId ||
-					candidateComparison.baselineRunId === input.baselineRunId) &&
-				(!input?.candidateRunId ||
-					candidateComparison.candidateRunId === input.candidateRunId),
-		) ??
+		(input?.baselineRunId || input?.candidateRunId
+			? comparisons.find(
+					(candidateComparison) =>
+						(!input.baselineRunId ||
+							candidateComparison.baselineRunId === input.baselineRunId) &&
+						(!input.candidateRunId ||
+							candidateComparison.candidateRunId === input.candidateRunId),
+				)
+			: undefined) ??
+		(!input?.baselineRunId && !input?.candidateRunId
+			? [...comparisons].reverse().find(isGeneratedComparison)
+			: undefined) ??
 		comparisons.find(
 			(candidateComparison) => candidateComparison.id === defaultComparisonId,
 		) ??
@@ -305,6 +363,117 @@ export async function compareRuns(input?: {
 	}
 
 	return comparison;
+}
+
+function evaluatorOutputByCaseId(evaluatorOutputs: EvaluatorOutput[]) {
+	return new Map(
+		evaluatorOutputs.map((evaluatorOutput) => [
+			evaluatorOutput.caseId,
+			evaluatorOutput,
+		]),
+	);
+}
+
+function caseScoreSummaryFor(
+	evaluatorOutput: EvaluatorOutput | undefined,
+): CaseScoreSummary | null {
+	if (!evaluatorOutput) {
+		return null;
+	}
+
+	return {
+		overall: evaluatorOutput.scores.overall,
+		grounding: evaluatorOutput.scores.grounding,
+		coverage: evaluatorOutput.scores.coverage,
+		citationSupport: evaluatorOutput.scores.citationSupport,
+		artifactPath:
+			evaluatorOutput.artifactPaths.find((artifactPath) =>
+				artifactPath.includes("/evaluations/"),
+			) ??
+			`runs/${evaluatorOutput.runId}/evaluations/${evaluatorOutput.caseId}.json`,
+	};
+}
+
+function scoreDelta(
+	candidate: CaseScoreSummary | null,
+	baseline: CaseScoreSummary | null,
+	metric: keyof Omit<CaseScoreSummary, "artifactPath">,
+) {
+	if (!candidate || !baseline) {
+		return null;
+	}
+
+	return Math.round((candidate[metric] - baseline[metric]) * 100) / 100;
+}
+
+export async function listCaseBreakdown(input?: {
+	baselineRunId?: string;
+	candidateRunId?: string;
+}): Promise<CaseBreakdownEntry[]> {
+	const comparison = await compareRuns(input);
+	const [
+		evalCases,
+		baselineEvaluations,
+		candidateEvaluations,
+		baselineBriefings,
+		candidateBriefings,
+	] = await Promise.all([
+		listEvalCases(),
+		listEvaluatorOutputs(comparison.baselineRunId),
+		listEvaluatorOutputs(comparison.candidateRunId),
+		listBriefingOutputs(comparison.baselineRunId),
+		listBriefingOutputs(comparison.candidateRunId),
+	]);
+	const evalCaseById = indexById(evalCases);
+	const baselineByCaseId = evaluatorOutputByCaseId(baselineEvaluations);
+	const candidateByCaseId = evaluatorOutputByCaseId(candidateEvaluations);
+	const baselineBriefingByCaseId = new Map(
+		baselineBriefings.map((briefing) => [briefing.caseId, briefing]),
+	);
+	const candidateBriefingByCaseId = new Map(
+		candidateBriefings.map((briefing) => [briefing.caseId, briefing]),
+	);
+	const caseIds = [
+		...new Set([
+			...baselineEvaluations.map((evaluation) => evaluation.caseId),
+			...candidateEvaluations.map((evaluation) => evaluation.caseId),
+		]),
+	].sort();
+
+	return caseIds.map((caseId) => {
+		const evalCase = evalCaseById.get(caseId);
+		const baseline = caseScoreSummaryFor(baselineByCaseId.get(caseId));
+		const candidate = caseScoreSummaryFor(candidateByCaseId.get(caseId));
+		const baselineBriefing = baselineBriefingByCaseId.get(caseId);
+		const candidateBriefing = candidateBriefingByCaseId.get(caseId);
+
+		return {
+			caseId,
+			title: evalCase?.title ?? caseId,
+			sourceEvidence:
+				evalCase?.expectedCoverage[0] ??
+				"No source evidence summary available.",
+			failureTags: evalCase?.failureTags ?? [],
+			baseline,
+			candidate,
+			delta: {
+				overall: scoreDelta(candidate, baseline, "overall"),
+				citationSupport: scoreDelta(candidate, baseline, "citationSupport"),
+			},
+			diff: {
+				baselineRecommendation:
+					baselineBriefing?.recommendation ??
+					"No baseline recommendation available.",
+				candidateRecommendation:
+					candidateBriefing?.recommendation ??
+					"No reference recommendation available.",
+				evaluatorNote:
+					candidateByCaseId.get(caseId)?.notes ??
+					baselineByCaseId.get(caseId)?.notes ??
+					"No evaluator note available.",
+			},
+		};
+	});
 }
 
 export async function listArtifacts(): Promise<ArtifactEntry[]> {

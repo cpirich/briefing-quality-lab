@@ -1,9 +1,28 @@
 # Latest Eval Summary
 
-This synthetic report compares `baseline-2026-06-10` with `candidate-citation-gates` on the expanded Phase 5 demo corpus.
+Generated comparison: Generated baseline `baseline-local-20260622-160000` vs Reference target `candidate-citation-gates`.
 
-The dataset now contains 9 synthetic eval cases: 7 visible cases for demo walkthroughs and 2 holdout cases that stay out of the Genie product flow. Source packets now include 3-6 richer documents with distractors, overlapping evidence, caveats, and explicit citation traps.
+| Metric | Generated baseline | Reference target | Gap |
+| --- | --- | --- | --- |
+| Overall score | 0.65 | 0.83 | +0.18 |
+| Citation support | 0.68 | 0.80 | +0.12 |
+| Unsupported claims | 14 | 7 | -7 |
+| Eval cases | 7 | 7 | 0 |
+| Median latency | 0.0s | 7.9s | 7.9s |
 
-The candidate improves overall quality from `0.66` to `0.83` and citation support from `0.51` to `0.80`. Unsupported claims drop from `26` to `7`, while cost stays inside the `1.15x` guardrail at `1.10x`.
+Featured case: `case-adoption-friction` - Developer adoption friction briefing.
 
-Featured case: `case-release-note-drift`. The baseline recommends publishing generated release notes because coverage is high. The candidate keeps the automation benefit but gates publication on stale-claim drift review and explicit approval for sensitive customer-facing statements.
+Comparison uses file-backed artifacts for the same eval case so the before/after story is inspectable.
+
+## Failure Clusters
+
+- Citation Grounding: 2 cases (case-adoption-friction, case-eval-loop)
+- Cost Guardrail: 2 cases (case-cost-latency-budget, case-eval-loop)
+- Human Approval: 2 cases (case-human-approval-boundary, case-release-note-drift)
+- Stale Source: 2 cases (case-incident-recovery-comms, case-release-note-drift)
+
+## Evidence Status
+
+This comparison uses Generated baseline and a human-authored Reference target. It validates the eval artifact flow and shows the gap to target, but not live model quality improvement.
+
+Run a live-provider baseline and generated candidate before using this as improvement evidence.

@@ -1,0 +1,31 @@
+{
+	"id": "case-cost-latency-budget-local-extractive-v1",
+	"sourcePacketId": "packet-cost-latency",
+	"caseId": "case-cost-latency-budget",
+	"title": "Cost And Latency Budget Packet Briefing",
+	"summary": "Run data, finance guidance, and user feedback about trace depth, retries, and demo responsiveness. Briefing focus: Recommend how much tracing and retry behavior to keep for the next demo run.",
+	"claims": [
+		{
+			"text": "Run telemetry: The candidate prompt reduced unsupported claims but increased median token usage by 11%.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Finance guidance: Finance approved up to a 1.15x cost ratio for demo-quality eval runs if the report shows why extra tokens reduce review time.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Reviewer feedback: Reviewers said long traces are useful only when they are summarized next to the claim that failed.",
+			"citations": ["S3"]
+		}
+	],
+	"openQuestions": [
+		"Confirm whether demo rehearsal has newer follow-up data.",
+		"Confirm whether retry policy draft has newer follow-up data."
+	],
+	"recommendation": "Use this as a fast first pass, then inspect source tension and citation support in the lab before treating the recommendation as shippable.",
+	"metadata": {
+		"variant": "Local extractive baseline",
+		"runId": "baseline-local-20260622-160000",
+		"model": "deterministic-extractive"
+	}
+}
