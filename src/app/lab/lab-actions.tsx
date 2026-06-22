@@ -1,18 +1,54 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { Button } from "~/components/button";
 import { api } from "~/trpc/react";
 
 export function LabActions() {
 	const [status, setStatus] = useState("Seeded artifacts loaded.");
+	const activePollId = useRef(0);
+	const utils = api.useUtils();
+	async function pollEvalRun(jobId: string) {
+		activePollId.current += 1;
+		const pollId = activePollId.current;
+
+		for (;;) {
+			await new Promise((resolve) => setTimeout(resolve, 750));
+			if (pollId !== activePollId.current) {
+				return;
+			}
+
+			try {
+				const job = await utils.lab.getEvalRun.fetch({ jobId });
+				if (job.status === "complete") {
+					setStatus(
+						`Completed ${job.provider} generation run ${job.runId}; wrote ${job.completedCases}/${job.totalCases} cases.`,
+					);
+					return;
+				}
+				if (job.status === "failed") {
+					setStatus(
+						`Failed ${job.provider} generation run ${job.runId}: ${job.error ?? "Unknown error"}`,
+					);
+					return;
+				}
+				setStatus(
+					`Running ${job.provider} generation run ${job.runId}: ${job.completedCases}/${job.totalCases || "visible"} cases complete.`,
+				);
+			} catch (error) {
+				setStatus(error instanceof Error ? error.message : String(error));
+				return;
+			}
+		}
+	}
 	const startEvalRun = api.lab.startEvalRun.useMutation({
 		onSuccess: (job) => {
 			setStatus(
-				`Started ${job.provider} generation run ${job.runId}; writing ${job.totalCases || "visible"} cases to runs/.`,
+				`Queued ${job.provider} generation run ${job.runId}; waiting for progress...`,
 			);
+			void pollEvalRun(job.id);
 		},
 		onError: (error) => {
 			setStatus(error.message);

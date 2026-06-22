@@ -167,6 +167,7 @@ function traceFromBriefing({
 	startedAt,
 	inputTokens,
 	outputTokens,
+	estimatedUsd,
 }: {
 	briefing: BriefingOutput;
 	sourcePacket: SourcePacket;
@@ -177,6 +178,7 @@ function traceFromBriefing({
 	startedAt: number;
 	inputTokens: number;
 	outputTokens: number;
+	estimatedUsd: number | null;
 }) {
 	return GenerationTraceSchema.parse({
 		id: `${briefing.id}-trace`,
@@ -207,7 +209,7 @@ function traceFromBriefing({
 		cost: {
 			inputTokens,
 			outputTokens,
-			estimatedUsd: 0,
+			estimatedUsd,
 		},
 		latencyMs: Math.max(1, Date.now() - startedAt),
 		artifactPaths: [`data/source-packets/${sourcePacket.id}.json`],
@@ -259,6 +261,7 @@ function generateLocalBriefing({
 		startedAt,
 		inputTokens: estimateTokens(prompt),
 		outputTokens: estimateTokens(outputText),
+		estimatedUsd: 0,
 	});
 
 	return {
@@ -329,6 +332,7 @@ async function generateOpenAIResponsesBriefing({
 		inputTokens: response.usage?.input_tokens ?? estimateTokens(prompt),
 		outputTokens:
 			response.usage?.output_tokens ?? estimateTokens(JSON.stringify(briefing)),
+		estimatedUsd: null,
 	});
 
 	return {

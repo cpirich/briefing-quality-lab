@@ -135,7 +135,7 @@ export const GenerationTraceSchema = z
 		cost: z.object({
 			inputTokens: z.number().int().nonnegative(),
 			outputTokens: z.number().int().nonnegative(),
-			estimatedUsd: z.number().nonnegative(),
+			estimatedUsd: z.number().nonnegative().nullable(),
 		}),
 		latencyMs: z.number().int().nonnegative(),
 		artifactPaths: z.array(artifactPathSchema).min(1),

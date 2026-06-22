@@ -139,6 +139,17 @@ async function executeEvalRun(
 			return input.caseIds.length === 0 || input.caseIds.includes(evalCase.id);
 		});
 		caseIds = selectedEvalCases.map((evalCase) => evalCase.id);
+		if (input.caseIds.length > 0) {
+			const selectedCaseIds = new Set(caseIds);
+			const missingCaseIds = input.caseIds.filter(
+				(caseId) => !selectedCaseIds.has(caseId),
+			);
+			if (missingCaseIds.length > 0) {
+				throw new Error(
+					`Requested eval cases were not selected: ${missingCaseIds.join(", ")}`,
+				);
+			}
+		}
 		if (caseIds.length === 0) {
 			throw new Error(
 				input.caseIds.length > 0
