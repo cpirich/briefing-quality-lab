@@ -247,12 +247,30 @@ export const RunManifestSchema = z.object({
 
 export const MetricToneSchema = z.enum(["green", "blue", "amber", "red"]);
 
+export const RunModelMetadataSchema = z.object({
+	provider: z.string().min(1),
+	model: z.string().min(1),
+	promptVersion: fixtureIdSchema.nullable(),
+	maxOutputTokens: z.number().int().positive().nullable(),
+	structuredOutputName: z.string().min(1).nullable(),
+	textVerbosity: z.enum(["low", "medium", "high"]).nullable(),
+	reasoningEffort: z.enum(["none", "low", "medium", "high"]).nullable(),
+	temperature: z.number().min(0).nullable(),
+	traceArtifactPath: artifactPathSchema.nullable(),
+});
+
 export const RunComparisonSchema = z.object({
 	id: fixtureIdSchema,
 	baselineRunId: fixtureIdSchema,
 	candidateRunId: fixtureIdSchema,
 	baselineLabel: z.string().min(1).optional(),
 	candidateLabel: z.string().min(1).optional(),
+	runMetadata: z
+		.object({
+			baseline: RunModelMetadataSchema.nullable(),
+			candidate: RunModelMetadataSchema.nullable(),
+		})
+		.optional(),
 	metrics: z.array(
 		z.object({
 			label: z.string().min(1),
@@ -319,4 +337,5 @@ export type GenerationTrace = z.infer<typeof GenerationTraceSchema>;
 export type EvaluatorOutput = z.infer<typeof EvaluatorOutputSchema>;
 export type RunManifest = z.infer<typeof RunManifestSchema>;
 export type RunComparison = z.infer<typeof RunComparisonSchema>;
+export type RunModelMetadata = z.infer<typeof RunModelMetadataSchema>;
 export type ArtifactEntry = z.infer<typeof ArtifactEntrySchema>;

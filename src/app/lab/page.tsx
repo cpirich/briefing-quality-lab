@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Badge } from "~/components/badge";
 import { Card, CardBody, CardHeader } from "~/components/card";
 import { cn } from "~/lib/utils";
+import type { RunModelMetadata } from "~/schemas";
 import { api } from "~/trpc/server";
 import { LabActions } from "./lab-actions";
 import { LabCaseInspector } from "./lab-case-inspector";
@@ -88,6 +89,65 @@ function changeTextClass(metric: string, value: string, changeLabel: string) {
 		return "text-[var(--warning-foreground)]";
 	}
 	return "text-[var(--success-foreground)]";
+}
+
+function metadataValue(value: number | string | null | undefined) {
+	if (value === null || value === undefined || value === "") {
+		return "provider default";
+	}
+
+	return String(value);
+}
+
+function RunMetadataPanel({
+	label,
+	metadata,
+}: {
+	label: string;
+	metadata: RunModelMetadata | null;
+}) {
+	if (!metadata) {
+		return (
+			<section className="space-y-2">
+				<h3 className="font-semibold text-sm">{label}</h3>
+				<p className="text-[var(--muted-foreground)] text-sm">
+					No trace metadata available.
+				</p>
+			</section>
+		);
+	}
+
+	const rows = [
+		["Provider", metadata.provider],
+		["Model", metadata.model],
+		["Prompt", metadata.promptVersion],
+		["Max output", metadata.maxOutputTokens],
+		["Schema", metadata.structuredOutputName],
+		["Reasoning", metadata.reasoningEffort],
+		["Verbosity", metadata.textVerbosity],
+		["Temperature", metadata.temperature],
+	] as const;
+
+	return (
+		<section className="space-y-2">
+			<h3 className="font-semibold text-sm">{label}</h3>
+			<dl className="grid grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] gap-x-3 gap-y-1.5 text-sm">
+				{rows.map(([name, value]) => (
+					<div className="contents" key={name}>
+						<dt className="text-[var(--muted-foreground)]">{name}</dt>
+						<dd className="min-w-0 break-words font-medium">
+							{metadataValue(value)}
+						</dd>
+					</div>
+				))}
+			</dl>
+			{metadata.traceArtifactPath ? (
+				<p className="break-all font-mono text-[var(--muted-foreground)] text-xs">
+					{metadata.traceArtifactPath}
+				</p>
+			) : null}
+		</section>
+	);
 }
 
 export default async function LabPage() {
@@ -353,6 +413,25 @@ export default async function LabPage() {
 							<div className="rounded-md border border-[var(--warning-border)] bg-[var(--warning)] p-3 text-[var(--warning-foreground)] text-sm">
 								{runComparison.recommendation.warning}
 							</div>
+						</CardBody>
+					</Card>
+
+					<Card>
+						<CardHeader>
+							<h2 className="font-semibold text-base">Run Metadata</h2>
+							<p className="text-[var(--muted-foreground)] text-sm">
+								Model and generation settings from trace artifacts.
+							</p>
+						</CardHeader>
+						<CardBody className="space-y-5">
+							<RunMetadataPanel
+								label={baselineLabel}
+								metadata={runComparison.runMetadata?.baseline ?? null}
+							/>
+							<RunMetadataPanel
+								label={candidateLabel}
+								metadata={runComparison.runMetadata?.candidate ?? null}
+							/>
 						</CardBody>
 					</Card>
 				</aside>

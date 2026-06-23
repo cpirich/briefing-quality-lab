@@ -17,6 +17,7 @@ import {
 	RunComparisonSchema,
 	type RunManifest,
 	RunManifestSchema,
+	type RunModelMetadata,
 	type SourcePacket,
 	SourcePacketSchema,
 } from "~/schemas";
@@ -371,6 +372,55 @@ function comparisonRecency(
 	);
 }
 
+function traceArtifactPath(trace: GenerationTrace) {
+	return (
+		trace.artifactPaths.find((artifactPath) =>
+			artifactPath.includes("/traces/"),
+		) ?? `runs/${trace.runId}/traces/${trace.caseId}.json`
+	);
+}
+
+function runModelMetadataFromTraces(
+	traces: GenerationTrace[],
+): RunModelMetadata | null {
+	const trace = [...traces].sort((left, right) =>
+		left.caseId.localeCompare(right.caseId),
+	)[0];
+
+	if (!trace) {
+		return null;
+	}
+
+	return {
+		provider: trace.model.provider,
+		model: trace.model.name,
+		promptVersion: trace.model.settings.promptVersion,
+		maxOutputTokens: trace.model.settings.maxOutputTokens,
+		structuredOutputName: trace.model.settings.structuredOutputName,
+		textVerbosity: trace.model.settings.textVerbosity,
+		reasoningEffort: trace.model.settings.reasoningEffort,
+		temperature: trace.model.settings.temperature,
+		traceArtifactPath: traceArtifactPath(trace),
+	};
+}
+
+async function comparisonWithRunMetadata(
+	comparison: RunComparison,
+): Promise<RunComparison> {
+	const [baselineTraces, candidateTraces] = await Promise.all([
+		listGenerationTraces(comparison.baselineRunId),
+		listGenerationTraces(comparison.candidateRunId),
+	]);
+
+	return RunComparisonSchema.parse({
+		...comparison,
+		runMetadata: {
+			baseline: runModelMetadataFromTraces(baselineTraces),
+			candidate: runModelMetadataFromTraces(candidateTraces),
+		},
+	});
+}
+
 function latestGeneratedComparison(
 	comparisons: RunComparison[],
 	manifestById: Map<string, RunManifest>,
@@ -441,7 +491,7 @@ export async function compareRuns(input?: {
 		);
 	}
 
-	return comparison;
+	return comparisonWithRunMetadata(comparison);
 }
 
 function evaluatorOutputByCaseId(evaluatorOutputs: EvaluatorOutput[]) {
