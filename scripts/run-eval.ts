@@ -933,14 +933,14 @@ function isGeneratedCandidateRun(manifest: RunManifest) {
 
 function isOpenAIProviderRun(manifest: RunManifest) {
 	return (
-		manifest.runId.includes("-openai-") ||
+		manifest.command.includes("--provider=openai") ||
 		manifest.variantLabel.startsWith("openai generated")
 	);
 }
 
 function isLocalProviderRun(manifest: RunManifest) {
 	return (
-		manifest.runId.includes("-local-") ||
+		manifest.command.includes("--provider=local") ||
 		manifest.variantLabel.startsWith("local generated")
 	);
 }
