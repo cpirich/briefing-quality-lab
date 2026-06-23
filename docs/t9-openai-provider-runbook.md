@@ -17,7 +17,7 @@ The first OpenAI pass is a provider shakedown, not a final improvement claim. It
 
 - Phase 8 generated-run work is merged or otherwise stable on the working branch.
 - `.env.local` contains `OPENAI_API_KEY`.
-- Optional: `.env.local` contains `OPENAI_MODEL` when testing a model other than the app default.
+- Optional: `.env.local` contains `OPENAI_MODEL` when testing a model other than the app default, currently `gpt-5.2`.
 - The visible non-holdout eval corpus validates.
 - The local generated-run path remains available as a cheap offline rehearsal and regression path.
 
