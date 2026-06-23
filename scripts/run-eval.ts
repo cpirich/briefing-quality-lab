@@ -85,6 +85,7 @@ const localEvaluatorCalibration = {
 const coverageTermMinimumLength = 5;
 const coverageTermsPerPoint = 5;
 const fixtureIdPattern = /^[a-z0-9][a-z0-9-]*$/;
+const reservedRunIds = new Set(["comparisons"]);
 
 function optionValue(name: string) {
 	const prefix = `${name}=`;
@@ -131,6 +132,11 @@ function validateFixtureId(value: string, label: string) {
 	if (!fixtureIdPattern.test(value)) {
 		throw new Error(
 			`Invalid ${label} "${value}". Use lowercase letters, numbers, and hyphens only; path separators are not allowed.`,
+		);
+	}
+	if (label === "run id" && reservedRunIds.has(value)) {
+		throw new Error(
+			`Invalid run id "${value}". This id is reserved for run-store infrastructure.`,
 		);
 	}
 
@@ -364,6 +370,32 @@ function briefingWithAcceptedCitationsOnly(
 						},
 					],
 	};
+}
+
+function sortedIds(values: string[]) {
+	return [...values].sort();
+}
+
+function assertVariantCaseSetMatchesBaseline({
+	referenceManifest,
+	selectedEvalCases,
+}: {
+	referenceManifest?: RunManifest;
+	selectedEvalCases: EvalCase[];
+}) {
+	if (!referenceManifest) {
+		return;
+	}
+
+	const selectedCaseIds = sortedIds(
+		selectedEvalCases.map((evalCase) => evalCase.id),
+	);
+	const referenceCaseIds = sortedIds(referenceManifest.caseIds);
+	if (selectedCaseIds.join("\0") !== referenceCaseIds.join("\0")) {
+		throw new Error(
+			`Cannot generate variant against baseline ${referenceManifest.runId} with a different case set. Selected cases: [${selectedCaseIds.join(", ")}]; baseline cases: [${referenceCaseIds.join(", ")}].`,
+		);
+	}
 }
 
 function roundMetric(value: number) {
@@ -699,6 +731,7 @@ async function generateRun(options: EvalOptions) {
 	const traces: GenerationTrace[] = [];
 	const evaluations: EvaluatorOutput[] = [];
 	const referenceManifest = await referenceManifestForVariant(options);
+	assertVariantCaseSetMatchesBaseline({ referenceManifest, selectedEvalCases });
 
 	await prepareRunOutputDirectories(runId, options.overwriteRun);
 
@@ -717,7 +750,8 @@ async function generateRun(options: EvalOptions) {
 				runId,
 				provider: options.provider,
 			});
-			const briefing = BriefingOutputSchema.parse(
+			const rawBriefing = result.briefing;
+			const persistedBriefing = BriefingOutputSchema.parse(
 				briefingWithAcceptedCitationsOnly(result.briefing, evalCase),
 			);
 			const briefingPath = `runs/${runId}/briefings/${evalCase.id}.json`;
@@ -725,7 +759,7 @@ async function generateRun(options: EvalOptions) {
 			const evaluationPath = `runs/${runId}/evaluations/${evalCase.id}.json`;
 			const trace = GenerationTraceSchema.parse({
 				...result.trace,
-				output: briefing,
+				output: persistedBriefing,
 				artifactPaths: [
 					...result.trace.artifactPaths,
 					briefingPath,
@@ -736,16 +770,16 @@ async function generateRun(options: EvalOptions) {
 			const evaluation = evaluatorOutputFor({
 				runId,
 				evalCase,
-				briefing,
+				briefing: rawBriefing,
 			});
 
 			await Promise.all([
-				writeJsonArtifact(briefingPath, briefing),
+				writeJsonArtifact(briefingPath, persistedBriefing),
 				writeJsonArtifact(tracePath, trace),
 				writeJsonArtifact(evaluationPath, evaluation),
 			]);
 
-			briefings.push(briefing);
+			briefings.push(persistedBriefing);
 			traces.push(trace);
 			evaluations.push(evaluation);
 			artifactPaths.push(briefingPath, tracePath, evaluationPath);

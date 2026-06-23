@@ -33,6 +33,23 @@ async function listPublicEvalCases() {
 	});
 }
 
+async function listPublicCaseBreakdown(input?: {
+	baselineRunId?: string;
+	candidateRunId?: string;
+}) {
+	const [caseBreakdown, evalCases] = await Promise.all([
+		listCaseBreakdown(input),
+		listEvalCases(),
+	]);
+	const holdoutCaseIds = new Set(
+		evalCases
+			.filter((evalCase) => evalCase.holdout)
+			.map((evalCase) => evalCase.id),
+	);
+
+	return caseBreakdown.filter((entry) => !holdoutCaseIds.has(entry.caseId));
+}
+
 export const labRouter = createTRPCRouter({
 	listEvalCases: publicProcedure.query(() => {
 		return listPublicEvalCases();
@@ -52,7 +69,7 @@ export const labRouter = createTRPCRouter({
 				.optional(),
 		)
 		.query(({ input }) => {
-			return listCaseBreakdown(input);
+			return listPublicCaseBreakdown(input);
 		}),
 
 	compareRuns: publicProcedure
