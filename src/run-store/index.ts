@@ -313,6 +313,16 @@ export async function listGenerationTraces(
 	return sortById(traces);
 }
 
+async function listOptionalGenerationTraces(
+	runId = defaultCandidateRunId,
+): Promise<GenerationTrace[]> {
+	const traces = await loadOptionalJsonFixtures(
+		`runs/${runId}/traces`,
+		GenerationTraceSchema,
+	);
+	return sortById(traces);
+}
+
 export async function listEvaluatorOutputs(
 	runId = defaultCandidateRunId,
 ): Promise<EvaluatorOutput[]> {
@@ -408,8 +418,8 @@ async function comparisonWithRunMetadata(
 	comparison: RunComparison,
 ): Promise<RunComparison> {
 	const [baselineTraces, candidateTraces] = await Promise.all([
-		listGenerationTraces(comparison.baselineRunId),
-		listGenerationTraces(comparison.candidateRunId),
+		listOptionalGenerationTraces(comparison.baselineRunId),
+		listOptionalGenerationTraces(comparison.candidateRunId),
 	]);
 
 	return RunComparisonSchema.parse({
