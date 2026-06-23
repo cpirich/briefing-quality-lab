@@ -84,6 +84,12 @@ Add repeatable commands for local demo work:
 - `eval:variant`: generate a candidate/variant run with the same artifact shape.
 - `eval:report`: compare two runs and refresh comparison/report artifacts.
 
+Command roles:
+
+- `eval:baseline` is the starting point for an experiment. It runs the current baseline generator across the selected eval cases, writes `runs/baseline-*` briefing, trace, evaluation, and manifest artifacts, then refreshes the latest comparison against the available candidate/reference target.
+- `eval:variant` is for a proposed improvement. It runs the candidate generator across the same artifact path shape under `runs/candidate-*`; when a generated baseline is available, latency is compared against that baseline instead of using a fixed placeholder ratio.
+- `eval:report` does not generate new briefings. It reads existing run manifests and per-case artifacts, writes a comparison JSON under `runs/comparisons/`, and refreshes `reports/latest-eval-summary.md`.
+
 The commands should support explicit ids through environment variables or flags so committed demo artifacts can have stable names.
 
 ## Dashboard Behavior

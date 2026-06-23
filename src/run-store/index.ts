@@ -338,11 +338,51 @@ function isGeneratedComparison(runComparison: RunComparison) {
 	);
 }
 
+function comparisonRecency(
+	runComparison: RunComparison,
+	manifestById: Map<string, RunManifest>,
+) {
+	const baselineCreatedAt = Date.parse(
+		manifestById.get(runComparison.baselineRunId)?.createdAt ?? "",
+	);
+	const candidateCreatedAt = Date.parse(
+		manifestById.get(runComparison.candidateRunId)?.createdAt ?? "",
+	);
+
+	return Math.max(
+		Number.isNaN(baselineCreatedAt) ? 0 : baselineCreatedAt,
+		Number.isNaN(candidateCreatedAt) ? 0 : candidateCreatedAt,
+	);
+}
+
+function latestGeneratedComparison(
+	comparisons: RunComparison[],
+	manifestById: Map<string, RunManifest>,
+) {
+	return [...comparisons].filter(isGeneratedComparison).sort((left, right) => {
+		const recencyDelta =
+			comparisonRecency(right, manifestById) -
+			comparisonRecency(left, manifestById);
+
+		if (recencyDelta !== 0) {
+			return recencyDelta;
+		}
+
+		return right.id.localeCompare(left.id);
+	})[0];
+}
+
 export async function compareRuns(input?: {
 	baselineRunId?: string;
 	candidateRunId?: string;
 }): Promise<RunComparison> {
-	const comparisons = await listRunComparisons();
+	const [comparisons, runManifests] = await Promise.all([
+		listRunComparisons(),
+		listRunManifests(),
+	]);
+	const manifestById = new Map(
+		runManifests.map((manifest) => [manifest.runId, manifest]),
+	);
 	const comparison =
 		(input?.baselineRunId || input?.candidateRunId
 			? comparisons.find(
@@ -354,7 +394,7 @@ export async function compareRuns(input?: {
 				)
 			: undefined) ??
 		(!input?.baselineRunId && !input?.candidateRunId
-			? [...comparisons].reverse().find(isGeneratedComparison)
+			? latestGeneratedComparison(comparisons, manifestById)
 			: undefined) ??
 		comparisons.find(
 			(candidateComparison) => candidateComparison.id === defaultComparisonId,

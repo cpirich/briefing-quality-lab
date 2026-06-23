@@ -9,6 +9,7 @@ Generated comparison: Generated baseline `baseline-local-20260622-160000` vs Ref
 | Unsupported claims | 14 | 7 | -7 |
 | Eval cases | 7 | 7 | 0 |
 | Median latency | 0.0s | 7.9s | 7.9s |
+| Cost ratio | 1.00x | 1.10x | +0.10x |
 
 Featured case: `case-adoption-friction` - Developer adoption friction briefing.
 
@@ -23,6 +24,6 @@ Comparison uses file-backed artifacts for the same eval case so the before/after
 
 ## Evidence Status
 
-This comparison uses Generated baseline and a human-authored Reference target. It validates the eval artifact flow and shows the gap to target, but not live model quality improvement.
+This comparison uses Generated baseline and a human-authored Reference target. It validates the eval artifact flow, but not live model quality improvement.
 
-Run a live-provider baseline and generated candidate before using this as improvement evidence.
+Run a generated candidate before using this as improvement evidence.

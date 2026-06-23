@@ -81,6 +81,12 @@
 			"baseline": "0.0s",
 			"candidate": "7.9s",
 			"delta": "7.9s"
+		},
+		{
+			"metric": "Cost ratio",
+			"baseline": "1.00x",
+			"candidate": "1.10x",
+			"delta": "+0.10x"
 		}
 	],
 	"failureClusters": [
@@ -124,8 +130,8 @@
 	"recommendation": {
 		"tone": "amber",
 		"label": "Pipeline rehearsal",
-		"text": "This comparison uses Generated baseline and a human-authored Reference target. It validates the eval artifact flow and shows the gap to target, but not live model quality improvement.",
-		"warning": "Run a live-provider baseline and generated candidate before using this as improvement evidence."
+		"text": "This comparison uses Generated baseline and a human-authored Reference target. It validates the eval artifact flow, but not live model quality improvement.",
+		"warning": "Run a generated candidate before using this as improvement evidence."
 	},
 	"artifactPaths": [
 		"runs/baseline-local-20260622-160000/manifest.json",

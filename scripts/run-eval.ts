@@ -344,6 +344,43 @@ function unsupportedClaims(evaluations: EvaluatorOutput[]) {
 	}, 0);
 }
 
+function tracesHaveUnknownCost(traces: GenerationTrace[]) {
+	return traces.some((trace) => trace.cost.estimatedUsd === null);
+}
+
+function knownEstimatedCost(traces: GenerationTrace[]) {
+	return traces.reduce(
+		(total, trace) => total + (trace.cost.estimatedUsd ?? 0),
+		0,
+	);
+}
+
+function latencyRatioFor({
+	mode,
+	traces,
+	referenceManifest,
+}: {
+	mode: Exclude<EvalMode, "report">;
+	traces: GenerationTrace[];
+	referenceManifest?: RunManifest;
+}) {
+	if (mode === "baseline") {
+		return 1;
+	}
+
+	const referenceLatency = referenceManifest?.aggregateMetrics.medianLatencyMs;
+	if (!referenceLatency) {
+		return 1;
+	}
+
+	return roundMetric(
+		Math.max(
+			0.01,
+			median(traces.map((trace) => trace.latencyMs)) / referenceLatency,
+		),
+	);
+}
+
 function manifestFor({
 	runId,
 	mode,
@@ -352,6 +389,9 @@ function manifestFor({
 	evaluations,
 	traces,
 	artifactPaths,
+	referenceManifest,
+	status = "complete",
+	error,
 }: {
 	runId: string;
 	mode: Exclude<EvalMode, "report">;
@@ -360,20 +400,15 @@ function manifestFor({
 	evaluations: EvaluatorOutput[];
 	traces: GenerationTrace[];
 	artifactPaths: string[];
+	referenceManifest?: RunManifest;
+	status?: RunManifest["status"];
+	error?: string;
 }) {
+	const hasUnknownCost = tracesHaveUnknownCost(traces);
 	const costRatio =
 		mode === "baseline"
 			? 1
-			: roundMetric(
-					Math.max(
-						1,
-						1 +
-							traces.reduce(
-								(total, trace) => total + (trace.cost.estimatedUsd ?? 0),
-								0,
-							),
-					),
-				);
+			: roundMetric(Math.max(1, 1 + knownEstimatedCost(traces)));
 	const citationSupport = averageScore(evaluations, "citationSupport");
 
 	return RunManifestSchema.parse({
@@ -383,7 +418,7 @@ function manifestFor({
 			mode === "baseline"
 				? `${provider} generated baseline`
 				: `${provider} generated variant`,
-		status: "complete",
+		status,
 		gitRef: "local-worktree",
 		command: `bun run eval:${mode}`,
 		caseIds,
@@ -395,7 +430,7 @@ function manifestFor({
 			unsupportedClaims: unsupportedClaims(evaluations),
 			medianLatencyMs: median(traces.map((trace) => trace.latencyMs)),
 			costRatio,
-			latencyRatio: mode === "baseline" ? 1 : 0.96,
+			latencyRatio: latencyRatioFor({ mode, traces, referenceManifest }),
 		},
 		guardrails: [
 			{
@@ -408,12 +443,13 @@ function manifestFor({
 			{
 				id: "cost-ratio",
 				label: "Cost ratio",
-				status: costRatio <= 1.15 ? "pass" : "warn",
-				value: `${costRatio.toFixed(2)}x`,
+				status: hasUnknownCost ? "warn" : costRatio <= 1.15 ? "pass" : "warn",
+				value: hasUnknownCost ? "unknown" : `${costRatio.toFixed(2)}x`,
 				threshold: "<= 1.15x",
 			},
 		],
 		artifactPaths,
+		error,
 	});
 }
 
@@ -435,68 +471,94 @@ async function generateRun(options: EvalOptions) {
 	const briefings: BriefingOutput[] = [];
 	const traces: GenerationTrace[] = [];
 	const evaluations: EvaluatorOutput[] = [];
+	const referenceManifest =
+		options.mode === "variant"
+			? await manifestForRunId(
+					options.baselineRunId ??
+						(await latestRunId(generatedBaselinePrefixes)),
+				)
+			: undefined;
 
-	for (const evalCase of selectedEvalCases) {
-		const sourcePacket = sourcePacketsById.get(evalCase.sourcePacketId);
-		if (!sourcePacket) {
-			throw new Error(
-				`Eval case ${evalCase.id} references missing source packet ${evalCase.sourcePacketId}`,
-			);
+	try {
+		for (const evalCase of selectedEvalCases) {
+			const sourcePacket = sourcePacketsById.get(evalCase.sourcePacketId);
+			if (!sourcePacket) {
+				throw new Error(
+					`Eval case ${evalCase.id} references missing source packet ${evalCase.sourcePacketId}`,
+				);
+			}
+
+			const result = await generateBriefing({
+				sourcePacket,
+				userRequest: evalCase.task,
+				runId,
+				provider: options.provider,
+			});
+			const briefingPath = `runs/${runId}/briefings/${evalCase.id}.json`;
+			const tracePath = `runs/${runId}/traces/${evalCase.id}.json`;
+			const evaluationPath = `runs/${runId}/evaluations/${evalCase.id}.json`;
+			const trace = GenerationTraceSchema.parse({
+				...result.trace,
+				artifactPaths: [
+					...result.trace.artifactPaths,
+					briefingPath,
+					tracePath,
+					evaluationPath,
+				],
+			});
+			const evaluation = evaluatorOutputFor({
+				runId,
+				evalCase,
+				briefing: result.briefing,
+			});
+
+			await Promise.all([
+				writeJsonArtifact(briefingPath, result.briefing),
+				writeJsonArtifact(tracePath, trace),
+				writeJsonArtifact(evaluationPath, evaluation),
+			]);
+
+			briefings.push(result.briefing);
+			traces.push(trace);
+			evaluations.push(evaluation);
+			artifactPaths.push(briefingPath, tracePath, evaluationPath);
 		}
 
-		const result = await generateBriefing({
-			sourcePacket,
-			userRequest: evalCase.task,
+		const manifest = manifestFor({
 			runId,
+			mode: options.mode,
 			provider: options.provider,
+			caseIds: selectedEvalCases.map((evalCase) => evalCase.id),
+			evaluations,
+			traces,
+			artifactPaths,
+			referenceManifest,
 		});
-		const briefingPath = `runs/${runId}/briefings/${evalCase.id}.json`;
-		const tracePath = `runs/${runId}/traces/${evalCase.id}.json`;
-		const evaluationPath = `runs/${runId}/evaluations/${evalCase.id}.json`;
-		const trace = GenerationTraceSchema.parse({
-			...result.trace,
-			artifactPaths: [
-				...result.trace.artifactPaths,
-				briefingPath,
-				tracePath,
-				evaluationPath,
-			],
-		});
-		const evaluation = evaluatorOutputFor({
+		await writeJsonArtifact(`runs/${runId}/manifest.json`, manifest);
+
+		return {
+			manifest,
+			briefings,
+			evaluations,
+			traces,
+		};
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		const failedManifest = manifestFor({
 			runId,
-			evalCase,
-			briefing: result.briefing,
+			mode: options.mode,
+			provider: options.provider,
+			caseIds: evaluations.map((evaluation) => evaluation.caseId),
+			evaluations,
+			traces,
+			artifactPaths,
+			referenceManifest,
+			status: "failed",
+			error: message,
 		});
-
-		await Promise.all([
-			writeJsonArtifact(briefingPath, result.briefing),
-			writeJsonArtifact(tracePath, trace),
-			writeJsonArtifact(evaluationPath, evaluation),
-		]);
-
-		briefings.push(result.briefing);
-		traces.push(trace);
-		evaluations.push(evaluation);
-		artifactPaths.push(briefingPath, tracePath, evaluationPath);
+		await writeJsonArtifact(`runs/${runId}/manifest.json`, failedManifest);
+		throw error;
 	}
-
-	const manifest = manifestFor({
-		runId,
-		mode: options.mode,
-		provider: options.provider,
-		caseIds: selectedEvalCases.map((evalCase) => evalCase.id),
-		evaluations,
-		traces,
-		artifactPaths,
-	});
-	await writeJsonArtifact(`runs/${runId}/manifest.json`, manifest);
-
-	return {
-		manifest,
-		briefings,
-		evaluations,
-		traces,
-	};
 }
 
 function startsWithOneOf(value: string, prefixes: string[]) {
@@ -507,7 +569,21 @@ async function latestRunId(prefixes: string[]) {
 	const manifests = await listRunManifests();
 	return [...manifests]
 		.reverse()
-		.find((manifest) => startsWithOneOf(manifest.runId, prefixes))?.runId;
+		.find(
+			(manifest) =>
+				manifest.status === "complete" &&
+				startsWithOneOf(manifest.runId, prefixes),
+		)?.runId;
+}
+
+async function manifestForRunId(runId: string | undefined) {
+	if (!runId) {
+		return undefined;
+	}
+
+	return (await listRunManifests()).find(
+		(manifest) => manifest.runId === runId,
+	);
 }
 
 async function artifactsFor(runId: string): Promise<RunArtifacts> {
@@ -580,21 +656,39 @@ function evidenceStatusFor({
 	candidateLabel: string;
 	overallDelta: number;
 }) {
-	const usesLocalProvider =
-		baselineRunId.startsWith("baseline-local-") ||
-		candidateRunId.startsWith("candidate-local-");
-	const usesSeededFallback = !startsWithOneOf(
+	const usesGeneratedBaseline = startsWithOneOf(
+		baselineRunId,
+		generatedBaselinePrefixes,
+	);
+	const usesGeneratedCandidate = startsWithOneOf(
 		candidateRunId,
 		generatedCandidatePrefixes,
 	);
+	const usesLiveProvider =
+		baselineRunId.startsWith("baseline-openai-") &&
+		candidateRunId.startsWith("candidate-openai-");
+	const usesLocalProvider =
+		baselineRunId.startsWith("baseline-local-") ||
+		candidateRunId.startsWith("candidate-local-");
+	const usesReferenceTarget = !usesGeneratedCandidate;
 
-	if (usesLocalProvider || usesSeededFallback) {
+	if (!usesGeneratedBaseline || !usesGeneratedCandidate || !usesLiveProvider) {
+		const candidateDescription = usesReferenceTarget
+			? `a human-authored ${candidateLabel}`
+			: candidateLabel;
+		const warning = !usesGeneratedBaseline
+			? "Run a generated baseline before using this as improvement evidence."
+			: !usesGeneratedCandidate
+				? "Run a generated candidate before using this as improvement evidence."
+				: usesLocalProvider
+					? "Run live-provider baseline and candidate artifacts before using this as live model quality evidence."
+					: "Run live-provider artifacts on both sides before using this as live model quality evidence.";
+
 		return {
 			tone: "amber" as const,
 			label: "Pipeline rehearsal",
-			text: `This comparison uses ${baselineLabel} and a human-authored ${candidateLabel}. It validates the eval artifact flow and shows the gap to target, but not live model quality improvement.`,
-			warning:
-				"Run a live-provider baseline and generated candidate before using this as improvement evidence.",
+			text: `This comparison uses ${baselineLabel} and ${candidateDescription}. It validates the eval artifact flow, but not live model quality improvement.`,
+			warning,
 		};
 	}
 
@@ -605,6 +699,31 @@ function evidenceStatusFor({
 		warning:
 			"Generated evaluator scores are deterministic heuristics; review evaluator quality before claiming production model quality.",
 	};
+}
+
+function hasUnknownCost(manifest: RunManifest) {
+	return manifest.guardrails.some(
+		(guardrail) =>
+			guardrail.id === "cost-ratio" && guardrail.value === "unknown",
+	);
+}
+
+function costRatioLabel(manifest: RunManifest) {
+	return hasUnknownCost(manifest)
+		? "unknown"
+		: `${manifest.aggregateMetrics.costRatio.toFixed(2)}x`;
+}
+
+function costRatioDeltaLabel(candidate: RunManifest, baseline: RunManifest) {
+	if (hasUnknownCost(candidate) || hasUnknownCost(baseline)) {
+		return "unknown";
+	}
+
+	return formatDelta(
+		candidate.aggregateMetrics.costRatio,
+		baseline.aggregateMetrics.costRatio,
+		"x",
+	);
 }
 
 function trendLabelFor(runId: string, role: "baseline" | "candidate") {
@@ -823,17 +942,19 @@ async function writeComparisonAndReport(input: {
 			},
 			{
 				label: "Cost ratio",
-				value: `${candidateMetrics.costRatio.toFixed(2)}x`,
-				delta: formatDelta(
-					candidateMetrics.costRatio,
-					baselineMetrics.costRatio,
-					"x",
-				),
+				value: costRatioLabel(candidate.manifest),
+				delta: costRatioDeltaLabel(candidate.manifest, baseline.manifest),
 				status:
 					changeLabel === "Gap"
 						? `${candidateLabel} cost ratio`
 						: "Cost guardrail",
-				tone: candidateMetrics.costRatio <= 1.15 ? "amber" : "red",
+				tone:
+					hasUnknownCost(candidate.manifest) ||
+					hasUnknownCost(baseline.manifest)
+						? "amber"
+						: candidateMetrics.costRatio <= 1.15
+							? "amber"
+							: "red",
 			},
 			{
 				label: "Latency ratio",
@@ -904,6 +1025,12 @@ async function writeComparisonAndReport(input: {
 					(candidateMetrics.medianLatencyMs - baselineMetrics.medianLatencyMs) /
 						1000
 				).toFixed(1)}s`,
+			},
+			{
+				metric: "Cost ratio",
+				baseline: costRatioLabel(baseline.manifest),
+				candidate: costRatioLabel(candidate.manifest),
+				delta: costRatioDeltaLabel(candidate.manifest, baseline.manifest),
 			},
 		],
 		failureClusters: failureClusters(candidate.evaluations),
