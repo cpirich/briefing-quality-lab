@@ -515,16 +515,7 @@ async function generateRun(options: EvalOptions) {
 	const briefings: BriefingOutput[] = [];
 	const traces: GenerationTrace[] = [];
 	const evaluations: EvaluatorOutput[] = [];
-	const referenceManifest =
-		options.mode === "variant"
-			? await manifestForRunId(
-					options.baselineRunId ??
-						(await latestRunId(
-							generatedBaselinePrefixes,
-							isGeneratedBaselineRun,
-						)),
-				)
-			: undefined;
+	const referenceManifest = await referenceManifestForVariant(options);
 
 	await prepareRunOutputDirectories(runId, options.overwriteRun);
 
@@ -644,9 +635,16 @@ function isLocalProviderRun(manifest: RunManifest) {
 	);
 }
 
+function isProviderRun(manifest: RunManifest, provider: EvalProvider) {
+	return provider === "openai"
+		? isOpenAIProviderRun(manifest)
+		: isLocalProviderRun(manifest);
+}
+
 async function latestRunId(
 	prefixes: string[],
 	isGeneratedRun?: (manifest: RunManifest) => boolean,
+	provider?: EvalProvider,
 ) {
 	const manifests = await listRunManifests();
 	return [...manifests]
@@ -655,7 +653,8 @@ async function latestRunId(
 			(manifest) =>
 				manifest.status === "complete" &&
 				(startsWithOneOf(manifest.runId, prefixes) ||
-					isGeneratedRun?.(manifest)),
+					isGeneratedRun?.(manifest)) &&
+				(!provider || isProviderRun(manifest, provider)),
 		)?.runId;
 }
 
@@ -669,12 +668,54 @@ async function manifestForRunId(runId: string | undefined) {
 	);
 }
 
+async function completeManifestForRunId(runId: string, role: string) {
+	const manifest = await manifestForRunId(runId);
+	if (!manifest) {
+		throw new Error(`No ${role} run manifest found for ${runId}.`);
+	}
+	if (manifest.status !== "complete") {
+		throw new Error(
+			`Cannot use ${role} run ${runId} because its status is ${manifest.status}.`,
+		);
+	}
+
+	return manifest;
+}
+
+async function referenceManifestForVariant(options: EvalOptions) {
+	if (options.mode !== "variant") {
+		return undefined;
+	}
+
+	if (options.baselineRunId) {
+		return completeManifestForRunId(options.baselineRunId, "baseline");
+	}
+
+	const baselineRunId = await latestRunId(
+		[`baseline-${options.provider}-`],
+		isGeneratedBaselineRun,
+		options.provider,
+	);
+	if (!baselineRunId) {
+		throw new Error(
+			`No complete ${options.provider} generated baseline run found. Run eval:baseline --provider=${options.provider} first, or pass --baseline=<run-id> for an explicit cross-provider comparison.`,
+		);
+	}
+
+	return completeManifestForRunId(baselineRunId, "baseline");
+}
+
 async function artifactsFor(runId: string): Promise<RunArtifacts> {
 	const manifest = (await listRunManifests()).find(
 		(candidateManifest) => candidateManifest.runId === runId,
 	);
 	if (!manifest) {
 		throw new Error(`No run manifest found for ${runId}`);
+	}
+	if (manifest.status !== "complete") {
+		throw new Error(
+			`Cannot report on run ${runId} because its status is ${manifest.status}.`,
+		);
 	}
 
 	return {
@@ -816,6 +857,32 @@ function costRatioDeltaLabel(candidate: RunManifest, baseline: RunManifest) {
 		baseline.aggregateMetrics.costRatio,
 		"x",
 	);
+}
+
+function selectedPairLatencyMetric(
+	candidate: RunManifest,
+	baseline: RunManifest,
+) {
+	const baselineLatencyMs = baseline.aggregateMetrics.medianLatencyMs;
+	const candidateLatencyMs = candidate.aggregateMetrics.medianLatencyMs;
+	if (baselineLatencyMs < 100) {
+		return {
+			value: "not comparable",
+			delta: `${(candidateLatencyMs / 1000).toFixed(1)}s vs ${(
+				baselineLatencyMs / 1000
+			).toFixed(1)}s`,
+			tone: "amber" as const,
+		};
+	}
+
+	const latencyRatio = roundMetric(
+		Math.max(0.01, candidateLatencyMs / baselineLatencyMs),
+	);
+	return {
+		value: `${latencyRatio.toFixed(2)}x`,
+		delta: formatDelta(latencyRatio, 1, "x"),
+		tone: latencyRatio <= 1 ? ("green" as const) : ("amber" as const),
+	};
 }
 
 function trendLabelFor(manifest: RunManifest, role: "baseline" | "candidate") {
@@ -999,6 +1066,10 @@ async function writeComparisonAndReport(input: {
 	const overallDelta = candidateMetrics.overall - baselineMetrics.overall;
 	const citationDelta =
 		candidateMetrics.citationSupport - baselineMetrics.citationSupport;
+	const latencyMetric = selectedPairLatencyMetric(
+		candidate.manifest,
+		baseline.manifest,
+	);
 	const baselineLabel = trendLabelFor(baseline.manifest, "baseline");
 	const candidateLabel = trendLabelFor(candidate.manifest, "candidate");
 	const changeLabel = comparisonChangeLabel(candidate.manifest);
@@ -1071,20 +1142,13 @@ async function writeComparisonAndReport(input: {
 			},
 			{
 				label: "Latency ratio",
-				value: `${candidateMetrics.latencyRatio.toFixed(2)}x`,
-				delta: formatDelta(
-					candidateMetrics.latencyRatio,
-					baselineMetrics.latencyRatio,
-					"x",
-				),
+				value: latencyMetric.value,
+				delta: latencyMetric.delta,
 				status:
 					changeLabel === "Gap"
 						? `${candidateLabel} latency ratio`
 						: "Median latency proxy",
-				tone:
-					candidateMetrics.latencyRatio <= baselineMetrics.latencyRatio
-						? "green"
-						: "amber",
+				tone: latencyMetric.tone,
 			},
 		],
 		trend: [

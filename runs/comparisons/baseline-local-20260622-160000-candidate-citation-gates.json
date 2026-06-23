@@ -35,10 +35,10 @@
 		},
 		{
 			"label": "Latency ratio",
-			"value": "0.94x",
-			"delta": "-0.06x",
+			"value": "not comparable",
+			"delta": "7.9s vs 0.0s",
 			"status": "Reference target latency ratio",
-			"tone": "green"
+			"tone": "amber"
 		}
 	],
 	"trend": [
