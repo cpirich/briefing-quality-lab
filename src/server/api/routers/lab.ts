@@ -319,9 +319,22 @@ export const labRouter = createTRPCRouter({
 		return listPublicEvalCases();
 	}),
 
-	listArtifacts: publicProcedure.query(() => {
-		return listArtifacts();
-	}),
+	listArtifacts: publicProcedure
+		.input(
+			z
+				.object({
+					baselineRunId: z.string().min(1).optional(),
+					candidateRunId: z.string().min(1).optional(),
+				})
+				.optional(),
+		)
+		.query(async ({ input }) => {
+			const comparison = await publicSafeComparison(input);
+			return listArtifacts({
+				artifactPaths: comparison.artifactPaths,
+				ownerLabel: `Run comparison ${comparison.id}`,
+			});
+		}),
 
 	listCaseBreakdown: publicProcedure
 		.input(
