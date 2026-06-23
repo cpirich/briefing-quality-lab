@@ -11,6 +11,12 @@ export const metadata: Metadata = {
 	title: "Briefing Genie Improvement Lab",
 };
 
+const lowerIsBetterDeltaMetrics = new Set([
+	"Unsupported claims",
+	"Median latency",
+	"Cost ratio",
+]);
+
 function comparisonSideLabel(runId: string) {
 	if (runId.startsWith("baseline-local-")) {
 		return "Generated baseline";
@@ -38,6 +44,13 @@ function usesReferenceTarget(candidateRunId: string) {
 	return candidateRunId === "candidate-citation-gates";
 }
 
+function comparisonChangeLabel(candidateLabel: string, candidateRunId: string) {
+	return candidateLabel === "Reference target" ||
+		usesReferenceTarget(candidateRunId)
+		? "Gap"
+		: "Delta";
+}
+
 function metricBadgeLabel(value: string, changeLabel: string) {
 	return changeLabel === "Gap" ? `gap ${value}` : value;
 }
@@ -48,14 +61,31 @@ function comparisonBarClass(label: string, baselineLabel: string) {
 		: "bg-[var(--accent)]";
 }
 
-function changeTextClass(value: string, changeLabel: string) {
-	if (changeLabel !== "Gap") {
-		return "text-[var(--success-foreground)]";
+function numericDelta(value: string) {
+	const parsed = Number.parseFloat(value.replace(/[^0-9.-]/g, ""));
+	return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function changeTextClass(metric: string, value: string, changeLabel: string) {
+	const delta = numericDelta(value);
+
+	if (delta === 0 || value === "unknown") {
+		return "text-[var(--muted-foreground)]";
 	}
-	if (value.startsWith("+")) {
+
+	if (changeLabel !== "Gap") {
+		const lowerIsBetter = lowerIsBetterDeltaMetrics.has(metric);
+		const isImprovement = lowerIsBetter ? delta < 0 : delta > 0;
+
+		return isImprovement
+			? "text-[var(--success-foreground)]"
+			: "text-[var(--danger-foreground)]";
+	}
+
+	if (delta > 0) {
 		return "text-[var(--warning-foreground)]";
 	}
-	if (value.startsWith("-")) {
+	if (delta < 0) {
 		return "text-[var(--success-foreground)]";
 	}
 	return "text-[var(--muted-foreground)]";
@@ -74,9 +104,16 @@ export default async function LabPage() {
 	const candidateLabel =
 		runComparison.candidateLabel ??
 		comparisonSideLabel(runComparison.candidateRunId);
-	const changeLabel = usesReferenceTarget(runComparison.candidateRunId)
-		? "Gap"
-		: "Delta";
+	const changeLabel = comparisonChangeLabel(
+		candidateLabel,
+		runComparison.candidateRunId,
+	);
+	const summaryTitle =
+		changeLabel === "Gap" ? "Reference Target Summary" : "Candidate Summary";
+	const summaryDescription =
+		changeLabel === "Gap"
+			? `Large values are ${candidateLabel} metrics; badges show the gap from ${baselineLabel}.`
+			: `Large values are ${candidateLabel} metrics; badges show deltas from ${baselineLabel}.`;
 	const comparedCaseCount =
 		Number(
 			runComparison.comparisonRows.find((row) => row.metric === "Eval cases")
@@ -110,12 +147,9 @@ export default async function LabPage() {
 				<section className="grid min-w-0 gap-4">
 					<div className="grid gap-2">
 						<div>
-							<h2 className="font-semibold text-base">
-								Reference Target Summary
-							</h2>
+							<h2 className="font-semibold text-base">{summaryTitle}</h2>
 							<p className="text-[var(--muted-foreground)] text-sm">
-								Large values are reference target metrics; badges show the gap
-								from generated baseline.
+								{summaryDescription}
 							</p>
 						</div>
 						<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -206,7 +240,7 @@ export default async function LabPage() {
 												<td
 													className={cn(
 														"px-3 py-2 font-medium",
-														changeTextClass(row.delta, changeLabel),
+														changeTextClass(row.metric, row.delta, changeLabel),
 													)}
 												>
 													{row.delta}

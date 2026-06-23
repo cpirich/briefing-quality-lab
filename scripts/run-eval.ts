@@ -1,4 +1,4 @@
-import { mkdir, rename, writeFile } from "node:fs/promises";
+import { access, mkdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { generateBriefing } from "~/genie/generate-briefing";
@@ -31,6 +31,7 @@ interface EvalOptions {
 	mode: EvalMode;
 	provider: EvalProvider;
 	includeHoldouts: boolean;
+	overwriteRun: boolean;
 	runId?: string;
 	baselineRunId?: string;
 	candidateRunId?: string;
@@ -47,10 +48,6 @@ const repoRoot = process.cwd();
 const seededCandidateRunId = "candidate-citation-gates";
 const generatedBaselinePrefixes = ["baseline-local-", "baseline-openai-"];
 const generatedCandidatePrefixes = ["candidate-local-", "candidate-openai-"];
-const generatedRunPrefixes = [
-	...generatedBaselinePrefixes,
-	...generatedCandidatePrefixes,
-];
 const localEvaluatorCalibration = {
 	// This evaluator is a deterministic demo heuristic, not a statistically
 	// calibrated judge. These constants keep the local extractive baseline below
@@ -105,6 +102,8 @@ function parseOptions(): EvalOptions {
 		mode,
 		provider,
 		includeHoldouts: hasFlag("--include-holdouts"),
+		overwriteRun:
+			hasFlag("--overwrite-run") || process.env.EVAL_OVERWRITE_RUN === "1",
 		runId: optionValue("--run-id") ?? process.env.EVAL_RUN_ID,
 		baselineRunId:
 			optionValue("--baseline") ?? process.env.EVAL_BASELINE_RUN_ID,
@@ -115,6 +114,24 @@ function parseOptions(): EvalOptions {
 
 function absolutePath(relativePath: string) {
 	return path.join(repoRoot, relativePath);
+}
+
+async function artifactExists(relativePath: string) {
+	try {
+		await access(absolutePath(relativePath));
+		return true;
+	} catch (error) {
+		if (
+			error &&
+			typeof error === "object" &&
+			"code" in error &&
+			error.code === "ENOENT"
+		) {
+			return false;
+		}
+
+		throw error;
+	}
 }
 
 async function writeJsonArtifact(relativePath: string, value: unknown) {
@@ -131,6 +148,33 @@ async function writeTextArtifact(relativePath: string, value: string) {
 	const tempPath = `${targetPath}.tmp`;
 	await writeFile(tempPath, value);
 	await rename(tempPath, targetPath);
+}
+
+async function clearRunOutputDirectories(runId: string) {
+	await Promise.all(
+		["briefings", "traces", "evaluations"].map((artifactDir) =>
+			rm(absolutePath(`runs/${runId}/${artifactDir}`), {
+				force: true,
+				recursive: true,
+			}),
+		),
+	);
+}
+
+async function prepareRunOutputDirectories(
+	runId: string,
+	overwriteRun: boolean,
+) {
+	const manifestPath = `runs/${runId}/manifest.json`;
+	const hasExistingManifest = await artifactExists(manifestPath);
+
+	if (hasExistingManifest && !overwriteRun) {
+		throw new Error(
+			`Run ${runId} already has ${manifestPath}. Re-run with --overwrite-run or EVAL_OVERWRITE_RUN=1 to replace its generated artifacts.`,
+		);
+	}
+
+	await clearRunOutputDirectories(runId);
 }
 
 function slugTimestamp(date = new Date()) {
@@ -475,9 +519,14 @@ async function generateRun(options: EvalOptions) {
 		options.mode === "variant"
 			? await manifestForRunId(
 					options.baselineRunId ??
-						(await latestRunId(generatedBaselinePrefixes)),
+						(await latestRunId(
+							generatedBaselinePrefixes,
+							isGeneratedBaselineRun,
+						)),
 				)
 			: undefined;
+
+	await prepareRunOutputDirectories(runId, options.overwriteRun);
 
 	try {
 		for (const evalCase of selectedEvalCases) {
@@ -565,14 +614,48 @@ function startsWithOneOf(value: string, prefixes: string[]) {
 	return prefixes.some((prefix) => value.startsWith(prefix));
 }
 
-async function latestRunId(prefixes: string[]) {
+function isGeneratedBaselineRun(manifest: RunManifest) {
+	return (
+		startsWithOneOf(manifest.runId, generatedBaselinePrefixes) ||
+		manifest.command.includes("eval:baseline") ||
+		manifest.variantLabel.endsWith("generated baseline")
+	);
+}
+
+function isGeneratedCandidateRun(manifest: RunManifest) {
+	return (
+		startsWithOneOf(manifest.runId, generatedCandidatePrefixes) ||
+		manifest.command.includes("eval:variant") ||
+		manifest.variantLabel.endsWith("generated variant")
+	);
+}
+
+function isOpenAIProviderRun(manifest: RunManifest) {
+	return (
+		manifest.runId.includes("-openai-") ||
+		manifest.variantLabel.startsWith("openai generated")
+	);
+}
+
+function isLocalProviderRun(manifest: RunManifest) {
+	return (
+		manifest.runId.includes("-local-") ||
+		manifest.variantLabel.startsWith("local generated")
+	);
+}
+
+async function latestRunId(
+	prefixes: string[],
+	isGeneratedRun?: (manifest: RunManifest) => boolean,
+) {
 	const manifests = await listRunManifests();
 	return [...manifests]
 		.reverse()
 		.find(
 			(manifest) =>
 				manifest.status === "complete" &&
-				startsWithOneOf(manifest.runId, prefixes),
+				(startsWithOneOf(manifest.runId, prefixes) ||
+					isGeneratedRun?.(manifest)),
 		)?.runId;
 }
 
@@ -631,45 +714,54 @@ function targetGapTone(delta: number) {
 	return "blue" as const;
 }
 
-function comparisonStatus(candidateRunId: string) {
-	return startsWithOneOf(candidateRunId, generatedRunPrefixes)
+function comparisonStatus(candidateManifest: RunManifest) {
+	return isGeneratedCandidateRun(candidateManifest)
 		? "Generated candidate compared"
 		: "Gap to reference target";
 }
 
-function comparisonChangeLabel(candidateRunId: string) {
-	return startsWithOneOf(candidateRunId, generatedCandidatePrefixes)
-		? "Delta"
-		: "Gap";
+function comparisonChangeLabel(comparison: RunComparison): "Delta" | "Gap";
+function comparisonChangeLabel(candidateManifest: RunManifest): "Delta" | "Gap";
+function comparisonChangeLabel(
+	input: RunComparison | RunManifest,
+): "Delta" | "Gap" {
+	if ("candidateRunId" in input) {
+		if (input.candidateLabel === "Reference target") {
+			return "Gap";
+		}
+		if (input.candidateLabel?.toLowerCase().includes("candidate")) {
+			return "Delta";
+		}
+
+		return startsWithOneOf(input.candidateRunId, generatedCandidatePrefixes)
+			? "Delta"
+			: "Gap";
+	}
+
+	return isGeneratedCandidateRun(input) ? "Delta" : "Gap";
 }
 
 function evidenceStatusFor({
-	baselineRunId,
-	candidateRunId,
+	baselineManifest,
+	candidateManifest,
 	baselineLabel,
 	candidateLabel,
 	overallDelta,
 }: {
-	baselineRunId: string;
-	candidateRunId: string;
+	baselineManifest: RunManifest;
+	candidateManifest: RunManifest;
 	baselineLabel: string;
 	candidateLabel: string;
 	overallDelta: number;
 }) {
-	const usesGeneratedBaseline = startsWithOneOf(
-		baselineRunId,
-		generatedBaselinePrefixes,
-	);
-	const usesGeneratedCandidate = startsWithOneOf(
-		candidateRunId,
-		generatedCandidatePrefixes,
-	);
+	const usesGeneratedBaseline = isGeneratedBaselineRun(baselineManifest);
+	const usesGeneratedCandidate = isGeneratedCandidateRun(candidateManifest);
 	const usesLiveProvider =
-		baselineRunId.startsWith("baseline-openai-") &&
-		candidateRunId.startsWith("candidate-openai-");
+		isOpenAIProviderRun(baselineManifest) &&
+		isOpenAIProviderRun(candidateManifest);
 	const usesLocalProvider =
-		baselineRunId.startsWith("baseline-local-") ||
-		candidateRunId.startsWith("candidate-local-");
+		isLocalProviderRun(baselineManifest) ||
+		isLocalProviderRun(candidateManifest);
 	const usesReferenceTarget = !usesGeneratedCandidate;
 
 	if (!usesGeneratedBaseline || !usesGeneratedCandidate || !usesLiveProvider) {
@@ -726,17 +818,36 @@ function costRatioDeltaLabel(candidate: RunManifest, baseline: RunManifest) {
 	);
 }
 
-function trendLabelFor(runId: string, role: "baseline" | "candidate") {
-	if (startsWithOneOf(runId, generatedBaselinePrefixes)) {
-		return "Generated baseline";
+function trendLabelFor(manifest: RunManifest, role: "baseline" | "candidate") {
+	if (isGeneratedBaselineRun(manifest)) {
+		return isOpenAIProviderRun(manifest)
+			? "OpenAI baseline"
+			: "Generated baseline";
 	}
-	if (startsWithOneOf(runId, generatedCandidatePrefixes)) {
-		return "Generated candidate";
+	if (isGeneratedCandidateRun(manifest)) {
+		return isOpenAIProviderRun(manifest)
+			? "OpenAI candidate"
+			: "Generated candidate";
 	}
 	if (role === "candidate") {
 		return "Reference target";
 	}
 	return "Seeded baseline";
+}
+
+function sortedCaseIds(manifest: RunManifest) {
+	return [...manifest.caseIds].sort();
+}
+
+function assertMatchingCaseSets(baseline: RunManifest, candidate: RunManifest) {
+	const baselineCaseIds = sortedCaseIds(baseline);
+	const candidateCaseIds = sortedCaseIds(candidate);
+
+	if (baselineCaseIds.join("\0") !== candidateCaseIds.join("\0")) {
+		throw new Error(
+			`Cannot compare runs with different case sets: ${baseline.runId} has [${baselineCaseIds.join(", ")}], ${candidate.runId} has [${candidateCaseIds.join(", ")}].`,
+		);
+	}
 }
 
 function failureClusters(evaluations: EvaluatorOutput[]) {
@@ -822,7 +933,7 @@ function comparisonLabelsFor(comparison: RunComparison) {
 
 function reportFor(comparison: RunComparison) {
 	const { baselineLabel, candidateLabel } = comparisonLabelsFor(comparison);
-	const changeLabel = comparisonChangeLabel(comparison.candidateRunId);
+	const changeLabel = comparisonChangeLabel(comparison);
 	const rows = comparison.comparisonRows
 		.map(
 			(row) =>
@@ -865,7 +976,8 @@ async function writeComparisonAndReport(input: {
 	candidateRunId?: string;
 }) {
 	const baselineRunId =
-		input.baselineRunId ?? (await latestRunId(generatedBaselinePrefixes));
+		input.baselineRunId ??
+		(await latestRunId(generatedBaselinePrefixes, isGeneratedBaselineRun));
 	if (!baselineRunId) {
 		throw new Error(
 			"No generated baseline run found. Run eval:baseline first.",
@@ -874,21 +986,22 @@ async function writeComparisonAndReport(input: {
 
 	const candidateRunId =
 		input.candidateRunId ??
-		(await latestRunId(generatedCandidatePrefixes)) ??
+		(await latestRunId(generatedCandidatePrefixes, isGeneratedCandidateRun)) ??
 		seededCandidateRunId;
 	const [evalCases, baseline, candidate] = await Promise.all([
 		listEvalCases(),
 		artifactsFor(baselineRunId),
 		artifactsFor(candidateRunId),
 	]);
+	assertMatchingCaseSets(baseline.manifest, candidate.manifest);
 	const baselineMetrics = baseline.manifest.aggregateMetrics;
 	const candidateMetrics = candidate.manifest.aggregateMetrics;
 	const overallDelta = candidateMetrics.overall - baselineMetrics.overall;
 	const citationDelta =
 		candidateMetrics.citationSupport - baselineMetrics.citationSupport;
-	const baselineLabel = trendLabelFor(baselineRunId, "baseline");
-	const candidateLabel = trendLabelFor(candidateRunId, "candidate");
-	const changeLabel = comparisonChangeLabel(candidateRunId);
+	const baselineLabel = trendLabelFor(baseline.manifest, "baseline");
+	const candidateLabel = trendLabelFor(candidate.manifest, "candidate");
+	const changeLabel = comparisonChangeLabel(candidate.manifest);
 	const comparison = RunComparisonSchema.parse({
 		id: `${baselineRunId}-${candidateRunId}`,
 		baselineRunId,
@@ -903,7 +1016,7 @@ async function writeComparisonAndReport(input: {
 				status:
 					changeLabel === "Gap"
 						? `${candidateLabel} score`
-						: comparisonStatus(candidateRunId),
+						: comparisonStatus(candidate.manifest),
 				tone:
 					changeLabel === "Gap"
 						? targetGapTone(overallDelta)
@@ -1036,8 +1149,8 @@ async function writeComparisonAndReport(input: {
 		failureClusters: failureClusters(candidate.evaluations),
 		featuredCase: featuredCaseFor(evalCases, baseline, candidate),
 		recommendation: evidenceStatusFor({
-			baselineRunId,
-			candidateRunId,
+			baselineManifest: baseline.manifest,
+			candidateManifest: candidate.manifest,
 			baselineLabel,
 			candidateLabel,
 			overallDelta,

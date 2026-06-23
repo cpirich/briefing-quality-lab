@@ -651,16 +651,35 @@ function assertCitationsBelongToCase(
 	evalCase: EvalCase,
 	ownerLabel: string,
 ) {
+	assertCitationsBelongToSourcePacket(citationIds, sourcePacket, ownerLabel);
+	assertCitationsAreAcceptedByCase(citationIds, evalCase, ownerLabel);
+}
+
+function assertCitationsBelongToSourcePacket(
+	citationIds: Iterable<string>,
+	sourcePacket: SourcePacket,
+	ownerLabel: string,
+) {
 	const sourceCitationIds = new Set(
 		sourcePacket.sources.map((source) => source.id),
 	);
-	const acceptedCitationIds = new Set(evalCase.acceptedCitations);
 
 	for (const citationId of citationIds) {
 		assertFixtureReference(
 			sourceCitationIds.has(citationId),
 			`${ownerLabel} cites ${citationId}, which is not present in source packet ${sourcePacket.id}`,
 		);
+	}
+}
+
+function assertCitationsAreAcceptedByCase(
+	citationIds: Iterable<string>,
+	evalCase: EvalCase,
+	ownerLabel: string,
+) {
+	const acceptedCitationIds = new Set(evalCase.acceptedCitations);
+
+	for (const citationId of citationIds) {
 		assertFixtureReference(
 			acceptedCitationIds.has(citationId),
 			`${ownerLabel} cites ${citationId}, which is not accepted by eval case ${evalCase.id}`,
@@ -884,10 +903,9 @@ export async function validateRunStore(): Promise<FixtureCounts> {
 
 		assertCaseBelongsToRun(runManifest, evaluatorOutput.caseId, ownerLabel);
 		assertCaseBelongsToSourcePacket(sourcePacket, evalCase, ownerLabel);
-		assertCitationsBelongToCase(
+		assertCitationsBelongToSourcePacket(
 			evaluatorOutput.citationSupport.map((citation) => citation.citation),
 			sourcePacket,
-			evalCase,
 			ownerLabel,
 		);
 		await assertArtifactPathsExist(evaluatorOutput.artifactPaths, ownerLabel);

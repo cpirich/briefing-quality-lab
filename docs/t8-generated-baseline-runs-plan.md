@@ -90,7 +90,7 @@ Command roles:
 - `eval:variant` is for a proposed improvement. It runs the candidate generator across the same artifact path shape under `runs/candidate-*`; when a generated baseline is available, latency is compared against that baseline instead of using a fixed placeholder ratio.
 - `eval:report` does not generate new briefings. It reads existing run manifests and per-case artifacts, writes a comparison JSON under `runs/comparisons/`, and refreshes `reports/latest-eval-summary.md`.
 
-The commands should support explicit ids through environment variables or flags so committed demo artifacts can have stable names.
+The commands should support explicit ids through environment variables or flags so committed demo artifacts can have stable names. Because `runs/` is source-controlled, rerunning an existing committed run id should be guarded: if `runs/<run-id>/manifest.json` already exists, replacement requires `--overwrite-run` or `EVAL_OVERWRITE_RUN=1` so a failed rerun cannot silently delete committed briefing, trace, or evaluation artifacts.
 
 ## Dashboard Behavior
 
