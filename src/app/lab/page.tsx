@@ -84,7 +84,11 @@ function changeTextClass(metric: string, value: string, changeLabel: string) {
 			: "text-[var(--danger-foreground)]";
 	}
 
-	const hasRemainingGap = lowerIsBetter ? delta < 0 : delta > 0;
+	if (lowerIsBetter) {
+		return "text-[var(--warning-foreground)]";
+	}
+
+	const hasRemainingGap = delta > 0;
 	if (hasRemainingGap) {
 		return "text-[var(--warning-foreground)]";
 	}
@@ -150,13 +154,37 @@ function RunMetadataPanel({
 	);
 }
 
+function clusterSeverityFor(count: number) {
+	if (count >= 5) {
+		return "High" as const;
+	}
+	if (count >= 3) {
+		return "Medium" as const;
+	}
+	return "Low" as const;
+}
+
 export default async function LabPage() {
 	const [runComparison, artifacts, caseBreakdown] = await Promise.all([
 		api.lab.compareRuns(),
 		api.lab.listArtifacts(),
 		api.lab.listCaseBreakdown(),
 	]);
-	const { failureClusters } = runComparison;
+	const publicCaseIds = new Set(
+		caseBreakdown.map((caseBreakdownEntry) => caseBreakdownEntry.caseId),
+	);
+	const failureClusters = runComparison.failureClusters
+		.map((cluster) => {
+			const cases = cluster.cases.filter((caseId) => publicCaseIds.has(caseId));
+
+			return {
+				...cluster,
+				cases,
+				count: cases.length,
+				severity: clusterSeverityFor(cases.length),
+			};
+		})
+		.filter((cluster) => cluster.count > 0);
 	const baselineLabel =
 		runComparison.baselineLabel ??
 		comparisonSideLabel(runComparison.baselineRunId);
@@ -173,11 +201,7 @@ export default async function LabPage() {
 		changeLabel === "Gap"
 			? `Large values are ${candidateLabel} metrics; badges show the gap from ${baselineLabel}.`
 			: `Large values are ${candidateLabel} metrics; badges show deltas from ${baselineLabel}.`;
-	const comparedCaseCount =
-		Number(
-			runComparison.comparisonRows.find((row) => row.metric === "Eval cases")
-				?.candidate,
-		) || new Set(failureClusters.flatMap((cluster) => cluster.cases)).size;
+	const comparedCaseCount = caseBreakdown.length;
 
 	return (
 		<main className="lab-route min-h-screen bg-[var(--background)] text-[var(--foreground)]">
@@ -329,6 +353,11 @@ export default async function LabPage() {
 								</p>
 							</CardHeader>
 							<CardBody className="space-y-3">
+								{failureClusters.length === 0 ? (
+									<p className="text-[var(--muted-foreground)] text-sm">
+										No public failure themes for this comparison.
+									</p>
+								) : null}
 								{failureClusters.map((cluster) => (
 									<div
 										className="rounded-md border border-[var(--border)] p-3"

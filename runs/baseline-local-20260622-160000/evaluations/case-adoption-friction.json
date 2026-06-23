@@ -8,7 +8,7 @@
 		"coverage": 0.72,
 		"citationSupport": 0.7
 	},
-	"failureTags": ["setup-recovery", "citation-grounding"],
+	"failureTags": ["citation-grounding", "grounding-risk"],
 	"rubricEvidence": [
 		"Coverage heuristic score: 0.72.",
 		"Citation support heuristic score: 0.70."

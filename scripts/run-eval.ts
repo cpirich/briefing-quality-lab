@@ -376,6 +376,27 @@ function sortedIds(values: string[]) {
 	return [...values].sort();
 }
 
+function assertMatchingCaseIds({
+	actualLabel,
+	actualCaseIds,
+	referenceLabel,
+	referenceCaseIds,
+}: {
+	actualLabel: string;
+	actualCaseIds: string[];
+	referenceLabel: string;
+	referenceCaseIds: string[];
+}) {
+	const sortedActualCaseIds = sortedIds(actualCaseIds);
+	const sortedReferenceCaseIds = sortedIds(referenceCaseIds);
+
+	if (sortedActualCaseIds.join("\0") !== sortedReferenceCaseIds.join("\0")) {
+		throw new Error(
+			`Cannot compare different case sets: ${actualLabel} has [${sortedActualCaseIds.join(", ")}], ${referenceLabel} has [${sortedReferenceCaseIds.join(", ")}].`,
+		);
+	}
+}
+
 function assertVariantCaseSetMatchesBaseline({
 	referenceManifest,
 	selectedEvalCases,
@@ -387,15 +408,12 @@ function assertVariantCaseSetMatchesBaseline({
 		return;
 	}
 
-	const selectedCaseIds = sortedIds(
-		selectedEvalCases.map((evalCase) => evalCase.id),
-	);
-	const referenceCaseIds = sortedIds(referenceManifest.caseIds);
-	if (selectedCaseIds.join("\0") !== referenceCaseIds.join("\0")) {
-		throw new Error(
-			`Cannot generate variant against baseline ${referenceManifest.runId} with a different case set. Selected cases: [${selectedCaseIds.join(", ")}]; baseline cases: [${referenceCaseIds.join(", ")}].`,
-		);
-	}
+	assertMatchingCaseIds({
+		actualLabel: "selected variant corpus",
+		actualCaseIds: selectedEvalCases.map((evalCase) => evalCase.id),
+		referenceLabel: `baseline ${referenceManifest.runId}`,
+		referenceCaseIds: referenceManifest.caseIds,
+	});
 }
 
 function roundMetric(value: number) {
@@ -510,6 +528,22 @@ function evaluatorScores(evalCase: EvalCase, briefing: BriefingOutput) {
 	};
 }
 
+function detectedFailureTags(scores: EvaluatorOutput["scores"]) {
+	const tags = new Set<string>();
+
+	if (scores.coverage < 0.65) {
+		tags.add("coverage-gap");
+	}
+	if (scores.citationSupport < 0.72) {
+		tags.add("citation-grounding");
+	}
+	if (scores.grounding < 0.65) {
+		tags.add("grounding-risk");
+	}
+
+	return [...tags];
+}
+
 function evaluatorOutputFor({
 	runId,
 	evalCase,
@@ -537,7 +571,7 @@ function evaluatorOutputFor({
 		runId,
 		caseId: evalCase.id,
 		scores,
-		failureTags: evalCase.failureTags,
+		failureTags: detectedFailureTags(scores),
 		rubricEvidence: [
 			`Coverage heuristic score: ${scores.coverage.toFixed(2)}.`,
 			`Citation support heuristic score: ${scores.citationSupport.toFixed(2)}.`,
@@ -928,6 +962,42 @@ async function referenceManifestForVariant(options: EvalOptions) {
 	return completeManifestForRunId(baselineRunId, "baseline");
 }
 
+async function referenceManifestForBaselineComparison(options: EvalOptions) {
+	if (options.mode !== "baseline") {
+		return undefined;
+	}
+
+	if (options.candidateRunId) {
+		return completeManifestForRunId(options.candidateRunId, "candidate");
+	}
+
+	const candidateRunId =
+		(await latestRunId(generatedCandidatePrefixes, isGeneratedCandidateRun)) ??
+		seededCandidateRunId;
+
+	return completeManifestForRunId(candidateRunId, "candidate");
+}
+
+async function assertBaselineComparisonIsValid(options: EvalOptions) {
+	const referenceManifest =
+		await referenceManifestForBaselineComparison(options);
+	if (!referenceManifest) {
+		return;
+	}
+
+	const evalCases = await listEvalCases();
+	const selectedCaseIds = evalCases
+		.filter((evalCase) => options.includeHoldouts || !evalCase.holdout)
+		.map((evalCase) => evalCase.id);
+
+	assertMatchingCaseIds({
+		actualLabel: "selected baseline corpus",
+		actualCaseIds: selectedCaseIds,
+		referenceLabel: `candidate ${referenceManifest.runId}`,
+		referenceCaseIds: referenceManifest.caseIds,
+	});
+}
+
 async function artifactsFor(runId: string): Promise<RunArtifacts> {
 	const manifest = (await listRunManifests()).find(
 		(candidateManifest) => candidateManifest.runId === runId,
@@ -1167,7 +1237,7 @@ function failureClusters(evaluations: EvaluatorOutput[]) {
 						? ("Medium" as const)
 						: ("Low" as const),
 			evidence: `Repeated ${tag} findings across evaluator outputs.`,
-			cases: entry.cases.slice(0, 6),
+			cases: entry.cases,
 		}));
 }
 
@@ -1477,6 +1547,7 @@ async function main() {
 		return;
 	}
 
+	await assertBaselineComparisonIsValid(options);
 	const run = await generateRun(options);
 	const comparison = await writeComparisonAndReport({
 		baselineRunId:

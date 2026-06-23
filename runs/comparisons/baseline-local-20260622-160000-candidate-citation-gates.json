@@ -91,32 +91,41 @@
 	],
 	"failureClusters": [
 		{
-			"title": "Setup Recovery",
-			"count": 2,
-			"severity": "Low",
-			"evidence": "Repeated setup-recovery findings across evaluator outputs.",
-			"cases": ["case-adoption-friction", "case-incident-recovery-comms"]
-		},
-		{
 			"title": "Citation Grounding",
-			"count": 2,
-			"severity": "Low",
+			"count": 7,
+			"severity": "High",
 			"evidence": "Repeated citation-grounding findings across evaluator outputs.",
-			"cases": ["case-adoption-friction", "case-eval-loop"]
+			"cases": [
+				"case-adoption-friction",
+				"case-code-review-queues",
+				"case-cost-latency-budget",
+				"case-eval-loop",
+				"case-human-approval-boundary",
+				"case-incident-recovery-comms",
+				"case-release-note-drift"
+			]
 		},
 		{
-			"title": "Cost Guardrail",
-			"count": 2,
-			"severity": "Low",
-			"evidence": "Repeated cost-guardrail findings across evaluator outputs.",
-			"cases": ["case-cost-latency-budget", "case-eval-loop"]
+			"title": "Grounding Risk",
+			"count": 7,
+			"severity": "High",
+			"evidence": "Repeated grounding-risk findings across evaluator outputs.",
+			"cases": [
+				"case-adoption-friction",
+				"case-code-review-queues",
+				"case-cost-latency-budget",
+				"case-eval-loop",
+				"case-human-approval-boundary",
+				"case-incident-recovery-comms",
+				"case-release-note-drift"
+			]
 		},
 		{
-			"title": "Human Approval",
-			"count": 2,
+			"title": "Coverage Gap",
+			"count": 1,
 			"severity": "Low",
-			"evidence": "Repeated human-approval findings across evaluator outputs.",
-			"cases": ["case-human-approval-boundary", "case-release-note-drift"]
+			"evidence": "Repeated coverage-gap findings across evaluator outputs.",
+			"cases": ["case-human-approval-boundary"]
 		}
 	],
 	"featuredCase": {
