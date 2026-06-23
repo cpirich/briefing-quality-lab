@@ -1,0 +1,31 @@
+{
+	"id": "case-adoption-friction-local-extractive-v1",
+	"sourcePacketId": "packet-dev-adoption",
+	"caseId": "case-adoption-friction",
+	"title": "Developer Adoption Review Briefing",
+	"summary": "Product signals from docs usage, support tickets, onboarding interviews, and pilot-team notes. Briefing focus: Summarize adoption risks and recommend the next product-quality improvement for pilot expansion.",
+	"claims": [
+		{
+			"text": "Docs analytics: Quickstart completion rose from 44% to 58% after the copy refresh, and the first API call step now has fewer exits.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Support digest: Most new tickets mention environment drift, stale CLI versions, and unclear recovery steps after failed installs.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Pilot interviews: Senior engineers said they trust generated recommendations only when each claim points back to source snippets they can inspect.",
+			"citations": ["S3"]
+		}
+	],
+	"openQuestions": [
+		"Confirm whether pilot expansion note has newer follow-up data.",
+		"Confirm whether onboarding triage notes has newer follow-up data."
+	],
+	"recommendation": "Use this as a fast first pass, then inspect source tension and citation support in the lab before treating the recommendation as shippable.",
+	"metadata": {
+		"variant": "Local extractive baseline",
+		"runId": "baseline-local-20260622-160000",
+		"model": "deterministic-extractive"
+	}
+}

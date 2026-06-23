@@ -236,6 +236,8 @@ export const RunComparisonSchema = z.object({
 	id: fixtureIdSchema,
 	baselineRunId: fixtureIdSchema,
 	candidateRunId: fixtureIdSchema,
+	baselineLabel: z.string().min(1).optional(),
+	candidateLabel: z.string().min(1).optional(),
 	metrics: z.array(
 		z.object({
 			label: z.string().min(1),

@@ -24,6 +24,12 @@ import {
 const repoRoot = process.cwd();
 const defaultCandidateRunId = "candidate-citation-gates";
 const defaultComparisonId = "baseline-2026-06-10-candidate-citation-gates";
+const generatedRunPrefixes = [
+	"baseline-local-",
+	"baseline-openai-",
+	"candidate-local-",
+	"candidate-openai-",
+] as const;
 const phase5MinSourceDocuments = 5;
 const phase5MaxSourceDocuments = 10;
 const phase5MinSourceBodyCharacters = 240;
@@ -49,6 +55,53 @@ type FixtureCounts = {
 	runComparisons: number;
 	artifacts: number;
 };
+
+interface CaseScoreSummary {
+	overall: number;
+	grounding: number;
+	coverage: number;
+	citationSupport: number;
+	artifactPath: string;
+}
+
+interface CaseArtifactDetail {
+	title: string;
+	summary: string;
+	claims: Array<{
+		text: string;
+		citations: string[];
+	}>;
+	openQuestions: string[];
+	recommendation: string;
+	rubricEvidence: string[];
+	citationSupport: Array<{
+		citation: string;
+		supported: boolean;
+		note: string;
+	}>;
+	evaluatorNote: string;
+	artifactPaths: string[];
+}
+
+export interface CaseBreakdownEntry {
+	caseId: string;
+	title: string;
+	sourceEvidence: string;
+	failureTags: string[];
+	baseline: CaseScoreSummary | null;
+	candidate: CaseScoreSummary | null;
+	delta: {
+		overall: number | null;
+		citationSupport: number | null;
+	};
+	diff: {
+		baselineRecommendation: string;
+		candidateRecommendation: string;
+		evaluatorNote: string;
+		baselineDetail: CaseArtifactDetail | null;
+		candidateDetail: CaseArtifactDetail | null;
+	};
+}
 
 function absolutePath(relativePath: string) {
 	return path.join(repoRoot, relativePath);
@@ -174,11 +227,24 @@ function artifactTypeForPath(artifactPath: string) {
 }
 
 function artifactLabelForPath(artifactPath: string) {
+	const manifestMatch = artifactPath.match(/^runs\/([^/]+)\/manifest\.json$/);
+	if (manifestMatch?.[1]?.startsWith("baseline-local-")) {
+		return "Generated baseline manifest";
+	}
+	if (manifestMatch?.[1]?.startsWith("baseline-openai-")) {
+		return "OpenAI baseline manifest";
+	}
+	if (manifestMatch?.[1]?.startsWith("candidate-local-")) {
+		return "Generated candidate manifest";
+	}
+	if (manifestMatch?.[1]?.startsWith("candidate-openai-")) {
+		return "OpenAI candidate manifest";
+	}
 	if (artifactPath === "runs/baseline-2026-06-10/manifest.json") {
-		return "Baseline manifest";
+		return "Seeded baseline manifest";
 	}
 	if (artifactPath === "runs/candidate-citation-gates/manifest.json") {
-		return "Latest candidate";
+		return "Reference target manifest";
 	}
 	if (artifactPath.includes("/traces/")) {
 		return "Featured trace";
@@ -264,19 +330,90 @@ export async function listRunComparisons(): Promise<RunComparison[]> {
 	return sortById(comparisons);
 }
 
+function isGeneratedRunManifest(manifest: RunManifest | undefined) {
+	if (!manifest) {
+		return false;
+	}
+
+	return (
+		generatedRunPrefixes.some((prefix) => manifest.runId.startsWith(prefix)) ||
+		manifest.command.includes("eval:baseline") ||
+		manifest.command.includes("eval:variant") ||
+		manifest.variantLabel.endsWith("generated baseline") ||
+		manifest.variantLabel.endsWith("generated variant")
+	);
+}
+
+function isGeneratedComparison(
+	runComparison: RunComparison,
+	manifestById: Map<string, RunManifest>,
+) {
+	return (
+		isGeneratedRunManifest(manifestById.get(runComparison.baselineRunId)) ||
+		isGeneratedRunManifest(manifestById.get(runComparison.candidateRunId))
+	);
+}
+
+function comparisonRecency(
+	runComparison: RunComparison,
+	manifestById: Map<string, RunManifest>,
+) {
+	const baselineCreatedAt = Date.parse(
+		manifestById.get(runComparison.baselineRunId)?.createdAt ?? "",
+	);
+	const candidateCreatedAt = Date.parse(
+		manifestById.get(runComparison.candidateRunId)?.createdAt ?? "",
+	);
+
+	return Math.max(
+		Number.isNaN(baselineCreatedAt) ? 0 : baselineCreatedAt,
+		Number.isNaN(candidateCreatedAt) ? 0 : candidateCreatedAt,
+	);
+}
+
+function latestGeneratedComparison(
+	comparisons: RunComparison[],
+	manifestById: Map<string, RunManifest>,
+) {
+	return [...comparisons]
+		.filter((comparison) => isGeneratedComparison(comparison, manifestById))
+		.sort((left, right) => {
+			const recencyDelta =
+				comparisonRecency(right, manifestById) -
+				comparisonRecency(left, manifestById);
+
+			if (recencyDelta !== 0) {
+				return recencyDelta;
+			}
+
+			return right.id.localeCompare(left.id);
+		})[0];
+}
+
 export async function compareRuns(input?: {
 	baselineRunId?: string;
 	candidateRunId?: string;
 }): Promise<RunComparison> {
-	const comparisons = await listRunComparisons();
+	const [comparisons, runManifests] = await Promise.all([
+		listRunComparisons(),
+		listRunManifests(),
+	]);
+	const manifestById = new Map(
+		runManifests.map((manifest) => [manifest.runId, manifest]),
+	);
 	const comparison =
-		comparisons.find(
-			(candidateComparison) =>
-				(!input?.baselineRunId ||
-					candidateComparison.baselineRunId === input.baselineRunId) &&
-				(!input?.candidateRunId ||
-					candidateComparison.candidateRunId === input.candidateRunId),
-		) ??
+		(input?.baselineRunId || input?.candidateRunId
+			? comparisons.find(
+					(candidateComparison) =>
+						(!input.baselineRunId ||
+							candidateComparison.baselineRunId === input.baselineRunId) &&
+						(!input.candidateRunId ||
+							candidateComparison.candidateRunId === input.candidateRunId),
+				)
+			: undefined) ??
+		(!input?.baselineRunId && !input?.candidateRunId
+			? latestGeneratedComparison(comparisons, manifestById)
+			: undefined) ??
 		comparisons.find(
 			(candidateComparison) => candidateComparison.id === defaultComparisonId,
 		) ??
@@ -305,6 +442,148 @@ export async function compareRuns(input?: {
 	}
 
 	return comparison;
+}
+
+function evaluatorOutputByCaseId(evaluatorOutputs: EvaluatorOutput[]) {
+	return new Map(
+		evaluatorOutputs.map((evaluatorOutput) => [
+			evaluatorOutput.caseId,
+			evaluatorOutput,
+		]),
+	);
+}
+
+function caseScoreSummaryFor(
+	evaluatorOutput: EvaluatorOutput | undefined,
+): CaseScoreSummary | null {
+	if (!evaluatorOutput) {
+		return null;
+	}
+
+	return {
+		overall: evaluatorOutput.scores.overall,
+		grounding: evaluatorOutput.scores.grounding,
+		coverage: evaluatorOutput.scores.coverage,
+		citationSupport: evaluatorOutput.scores.citationSupport,
+		artifactPath:
+			evaluatorOutput.artifactPaths.find((artifactPath) =>
+				artifactPath.includes("/evaluations/"),
+			) ??
+			`runs/${evaluatorOutput.runId}/evaluations/${evaluatorOutput.caseId}.json`,
+	};
+}
+
+function scoreDelta(
+	candidate: CaseScoreSummary | null,
+	baseline: CaseScoreSummary | null,
+	metric: keyof Omit<CaseScoreSummary, "artifactPath">,
+) {
+	if (!candidate || !baseline) {
+		return null;
+	}
+
+	return Math.round((candidate[metric] - baseline[metric]) * 100) / 100;
+}
+
+function caseArtifactDetailFor(
+	briefing: BriefingOutput | undefined,
+	evaluatorOutput: EvaluatorOutput | undefined,
+): CaseArtifactDetail | null {
+	if (!briefing && !evaluatorOutput) {
+		return null;
+	}
+
+	return {
+		title: briefing?.title ?? "No briefing title available",
+		summary: briefing?.summary ?? "No briefing summary available.",
+		claims: briefing?.claims ?? [],
+		openQuestions: briefing?.openQuestions ?? [],
+		recommendation: briefing?.recommendation ?? "No recommendation available.",
+		rubricEvidence: evaluatorOutput?.rubricEvidence ?? [],
+		citationSupport: evaluatorOutput?.citationSupport ?? [],
+		evaluatorNote: evaluatorOutput?.notes ?? "No evaluator note available.",
+		artifactPaths: evaluatorOutput?.artifactPaths ?? [],
+	};
+}
+
+export async function listCaseBreakdown(input?: {
+	baselineRunId?: string;
+	candidateRunId?: string;
+}): Promise<CaseBreakdownEntry[]> {
+	const comparison = await compareRuns(input);
+	const [
+		evalCases,
+		baselineEvaluations,
+		candidateEvaluations,
+		baselineBriefings,
+		candidateBriefings,
+	] = await Promise.all([
+		listEvalCases(),
+		listEvaluatorOutputs(comparison.baselineRunId),
+		listEvaluatorOutputs(comparison.candidateRunId),
+		listBriefingOutputs(comparison.baselineRunId),
+		listBriefingOutputs(comparison.candidateRunId),
+	]);
+	const evalCaseById = indexById(evalCases);
+	const baselineByCaseId = evaluatorOutputByCaseId(baselineEvaluations);
+	const candidateByCaseId = evaluatorOutputByCaseId(candidateEvaluations);
+	const baselineBriefingByCaseId = new Map(
+		baselineBriefings.map((briefing) => [briefing.caseId, briefing]),
+	);
+	const candidateBriefingByCaseId = new Map(
+		candidateBriefings.map((briefing) => [briefing.caseId, briefing]),
+	);
+	const caseIds = [
+		...new Set([
+			...baselineEvaluations.map((evaluation) => evaluation.caseId),
+			...candidateEvaluations.map((evaluation) => evaluation.caseId),
+		]),
+	].sort();
+
+	return caseIds.map((caseId) => {
+		const evalCase = evalCaseById.get(caseId);
+		const baseline = caseScoreSummaryFor(baselineByCaseId.get(caseId));
+		const candidate = caseScoreSummaryFor(candidateByCaseId.get(caseId));
+		const baselineEvaluation = baselineByCaseId.get(caseId);
+		const candidateEvaluation = candidateByCaseId.get(caseId);
+		const baselineBriefing = baselineBriefingByCaseId.get(caseId);
+		const candidateBriefing = candidateBriefingByCaseId.get(caseId);
+
+		return {
+			caseId,
+			title: evalCase?.title ?? caseId,
+			sourceEvidence:
+				evalCase?.expectedCoverage[0] ??
+				"No source evidence summary available.",
+			failureTags: evalCase?.failureTags ?? [],
+			baseline,
+			candidate,
+			delta: {
+				overall: scoreDelta(candidate, baseline, "overall"),
+				citationSupport: scoreDelta(candidate, baseline, "citationSupport"),
+			},
+			diff: {
+				baselineRecommendation:
+					baselineBriefing?.recommendation ??
+					"No baseline recommendation available.",
+				candidateRecommendation:
+					candidateBriefing?.recommendation ??
+					"No reference recommendation available.",
+				evaluatorNote:
+					candidateEvaluation?.notes ??
+					baselineEvaluation?.notes ??
+					"No evaluator note available.",
+				baselineDetail: caseArtifactDetailFor(
+					baselineBriefing,
+					baselineEvaluation,
+				),
+				candidateDetail: caseArtifactDetailFor(
+					candidateBriefing,
+					candidateEvaluation,
+				),
+			},
+		};
+	});
 }
 
 export async function listArtifacts(): Promise<ArtifactEntry[]> {
@@ -390,16 +669,35 @@ function assertCitationsBelongToCase(
 	evalCase: EvalCase,
 	ownerLabel: string,
 ) {
+	assertCitationsBelongToSourcePacket(citationIds, sourcePacket, ownerLabel);
+	assertCitationsAreAcceptedByCase(citationIds, evalCase, ownerLabel);
+}
+
+function assertCitationsBelongToSourcePacket(
+	citationIds: Iterable<string>,
+	sourcePacket: SourcePacket,
+	ownerLabel: string,
+) {
 	const sourceCitationIds = new Set(
 		sourcePacket.sources.map((source) => source.id),
 	);
-	const acceptedCitationIds = new Set(evalCase.acceptedCitations);
 
 	for (const citationId of citationIds) {
 		assertFixtureReference(
 			sourceCitationIds.has(citationId),
 			`${ownerLabel} cites ${citationId}, which is not present in source packet ${sourcePacket.id}`,
 		);
+	}
+}
+
+function assertCitationsAreAcceptedByCase(
+	citationIds: Iterable<string>,
+	evalCase: EvalCase,
+	ownerLabel: string,
+) {
+	const acceptedCitationIds = new Set(evalCase.acceptedCitations);
+
+	for (const citationId of citationIds) {
 		assertFixtureReference(
 			acceptedCitationIds.has(citationId),
 			`${ownerLabel} cites ${citationId}, which is not accepted by eval case ${evalCase.id}`,
@@ -623,10 +921,9 @@ export async function validateRunStore(): Promise<FixtureCounts> {
 
 		assertCaseBelongsToRun(runManifest, evaluatorOutput.caseId, ownerLabel);
 		assertCaseBelongsToSourcePacket(sourcePacket, evalCase, ownerLabel);
-		assertCitationsBelongToCase(
+		assertCitationsBelongToSourcePacket(
 			evaluatorOutput.citationSupport.map((citation) => citation.citation),
 			sourcePacket,
-			evalCase,
 			ownerLabel,
 		);
 		await assertArtifactPathsExist(evaluatorOutput.artifactPaths, ownerLabel);

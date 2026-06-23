@@ -21,6 +21,7 @@ This phase should start with a local deterministic generator and file-backed orc
 ## Non-Goals
 
 - Do not remove the seeded Phase 5 artifacts. Keep them as fallback demo data and regression fixtures.
+- Do not use seeded baseline or candidate artifacts as the default `/genie` product result. They can support lab comparisons and fallback fixtures, but the product page should distinguish not-yet-generated, generated, and errored states.
 - Do not add a database, Redis queue, authentication, billing, or hosted deployment dependency.
 - Do not expose eval-case tuning labels to the `/genie` product path.
 - Do not claim real model improvement until baseline and candidate artifacts are generated through the live provider path.
@@ -81,6 +82,7 @@ The first live milestone should define an explicit generated baseline variant, r
 Update the UI after the backend path exists:
 
 - make `/genie` call the real generation mutation/job instead of only refreshing seeded previews
+- make the `/genie` result panel start empty for the selected packet, then show the live generated output after generation succeeds
 - make `/lab` actions start and poll eval runs
 - show progress, current case, artifact path being written, success/failure state, and latest comparison
 - keep seeded comparisons visible when no generated comparison exists yet

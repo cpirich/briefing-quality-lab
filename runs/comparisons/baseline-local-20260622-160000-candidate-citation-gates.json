@@ -1,0 +1,154 @@
+{
+	"id": "baseline-local-20260622-160000-candidate-citation-gates",
+	"baselineRunId": "baseline-local-20260622-160000",
+	"candidateRunId": "candidate-citation-gates",
+	"baselineLabel": "Generated baseline",
+	"candidateLabel": "Reference target",
+	"metrics": [
+		{
+			"label": "Overall quality",
+			"value": "0.83",
+			"delta": "+0.18",
+			"status": "Reference target score",
+			"tone": "amber"
+		},
+		{
+			"label": "Citation grounding",
+			"value": "0.80",
+			"delta": "+0.12",
+			"status": "Reference target citation score",
+			"tone": "amber"
+		},
+		{
+			"label": "Coverage",
+			"value": "0.86",
+			"delta": "+0.16",
+			"status": "Reference target coverage score",
+			"tone": "amber"
+		},
+		{
+			"label": "Cost ratio",
+			"value": "1.10x",
+			"delta": "+0.10x",
+			"status": "Reference target cost ratio",
+			"tone": "amber"
+		},
+		{
+			"label": "Latency ratio",
+			"value": "not comparable",
+			"delta": "7.9s vs 0.0s",
+			"status": "Reference target latency ratio",
+			"tone": "amber"
+		}
+	],
+	"trend": [
+		{
+			"label": "Generated baseline",
+			"score": 65
+		},
+		{
+			"label": "Reference target",
+			"score": 83
+		}
+	],
+	"comparisonRows": [
+		{
+			"metric": "Overall score",
+			"baseline": "0.65",
+			"candidate": "0.83",
+			"delta": "+0.18"
+		},
+		{
+			"metric": "Citation support",
+			"baseline": "0.68",
+			"candidate": "0.80",
+			"delta": "+0.12"
+		},
+		{
+			"metric": "Unsupported claims",
+			"baseline": "14",
+			"candidate": "7",
+			"delta": "-7"
+		},
+		{
+			"metric": "Eval cases",
+			"baseline": "7",
+			"candidate": "7",
+			"delta": "0"
+		},
+		{
+			"metric": "Median latency",
+			"baseline": "0.0s",
+			"candidate": "7.9s",
+			"delta": "7.9s"
+		},
+		{
+			"metric": "Cost ratio",
+			"baseline": "1.00x",
+			"candidate": "1.10x",
+			"delta": "+0.10x"
+		}
+	],
+	"failureClusters": [
+		{
+			"title": "Citation Grounding",
+			"count": 7,
+			"severity": "High",
+			"evidence": "Repeated citation-grounding findings across evaluator outputs.",
+			"cases": [
+				"case-adoption-friction",
+				"case-code-review-queues",
+				"case-cost-latency-budget",
+				"case-eval-loop",
+				"case-human-approval-boundary",
+				"case-incident-recovery-comms",
+				"case-release-note-drift"
+			]
+		},
+		{
+			"title": "Grounding Risk",
+			"count": 7,
+			"severity": "High",
+			"evidence": "Repeated grounding-risk findings across evaluator outputs.",
+			"cases": [
+				"case-adoption-friction",
+				"case-code-review-queues",
+				"case-cost-latency-budget",
+				"case-eval-loop",
+				"case-human-approval-boundary",
+				"case-incident-recovery-comms",
+				"case-release-note-drift"
+			]
+		},
+		{
+			"title": "Coverage Gap",
+			"count": 1,
+			"severity": "Low",
+			"evidence": "Repeated coverage-gap findings across evaluator outputs.",
+			"cases": ["case-human-approval-boundary"]
+		}
+	],
+	"featuredCase": {
+		"id": "case-adoption-friction",
+		"title": "Developer adoption friction briefing",
+		"sourceEvidence": "Quickstart completion is improving but setup remains a drop-off point.",
+		"baseline": "Use this as a fast first pass, then inspect source tension and citation support in the lab before treating the recommendation as shippable.",
+		"candidate": "Ship the recovery-path copy and trace-backed citation checks before widening the pilot.",
+		"evaluatorNote": "Comparison uses file-backed artifacts for the same eval case so the before/after story is inspectable."
+	},
+	"recommendation": {
+		"tone": "amber",
+		"label": "Pipeline rehearsal",
+		"text": "This comparison uses Generated baseline and a human-authored Reference target. It validates the eval artifact flow, but not live model quality improvement.",
+		"warning": "Run a generated candidate before using this as improvement evidence."
+	},
+	"artifactPaths": [
+		"runs/baseline-local-20260622-160000/manifest.json",
+		"runs/candidate-citation-gates/manifest.json",
+		"runs/baseline-local-20260622-160000/evaluations/case-adoption-friction.json",
+		"runs/baseline-local-20260622-160000/evaluations/case-code-review-queues.json",
+		"runs/candidate-citation-gates/evaluations/case-adoption-friction.json",
+		"runs/candidate-citation-gates/evaluations/case-eval-loop.json",
+		"reports/latest-eval-summary.md"
+	]
+}

@@ -1,0 +1,31 @@
+{
+	"id": "case-human-approval-boundary-local-extractive-v1",
+	"sourcePacketId": "packet-human-approval",
+	"caseId": "case-human-approval-boundary",
+	"title": "Human Approval Boundary Packet Briefing",
+	"summary": "Notes about when AI-generated operational recommendations can act automatically versus require review. Briefing focus: Recommend which Briefing Genie actions can be automated and which should require human approval.",
+	"claims": [
+		{
+			"text": "Governance workshop: Participants approved automatic drafting, summarization, and artifact linking when outputs are clearly marked as generated.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Operations incident note: A prior automation posted a recommendation as if it were an approved decision, causing two teams to pause rollout work unnecessarily.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Product analytics: Users are most likely to accept generated briefings when the interface separates evidence, recommendation, and action controls.",
+			"citations": ["S3"]
+		}
+	],
+	"openQuestions": [
+		"Confirm whether legal review has newer follow-up data.",
+		"Confirm whether action taxonomy draft has newer follow-up data."
+	],
+	"recommendation": "Use this as a fast first pass, then inspect source tension and citation support in the lab before treating the recommendation as shippable.",
+	"metadata": {
+		"variant": "Local extractive baseline",
+		"runId": "baseline-local-20260622-160000",
+		"model": "deterministic-extractive"
+	}
+}

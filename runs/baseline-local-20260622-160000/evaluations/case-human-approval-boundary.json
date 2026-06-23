@@ -1,0 +1,38 @@
+{
+	"id": "evaluation-baseline-local-20260622-160000-case-human-approval-boundary",
+	"runId": "baseline-local-20260622-160000",
+	"caseId": "case-human-approval-boundary",
+	"scores": {
+		"overall": 0.6,
+		"grounding": 0.55,
+		"coverage": 0.57,
+		"citationSupport": 0.68
+	},
+	"failureTags": ["coverage-gap", "citation-grounding", "grounding-risk"],
+	"rubricEvidence": [
+		"Coverage heuristic score: 0.57.",
+		"Citation support heuristic score: 0.68."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "S1 is accepted evidence for case-human-approval-boundary."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "S2 is accepted evidence for case-human-approval-boundary."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "S3 is accepted evidence for case-human-approval-boundary."
+		}
+	],
+	"notes": "Deterministic local evaluator output for baseline-run artifact generation. Replace or augment with stronger evaluator logic before making production quality claims.",
+	"artifactPaths": [
+		"runs/baseline-local-20260622-160000/evaluations/case-human-approval-boundary.json",
+		"runs/baseline-local-20260622-160000/briefings/case-human-approval-boundary.json"
+	]
+}

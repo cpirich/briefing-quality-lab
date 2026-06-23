@@ -1,0 +1,31 @@
+{
+	"id": "case-eval-loop-local-extractive-v1",
+	"sourcePacketId": "packet-eval-loop",
+	"caseId": "case-eval-loop",
+	"title": "Eval Loop Strategy Briefing",
+	"summary": "Notes comparing weekly human review, automated scoring, holdout cases, and release guardrails. Briefing focus: Recommend whether to expand automated evals, balancing coverage, citation support, trace utility, and cost.",
+	"claims": [
+		{
+			"text": "Quality review memo: Teams need smaller eval batches with visible failure clusters before expanding model coverage.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Release guardrail notes: Coverage can improve while grounding regresses, so citation support needs an explicit shipping gate.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Cost review: Long traces help debug failures, but unchecked retries created a 1.34x cost increase in the last dry run.",
+			"citations": ["S3"]
+		}
+	],
+	"openQuestions": [
+		"Confirm whether holdout protocol has newer follow-up data.",
+		"Confirm whether reviewer retro notes has newer follow-up data."
+	],
+	"recommendation": "Use this as a fast first pass, then inspect source tension and citation support in the lab before treating the recommendation as shippable.",
+	"metadata": {
+		"variant": "Local extractive baseline",
+		"runId": "baseline-local-20260622-160000",
+		"model": "deterministic-extractive"
+	}
+}

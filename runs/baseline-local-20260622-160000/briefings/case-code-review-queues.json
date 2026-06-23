@@ -1,0 +1,31 @@
+{
+	"id": "case-code-review-queues-local-extractive-v1",
+	"sourcePacketId": "packet-code-review-queues",
+	"caseId": "case-code-review-queues",
+	"title": "Code Review Queue Signals Briefing",
+	"summary": "Operational notes on review latency, reviewer load, bot suggestions, and merge quality. Briefing focus: Recommend how to reduce code review queue time without increasing low-quality merges.",
+	"claims": [
+		{
+			"text": "Queue analytics: Median review wait time improved from 19 hours to 13 hours after adding reviewer rotation.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Reviewer survey: Reviewers like auto-assignment for routine changes, but they distrust bot approvals when tests are flaky or ownership is unclear.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Post-merge defect review: Defects did not rise for small documentation and config changes, but two incidents came from fast-tracking cross-service changes without the owning team.",
+			"citations": ["S3"]
+		}
+	],
+	"openQuestions": [
+		"Confirm whether tooling proposal has newer follow-up data.",
+		"Confirm whether ownership metadata audit has newer follow-up data."
+	],
+	"recommendation": "Use this as a fast first pass, then inspect source tension and citation support in the lab before treating the recommendation as shippable.",
+	"metadata": {
+		"variant": "Local extractive baseline",
+		"runId": "baseline-local-20260622-160000",
+		"model": "deterministic-extractive"
+	}
+}

@@ -11,18 +11,12 @@ import { api } from "~/trpc/react";
 
 type GeniePageClientProps = {
 	sourcePackets: SourcePacket[];
-	briefingOutputs: BriefingOutput[];
 };
 
-export function GeniePageClient({
-	sourcePackets,
-	briefingOutputs,
-}: GeniePageClientProps) {
+export function GeniePageClient({ sourcePackets }: GeniePageClientProps) {
 	const fallbackPacket = sourcePackets[0];
 	const [selectedPacketId, setSelectedPacketId] = useState(fallbackPacket?.id);
-	const [generationStatus, setGenerationStatus] = useState(
-		"Seeded preview is ready.",
-	);
+	const [generationStatus, setGenerationStatus] = useState("Ready.");
 	const [generatedBriefing, setGeneratedBriefing] = useState<BriefingOutput>();
 	const [generatedTrace, setGeneratedTrace] = useState<GenerationTrace>();
 	const generateBriefing = api.genie.generateBriefing.useMutation({
@@ -41,15 +35,10 @@ export function GeniePageClient({
 	const selectedPacket =
 		sourcePackets.find((packet) => packet.id === selectedPacketId) ??
 		fallbackPacket;
-	const fallbackBriefing = briefingOutputs[0];
-	const seededBriefing =
-		briefingOutputs.find(
-			(output) => output.sourcePacketId === selectedPacket?.id,
-		) ?? fallbackBriefing;
 	const briefingPreview =
 		generatedBriefing?.sourcePacketId === selectedPacket?.id
 			? generatedBriefing
-			: seededBriefing;
+			: undefined;
 	const activeTrace =
 		generatedBriefing?.sourcePacketId === selectedPacket?.id
 			? generatedTrace
@@ -111,7 +100,9 @@ export function GeniePageClient({
 								id="source-packet"
 								onChange={(event) => {
 									setSelectedPacketId(event.target.value);
-									setGenerationStatus("Preview updated for selection.");
+									setGeneratedBriefing(undefined);
+									setGeneratedTrace(undefined);
+									setGenerationStatus("Ready.");
 								}}
 								value={selectedPacket?.id ?? ""}
 								wrapperClassName="mt-1"
@@ -154,8 +145,7 @@ export function GeniePageClient({
 							aria-live="polite"
 							className="text-[var(--muted-foreground)] text-xs"
 						>
-							{generationStatus} Generated previews return a Zod-validated
-							trace; persistence comes next in the lab runner.
+							{generationStatus}
 						</p>
 					</CardBody>
 				</Card>
@@ -165,65 +155,77 @@ export function GeniePageClient({
 						<CardHeader>
 							<div className="flex flex-wrap items-center justify-between gap-3">
 								<div>
-									<h2 className="font-semibold text-base">
-										Generated Briefing Preview
-									</h2>
+									<h2 className="font-semibold text-base">Briefing Result</h2>
 									<p className="text-[var(--muted-foreground)] text-sm">
-										Seeded artifact for {selectedPacket?.caseId}
+										{selectedPacket?.caseId}
 									</p>
 								</div>
 								<Badge tone={activeTrace ? "green" : "blue"}>
-									{activeTrace ? activeTrace.model.name : "seeded artifact"}
+									{activeTrace ? activeTrace.model.name : "not generated"}
 								</Badge>
 							</div>
 						</CardHeader>
 						<CardBody className="space-y-5">
-							<div>
-								<h3 className="font-semibold text-xl">
-									{briefingPreview?.title}
-								</h3>
-								<p className="mt-2 text-[var(--muted-foreground)]">
-									{briefingPreview?.summary}
-								</p>
-							</div>
-							<div>
-								<h4 className="font-semibold text-sm">Claims</h4>
-								<div className="mt-2 grid gap-2">
-									{briefingPreview?.claims.map((claim) => (
-										<div
-											className="rounded-md border border-[var(--border)] p-3"
-											key={claim.text}
-										>
-											<p className="text-sm">{claim.text}</p>
-											<div className="mt-2 flex flex-wrap gap-1">
-												{claim.citations.map((citation) => (
-													<Badge key={citation} tone="green">
-														{citation}
-													</Badge>
-												))}
-											</div>
+							{briefingPreview ? (
+								<>
+									<div>
+										<h3 className="font-semibold text-xl">
+											{briefingPreview.title}
+										</h3>
+										<p className="mt-2 text-[var(--muted-foreground)]">
+											{briefingPreview.summary}
+										</p>
+									</div>
+									<div>
+										<h4 className="font-semibold text-sm">Claims</h4>
+										<div className="mt-2 grid gap-2">
+											{briefingPreview.claims.map((claim) => (
+												<div
+													className="rounded-md border border-[var(--border)] p-3"
+													key={claim.text}
+												>
+													<p className="text-sm">{claim.text}</p>
+													<div className="mt-2 flex flex-wrap gap-1">
+														{claim.citations.map((citation) => (
+															<Badge key={citation} tone="green">
+																{citation}
+															</Badge>
+														))}
+													</div>
+												</div>
+											))}
 										</div>
-									))}
+									</div>
+									<div className="grid gap-3 md:grid-cols-2">
+										<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-3">
+											<h4 className="font-semibold text-sm">Open Questions</h4>
+											<ul className="mt-2 space-y-2 text-[var(--muted-foreground)] text-sm">
+												{briefingPreview.openQuestions.map((question) => (
+													<li key={question}>{question}</li>
+												))}
+											</ul>
+										</div>
+										<div className="rounded-md border border-[var(--success-border)] bg-[var(--success)] p-3">
+											<h4 className="font-semibold text-[var(--success-foreground)] text-sm">
+												Recommendation
+											</h4>
+											<p className="mt-2 text-[var(--success-foreground)] text-sm">
+												{briefingPreview.recommendation}
+											</p>
+										</div>
+									</div>
+								</>
+							) : (
+								<div className="flex min-h-96 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--muted)] p-6 text-center">
+									<div>
+										<h3 className="font-semibold text-lg">No briefing yet</h3>
+										<p className="mt-2 max-w-md text-[var(--muted-foreground)] text-sm">
+											This packet does not have a generated result in the
+											product view.
+										</p>
+									</div>
 								</div>
-							</div>
-							<div className="grid gap-3 md:grid-cols-2">
-								<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-3">
-									<h4 className="font-semibold text-sm">Open Questions</h4>
-									<ul className="mt-2 space-y-2 text-[var(--muted-foreground)] text-sm">
-										{briefingPreview?.openQuestions.map((question) => (
-											<li key={question}>{question}</li>
-										))}
-									</ul>
-								</div>
-								<div className="rounded-md border border-[var(--success-border)] bg-[var(--success)] p-3">
-									<h4 className="font-semibold text-[var(--success-foreground)] text-sm">
-										Recommendation
-									</h4>
-									<p className="mt-2 text-[var(--success-foreground)] text-sm">
-										{briefingPreview?.recommendation}
-									</p>
-								</div>
-							</div>
+							)}
 						</CardBody>
 					</Card>
 				</section>

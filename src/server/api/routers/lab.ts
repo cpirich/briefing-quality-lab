@@ -1,7 +1,12 @@
 import { z } from "zod";
 
 import { getEvalRun, startEvalRun } from "~/lab/eval-runs";
-import { compareRuns, listArtifacts, listEvalCases } from "~/run-store";
+import {
+	compareRuns,
+	listArtifacts,
+	listCaseBreakdown,
+	listEvalCases,
+} from "~/run-store";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 async function listPublicEvalCases() {
@@ -28,6 +33,23 @@ async function listPublicEvalCases() {
 	});
 }
 
+async function listPublicCaseBreakdown(input?: {
+	baselineRunId?: string;
+	candidateRunId?: string;
+}) {
+	const [caseBreakdown, evalCases] = await Promise.all([
+		listCaseBreakdown(input),
+		listEvalCases(),
+	]);
+	const holdoutCaseIds = new Set(
+		evalCases
+			.filter((evalCase) => evalCase.holdout)
+			.map((evalCase) => evalCase.id),
+	);
+
+	return caseBreakdown.filter((entry) => !holdoutCaseIds.has(entry.caseId));
+}
+
 export const labRouter = createTRPCRouter({
 	listEvalCases: publicProcedure.query(() => {
 		return listPublicEvalCases();
@@ -36,6 +58,19 @@ export const labRouter = createTRPCRouter({
 	listArtifacts: publicProcedure.query(() => {
 		return listArtifacts();
 	}),
+
+	listCaseBreakdown: publicProcedure
+		.input(
+			z
+				.object({
+					baselineRunId: z.string().min(1).optional(),
+					candidateRunId: z.string().min(1).optional(),
+				})
+				.optional(),
+		)
+		.query(({ input }) => {
+			return listPublicCaseBreakdown(input);
+		}),
 
 	compareRuns: publicProcedure
 		.input(

@@ -107,7 +107,7 @@ Demo-realistic dataset size:
 - 5-8 holdout or regression cases that contribute to aggregate confidence but do not expose tuning labels
 - enough examples to show repeated failure patterns across citation grounding, stale evidence, unsupported recommendations, cost/latency tradeoffs, human approval boundaries, and holdout leakage
 
-Use 8-12 cases to prove the richer fixture shape and keep the first Phase 5 PR reviewable. Move to 25-40 cases in a separate follow-on PR before claiming real prompt, model, or evaluator improvement. Treat 60-100 cases as a later hardening target once live generation, evaluator reliability, and run costs are stable.
+Use 8-12 cases to prove the richer fixture shape and keep the first Phase 5 PR reviewable. Move to 25-40 cases only through the staged authoring and review loop in [t7-demo-realistic-eval-expansion-plan.md](./t7-demo-realistic-eval-expansion-plan.md) before claiming real prompt, model, or evaluator improvement. Treat 60-100 cases as a later hardening target once live generation, evaluator reliability, and run costs are stable.
 
 Good case themes:
 
@@ -157,12 +157,14 @@ The `/genie` route should show:
 - Page title and metadata that say Briefing Genie.
 - Source packet selector with short source summaries.
 - Single generate action.
-- Generated briefing preview with claims, citations, open questions, and recommendation.
+- Briefing result panel that starts empty for the selected packet, then shows the generated briefing with claims, citations, open questions, and recommendation after generation completes.
 - Lightweight links back to the corresponding lab case or latest evaluation, without turning the product page into the lab.
+
+The product route should not prefill the main result panel with seeded baseline or candidate artifacts. Seeded outputs are useful for the lab, offline fixtures, visual regression, and deterministic fallback states, but showing them as the default `/genie` result blurs the difference between an example artifact and a briefing the user just generated.
 
 ## Demo Pacing Requirements
 
-- Single-briefing generation should complete quickly enough for live use, or fall back to a seeded output without changing the visible workflow.
+- Single-briefing generation should complete quickly enough for live use. If live generation is unavailable, the product route should show a clear not-generated or error state rather than silently replacing the result with a seeded candidate artifact.
 - Eval runs can take longer, but the lab should show observable progress: queued/running/complete state, current case, elapsed time, and the artifact path being written.
 - The most visual states should be in the lab: score cards, delta indicators, failure tags, citation coverage, and before/after diff panels.
 - Avoid building a full document editor. The product exists to generate outputs that the lab can evaluate.
@@ -264,7 +266,8 @@ The meaningful boundary is between probabilistic LLM communication and determini
    - Validate the expanded dataset with Zod before wiring it into any live generation or eval-run path.
 
 6. Demo-realistic eval expansion
-   - Grow the reviewed Phase 5 fixture set from 8-12 cases to 25-40 cases in a separate PR.
+   - Grow the reviewed Phase 5 fixture set from 8-12 cases to 25-40 cases only after selecting [the Phase 7 expansion plan](./t7-demo-realistic-eval-expansion-plan.md) as the active slice.
+   - Add cases in small reviewed batches rather than bulk-generating placeholder packets.
    - Keep 4-6 cases highlighted for live walkthroughs while metrics and failure clusters come from the broader set.
    - Add enough cases to get repeated examples per target failure mode, especially citation grounding, stale evidence, unsupported recommendations, cost/latency tradeoffs, human approval boundaries, and holdout leakage.
    - Preserve the holdout boundary by keeping holdout labels and expected answers out of `/genie` and prompt-iteration views.

@@ -8,15 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default async function GeniePage() {
-	const [sourcePackets, briefingOutputs] = await Promise.all([
-		api.genie.listSourcePackets(),
-		api.genie.listSeededBriefingOutputs(),
-	]);
+	const sourcePackets = await api.genie.listSourcePackets();
 
-	return (
-		<GeniePageClient
-			briefingOutputs={briefingOutputs}
-			sourcePackets={sourcePackets}
-		/>
-	);
+	return <GeniePageClient sourcePackets={sourcePackets} />;
 }

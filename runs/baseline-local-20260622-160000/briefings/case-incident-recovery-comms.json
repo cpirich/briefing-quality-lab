@@ -1,0 +1,31 @@
+{
+	"id": "case-incident-recovery-comms-local-extractive-v1",
+	"sourcePacketId": "packet-incident-recovery",
+	"caseId": "case-incident-recovery-comms",
+	"title": "Incident Recovery Communication Packet Briefing",
+	"summary": "Support, status-page, and customer-success notes about communicating recovery after failed installs. Briefing focus: Recommend how Briefing Genie should summarize recovery work after a setup incident.",
+	"claims": [
+		{
+			"text": "Support incident recap: A failed installer release caused 31 setup tickets in two days.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Status page draft: The draft status update says the issue is resolved, but engineering has only verified recovery on macOS and Linux.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Customer success guidance: Customer success wants a concise message that separates who is affected, what action they should take, and which environments are still pending validation.",
+			"citations": ["S3"]
+		}
+	],
+	"openQuestions": [
+		"Confirm whether engineering fix note has newer follow-up data.",
+		"Confirm whether docs update checklist has newer follow-up data."
+	],
+	"recommendation": "Use this as a fast first pass, then inspect source tension and citation support in the lab before treating the recommendation as shippable.",
+	"metadata": {
+		"variant": "Local extractive baseline",
+		"runId": "baseline-local-20260622-160000",
+		"model": "deterministic-extractive"
+	}
+}
