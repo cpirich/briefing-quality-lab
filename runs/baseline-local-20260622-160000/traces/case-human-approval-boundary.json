@@ -19,7 +19,20 @@
 	],
 	"model": {
 		"provider": "local",
-		"name": "deterministic-extractive"
+		"name": "deterministic-extractive",
+		"settings": {
+			"promptVersion": "briefing-genie-v1",
+			"maxOutputTokens": 900,
+			"structuredOutputName": null,
+			"textVerbosity": null,
+			"reasoningEffort": null,
+			"reasoningSummary": null,
+			"temperature": 0,
+			"topP": null,
+			"truncation": null,
+			"toolChoice": "none",
+			"parallelToolCalls": false
+		}
 	},
 	"output": {
 		"id": "case-human-approval-boundary-local-extractive-v1",

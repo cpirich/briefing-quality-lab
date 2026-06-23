@@ -96,6 +96,20 @@ export const GenerationVariantSchema = z.object({
 	maxOutputTokens: z.number().int().positive().optional(),
 });
 
+export const GenerationModelSettingsSchema = z.object({
+	promptVersion: fixtureIdSchema,
+	maxOutputTokens: z.number().int().positive().nullable(),
+	structuredOutputName: z.string().min(1).nullable(),
+	textVerbosity: z.enum(["low", "medium", "high"]).nullable(),
+	reasoningEffort: z.enum(["none", "low", "medium", "high"]).nullable(),
+	reasoningSummary: z.string().min(1).nullable(),
+	temperature: z.number().min(0).nullable(),
+	topP: z.number().min(0).max(1).nullable(),
+	truncation: z.enum(["auto", "disabled"]).nullable(),
+	toolChoice: z.string().min(1).nullable(),
+	parallelToolCalls: z.boolean().nullable(),
+});
+
 export const ToolCallTraceSchema = z.object({
 	id: fixtureIdSchema,
 	toolName: z.string().min(1),
@@ -129,6 +143,7 @@ export const GenerationTraceSchema = z
 			provider: z.string().min(1),
 			name: z.string().min(1),
 			temperature: z.number().min(0).optional(),
+			settings: GenerationModelSettingsSchema,
 		}),
 		output: BriefingOutputSchema,
 		toolCalls: z.array(ToolCallTraceSchema),
@@ -297,6 +312,9 @@ export type SourcePacket = z.infer<typeof SourcePacketSchema>;
 export type EvalCase = z.infer<typeof EvalCaseSchema>;
 export type BriefingOutput = z.infer<typeof BriefingOutputSchema>;
 export type GenerationVariant = z.infer<typeof GenerationVariantSchema>;
+export type GenerationModelSettings = z.infer<
+	typeof GenerationModelSettingsSchema
+>;
 export type GenerationTrace = z.infer<typeof GenerationTraceSchema>;
 export type EvaluatorOutput = z.infer<typeof EvaluatorOutputSchema>;
 export type RunManifest = z.infer<typeof RunManifestSchema>;

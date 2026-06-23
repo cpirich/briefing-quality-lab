@@ -24,7 +24,20 @@
 	"model": {
 		"provider": "seeded-fixture",
 		"name": "phase-5-candidate",
-		"temperature": 0
+		"temperature": 0,
+		"settings": {
+			"promptVersion": "briefing-genie-v1",
+			"maxOutputTokens": 1200,
+			"structuredOutputName": "seeded-fixture",
+			"textVerbosity": null,
+			"reasoningEffort": null,
+			"reasoningSummary": null,
+			"temperature": 0,
+			"topP": null,
+			"truncation": null,
+			"toolChoice": "read_source_packet",
+			"parallelToolCalls": false
+		}
 	},
 	"output": {
 		"id": "briefing-release-note-drift-candidate",

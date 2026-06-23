@@ -58,6 +58,7 @@ Expected result:
 - a new `runs/baseline-openai-*` directory
 - one briefing artifact per visible eval case
 - one generation trace per visible eval case
+- each trace records `model.settings`, including prompt version, max output tokens, structured output name, verbosity, reasoning effort, temperature, top-p, truncation, tool choice, and parallel tool-call settings; `null` means the run did not explicitly configure that setting
 - one evaluator output per visible eval case
 - a complete `manifest.json` with OpenAI provider/model metadata
 

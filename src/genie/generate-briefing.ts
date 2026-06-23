@@ -6,6 +6,7 @@ import {
 	BriefingClaimSchema,
 	type BriefingOutput,
 	BriefingOutputSchema,
+	type GenerationModelSettings,
 	type GenerationTrace,
 	GenerationTraceSchema,
 	type GenerationVariant,
@@ -39,6 +40,7 @@ type GeneratedBriefingContent = z.infer<typeof GeneratedBriefingContentSchema>;
 
 const sentenceBoundaryPattern = /(?<=[.!?])\s+/;
 const defaultOpenAIModel = "gpt-5.2";
+const structuredOutputName = "briefing_genie_output";
 const openAIApiKey = process.env.OPENAI_API_KEY;
 const openAIModel = process.env.OPENAI_MODEL ?? defaultOpenAIModel;
 
@@ -157,12 +159,33 @@ function briefingFromContent({
 	});
 }
 
+function modelSettingsForVariant(
+	variant: GenerationVariant,
+	overrides: Partial<GenerationModelSettings> = {},
+): GenerationModelSettings {
+	return {
+		promptVersion: variant.promptVersion,
+		maxOutputTokens: variant.maxOutputTokens ?? null,
+		structuredOutputName: null,
+		textVerbosity: null,
+		reasoningEffort: null,
+		reasoningSummary: null,
+		temperature: null,
+		topP: null,
+		truncation: null,
+		toolChoice: null,
+		parallelToolCalls: null,
+		...overrides,
+	};
+}
+
 function traceFromBriefing({
 	briefing,
 	sourcePacket,
 	userRequest,
 	runId,
 	variant,
+	settings,
 	prompt,
 	startedAt,
 	inputTokens,
@@ -174,6 +197,7 @@ function traceFromBriefing({
 	userRequest: string;
 	runId: string;
 	variant: GenerationVariant;
+	settings: GenerationModelSettings;
 	prompt: string;
 	startedAt: number;
 	inputTokens: number;
@@ -203,6 +227,10 @@ function traceFromBriefing({
 		model: {
 			provider: variant.provider,
 			name: variant.model,
+			...(settings.temperature !== null
+				? { temperature: settings.temperature }
+				: {}),
+			settings,
 		},
 		output: briefing,
 		toolCalls: [],
@@ -257,6 +285,12 @@ function generateLocalBriefing({
 		userRequest,
 		runId,
 		variant,
+		settings: modelSettingsForVariant(variant, {
+			structuredOutputName: null,
+			temperature: 0,
+			toolChoice: "none",
+			parallelToolCalls: false,
+		}),
 		prompt,
 		startedAt,
 		inputTokens: estimateTokens(prompt),
@@ -289,6 +323,9 @@ async function generateOpenAIResponsesBriefing({
 
 	const client = new OpenAI({ apiKey: openAIApiKey });
 	const prompt = buildPrompt(sourcePacket, userRequest);
+	const settings = modelSettingsForVariant(variant, {
+		structuredOutputName,
+	});
 	const response = await client.responses.parse({
 		model: variant.model,
 		instructions: [
@@ -302,7 +339,7 @@ async function generateOpenAIResponsesBriefing({
 		text: {
 			format: zodTextFormat(
 				GeneratedBriefingContentSchema,
-				"briefing_genie_output",
+				structuredOutputName,
 			),
 		},
 		...(variant.maxOutputTokens
@@ -327,6 +364,7 @@ async function generateOpenAIResponsesBriefing({
 		userRequest,
 		runId,
 		variant,
+		settings,
 		prompt,
 		startedAt,
 		inputTokens: response.usage?.input_tokens ?? estimateTokens(prompt),
