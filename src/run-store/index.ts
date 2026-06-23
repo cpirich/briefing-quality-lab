@@ -330,11 +330,27 @@ export async function listRunComparisons(): Promise<RunComparison[]> {
 	return sortById(comparisons);
 }
 
-function isGeneratedComparison(runComparison: RunComparison) {
-	return generatedRunPrefixes.some(
-		(prefix) =>
-			runComparison.baselineRunId.startsWith(prefix) ||
-			runComparison.candidateRunId.startsWith(prefix),
+function isGeneratedRunManifest(manifest: RunManifest | undefined) {
+	if (!manifest) {
+		return false;
+	}
+
+	return (
+		generatedRunPrefixes.some((prefix) => manifest.runId.startsWith(prefix)) ||
+		manifest.command.includes("eval:baseline") ||
+		manifest.command.includes("eval:variant") ||
+		manifest.variantLabel.endsWith("generated baseline") ||
+		manifest.variantLabel.endsWith("generated variant")
+	);
+}
+
+function isGeneratedComparison(
+	runComparison: RunComparison,
+	manifestById: Map<string, RunManifest>,
+) {
+	return (
+		isGeneratedRunManifest(manifestById.get(runComparison.baselineRunId)) ||
+		isGeneratedRunManifest(manifestById.get(runComparison.candidateRunId))
 	);
 }
 
@@ -359,17 +375,19 @@ function latestGeneratedComparison(
 	comparisons: RunComparison[],
 	manifestById: Map<string, RunManifest>,
 ) {
-	return [...comparisons].filter(isGeneratedComparison).sort((left, right) => {
-		const recencyDelta =
-			comparisonRecency(right, manifestById) -
-			comparisonRecency(left, manifestById);
+	return [...comparisons]
+		.filter((comparison) => isGeneratedComparison(comparison, manifestById))
+		.sort((left, right) => {
+			const recencyDelta =
+				comparisonRecency(right, manifestById) -
+				comparisonRecency(left, manifestById);
 
-		if (recencyDelta !== 0) {
-			return recencyDelta;
-		}
+			if (recencyDelta !== 0) {
+				return recencyDelta;
+			}
 
-		return right.id.localeCompare(left.id);
-	})[0];
+			return right.id.localeCompare(left.id);
+		})[0];
 }
 
 export async function compareRuns(input?: {

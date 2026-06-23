@@ -17,10 +17,10 @@ Comparison uses file-backed artifacts for the same eval case so the before/after
 
 ## Failure Clusters
 
+- Setup Recovery: 2 cases (case-adoption-friction, case-incident-recovery-comms)
 - Citation Grounding: 2 cases (case-adoption-friction, case-eval-loop)
 - Cost Guardrail: 2 cases (case-cost-latency-budget, case-eval-loop)
 - Human Approval: 2 cases (case-human-approval-boundary, case-release-note-drift)
-- Stale Source: 2 cases (case-incident-recovery-comms, case-release-note-drift)
 
 ## Evidence Status
 

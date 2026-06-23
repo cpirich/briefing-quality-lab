@@ -91,6 +91,13 @@
 	],
 	"failureClusters": [
 		{
+			"title": "Setup Recovery",
+			"count": 2,
+			"severity": "Low",
+			"evidence": "Repeated setup-recovery findings across evaluator outputs.",
+			"cases": ["case-adoption-friction", "case-incident-recovery-comms"]
+		},
+		{
 			"title": "Citation Grounding",
 			"count": 2,
 			"severity": "Low",
@@ -110,13 +117,6 @@
 			"severity": "Low",
 			"evidence": "Repeated human-approval findings across evaluator outputs.",
 			"cases": ["case-human-approval-boundary", "case-release-note-drift"]
-		},
-		{
-			"title": "Stale Source",
-			"count": 2,
-			"severity": "Low",
-			"evidence": "Repeated stale-source findings across evaluator outputs.",
-			"cases": ["case-incident-recovery-comms", "case-release-note-drift"]
 		}
 	],
 	"featuredCase": {

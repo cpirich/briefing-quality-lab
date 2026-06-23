@@ -1,5 +1,12 @@
 import { spawn } from "node:child_process";
-import { access, mkdir, rename, rm, writeFile } from "node:fs/promises";
+import {
+	access,
+	mkdir,
+	readdir,
+	rename,
+	rm,
+	writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 
 import { generateBriefing } from "~/genie/generate-briefing";
@@ -75,6 +82,7 @@ const localEvaluatorCalibration = {
 } as const;
 const coverageTermMinimumLength = 5;
 const coverageTermsPerPoint = 5;
+const fixtureIdPattern = /^[a-z0-9][a-z0-9-]*$/;
 
 function optionValue(name: string) {
 	const prefix = `${name}=`;
@@ -115,6 +123,16 @@ function parseOptions(): EvalOptions {
 
 function absolutePath(relativePath: string) {
 	return path.join(repoRoot, relativePath);
+}
+
+function validateFixtureId(value: string, label: string) {
+	if (!fixtureIdPattern.test(value)) {
+		throw new Error(
+			`Invalid ${label} "${value}". Use lowercase letters, numbers, and hyphens only; path separators are not allowed.`,
+		);
+	}
+
+	return value;
 }
 
 async function artifactExists(relativePath: string) {
@@ -197,10 +215,64 @@ async function clearRunOutputDirectories(runId: string) {
 	);
 }
 
+async function quarantineRunComparisons(runId: string) {
+	let comparisonFiles: string[];
+	try {
+		comparisonFiles = await readdir(absolutePath("runs/comparisons"));
+	} catch (error) {
+		if (
+			error &&
+			typeof error === "object" &&
+			"code" in error &&
+			error.code === "ENOENT"
+		) {
+			return 0;
+		}
+
+		throw error;
+	}
+
+	const staleComparisonFiles = comparisonFiles.filter(
+		(fileName) => fileName.endsWith(".json") && fileName.includes(runId),
+	);
+	if (staleComparisonFiles.length === 0) {
+		return 0;
+	}
+
+	const staleDir = absolutePath("runs/comparisons/stale");
+	await mkdir(staleDir, { recursive: true });
+	const timestamp = slugTimestamp();
+	await Promise.all(
+		staleComparisonFiles.map((fileName) =>
+			rename(
+				absolutePath(`runs/comparisons/${fileName}`),
+				path.join(staleDir, `${timestamp}-${fileName}`),
+			),
+		),
+	);
+
+	return staleComparisonFiles.length;
+}
+
+async function quarantineLatestReport() {
+	const reportPath = "reports/latest-eval-summary.md";
+	if (!(await artifactExists(reportPath))) {
+		return;
+	}
+
+	const staleDir = absolutePath("reports/stale");
+	await mkdir(staleDir, { recursive: true });
+	await rename(
+		absolutePath(reportPath),
+		path.join(staleDir, `${slugTimestamp()}-latest-eval-summary.md`),
+	);
+}
+
 async function prepareRunOutputDirectories(
 	runId: string,
 	overwriteRun: boolean,
 ) {
+	validateFixtureId(runId, "run id");
 	const manifestPath = `runs/${runId}/manifest.json`;
 	const hasExistingManifest = await artifactExists(manifestPath);
 
@@ -210,6 +282,12 @@ async function prepareRunOutputDirectories(
 		);
 	}
 
+	if (overwriteRun) {
+		const quarantinedComparisons = await quarantineRunComparisons(runId);
+		if (quarantinedComparisons > 0) {
+			await quarantineLatestReport();
+		}
+	}
 	await clearRunOutputDirectories(runId);
 }
 
@@ -547,6 +625,7 @@ async function generateRun(options: EvalOptions) {
 		(evalCase) => options.includeHoldouts || !evalCase.holdout,
 	);
 	const runId = options.runId ?? runIdFor(options.mode, options.provider);
+	validateFixtureId(runId, "run id");
 	const artifactPaths = [`runs/${runId}/manifest.json`];
 	const briefings: BriefingOutput[] = [];
 	const traces: GenerationTrace[] = [];
@@ -1109,6 +1188,8 @@ async function writeComparisonAndReport(input: {
 	const baselineLabel = trendLabelFor(baseline.manifest, "baseline");
 	const candidateLabel = trendLabelFor(candidate.manifest, "candidate");
 	const changeLabel = comparisonChangeLabel(candidate.manifest);
+	const failureClusterEvaluations =
+		changeLabel === "Gap" ? baseline.evaluations : candidate.evaluations;
 	const comparison = RunComparisonSchema.parse({
 		id: `${baselineRunId}-${candidateRunId}`,
 		baselineRunId,
@@ -1246,7 +1327,7 @@ async function writeComparisonAndReport(input: {
 				delta: costRatioDeltaLabel(candidate.manifest, baseline.manifest),
 			},
 		],
-		failureClusters: failureClusters(candidate.evaluations),
+		failureClusters: failureClusters(failureClusterEvaluations),
 		featuredCase: featuredCaseFor(evalCases, baseline, candidate),
 		recommendation: evidenceStatusFor({
 			baselineManifest: baseline.manifest,
