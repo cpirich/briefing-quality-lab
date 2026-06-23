@@ -1,0 +1,41 @@
+{
+	"id": "case-cost-latency-budget-openai-responses-v1",
+	"sourcePacketId": "packet-cost-latency",
+	"caseId": "case-cost-latency-budget",
+	"title": "Recommendation: tracing + retry behavior for next demo run",
+	"summary": "Keep claim-level trace summaries in the UI and store full raw traces on disk; cap retries tightly (1 auto retry only for transient provider errors) with explicit manifest logging. This preserves reviewer value while staying within the 1.15x cost ceiling and maintaining live-demo responsiveness.",
+	"claims": [
+		{
+			"text": "Candidate prompt increases median token usage by ~11% but improves latency by ~6% due to fewer manual reruns (not shorter generations).",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Finance will accept up to a 1.15x cost ratio for demo-quality runs if extra tokens are justified by reduced review time; above that requires smaller batches, stricter retry caps, or more aggressive trace summarization.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Reviewers find long traces useful only when summarized next to the failing claim; raw provider payloads slow review because evidence is hard to locate.",
+			"citations": ["S3"]
+		},
+		{
+			"text": "Live demo felt responsive when a single briefing completes under 10 seconds and progress shows the current case; longer full runs are acceptable if progress/artifact paths update continuously.",
+			"citations": ["S4"]
+		},
+		{
+			"text": "Draft policy: allow one automatic retry for transient provider errors; require a manifest entry when retries change cost/latency; avoid silent repeated generations.",
+			"citations": ["S5"]
+		}
+	],
+	"openQuestions": [
+		"Do we have a reliable way to classify 'transient provider errors' vs. model quality failures for the one allowed auto-retry?",
+		"Is the next demo a single-briefing live flow, a full batch eval, or both (to tune the 10s target vs. batch cost constraints)?",
+		"Are we currently exceeding the 1.15x cost ratio when enabling full raw payload retention in the dashboard (as opposed to disk-only)?",
+		"What fields are required in the manifest for retry/cost explanation during stakeholder review?"
+	],
+	"recommendation": "Tracing: Keep claim-level trace summaries visible in the dashboard (selected source ids, what evidence was missing, retry count, and output/artifact path), and keep detailed raw traces/payloads on disk only (not dumped into the main UI). This matches reviewer preferences and keeps the live demo readable. Retries: Use a strict cap—1 automatic retry only for transient provider errors; no silent repeated generations. Log any retry occurrence and its cost/latency impact in a manifest. Cost/latency guardrails: Target staying within the 1.15x cost ceiling; if projected above, first tighten retries (already capped), then reduce batch size and/or summarize traces more aggressively rather than expanding raw trace retention in the UI. Demo responsiveness: Prioritize sub-10s completion for individual briefings; for longer eval runs, ensure continuous progress indicators (current case, elapsed time, artifact path updates).",
+	"metadata": {
+		"variant": "OpenAI Responses baseline",
+		"runId": "baseline-openai-20260623165128",
+		"model": "gpt-5.2"
+	}
+}

@@ -1,0 +1,190 @@
+{
+	"id": "evaluation-baseline-openai-20260623165128-case-adoption-friction",
+	"runId": "baseline-openai-20260623165128",
+	"caseId": "case-adoption-friction",
+	"evaluator": {
+		"mode": "hybrid",
+		"provider": "openai",
+		"model": "gpt-5.2",
+		"promptVersion": "hybrid-judge-v1",
+		"settings": {
+			"structuredOutputName": "hybrid_evaluator_output"
+		},
+		"latencyMs": 15164,
+		"cost": {
+			"inputTokens": 2145,
+			"cachedInputTokens": 0,
+			"outputTokens": 1144,
+			"estimatedUsd": 0.01976975,
+			"pricing": {
+				"model": "gpt-5.2",
+				"inputUsdPer1MTokens": 1.75,
+				"cachedInputUsdPer1MTokens": 0.175,
+				"outputUsdPer1MTokens": 14,
+				"currency": "USD",
+				"serviceTier": "standard",
+				"context": "short",
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+			}
+		}
+	},
+	"hardChecks": [
+		{
+			"id": "briefing-schema",
+			"label": "Briefing schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "BriefingOutput schema parses"
+		},
+		{
+			"id": "citation-source-ids",
+			"label": "Citation source ids",
+			"status": "pass",
+			"value": "3 cited ids exist",
+			"expectation": "Every cited source id exists in the source packet"
+		},
+		{
+			"id": "trace-schema",
+			"label": "Trace schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "GenerationTrace schema parses"
+		},
+		{
+			"id": "latency-metadata",
+			"label": "Latency metadata",
+			"status": "pass",
+			"value": "11418ms",
+			"threshold": "> 0ms"
+		},
+		{
+			"id": "cost-metadata",
+			"label": "Cost metadata",
+			"status": "pass",
+			"value": "$0.008344",
+			"expectation": "estimatedUsd is present when pricing is configured"
+		},
+		{
+			"id": "token-metadata",
+			"label": "Token metadata",
+			"status": "pass",
+			"value": "864 in / 0 cached / 488 out",
+			"expectation": "Input, cached-input, and output token counts are coherent"
+		},
+		{
+			"id": "model-metadata",
+			"label": "Provider and model metadata",
+			"status": "pass",
+			"value": "openai gpt-5.2 briefing-genie-v1",
+			"expectation": "Provider, model, and prompt version are present"
+		},
+		{
+			"id": "judge-input-boundary",
+			"label": "Judge input boundary",
+			"status": "pass",
+			"value": "eval-only fields omitted",
+			"expectation": "Judge prompt omits eval-only labels and holdout tuning fields"
+		}
+	],
+	"claimJudgments": [
+		{
+			"claimText": "Quickstart completion improved from 44% to 58% after the docs copy refresh, with fewer exits at the first API call step.",
+			"citedSourceIds": ["S1"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S1"],
+			"missingEvidence": [],
+			"explanation": "S1 states quickstart completion rose 44%→58% after the copy refresh and that the first API call step has fewer exits.",
+			"failureTags": []
+		},
+		{
+			"claimText": "The largest remaining onboarding drop is during local setup and credential configuration, driven by environment-specific errors and limited recovery paths.",
+			"citedSourceIds": ["S1"],
+			"supportStatus": "partially-supported",
+			"supportingEvidenceIds": ["S1"],
+			"missingEvidence": [
+				"Evidence that 'limited recovery paths' (or lack of recovery path) is a driver of the drop, not just a note about how metrics should be framed."
+			],
+			"explanation": "S1 clearly supports that the biggest remaining drop happens during local setup/credential configuration and mentions users bounce after environment-specific errors. It also notes onboarding should not be framed as end-to-end until credential setup has its own recovery path, but it does not directly attribute the drop to 'limited recovery paths' as a causal driver—more a caution about measurement/presentation.",
+			"failureTags": ["causality-overreach"]
+		},
+		{
+			"claimText": "Support volume is dominated by environment drift, stale CLI versions, missing environment variables, and credentials copied from the wrong workspace; users often need an internal checklist to recover.",
+			"citedSourceIds": ["S2"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S2"],
+			"missingEvidence": [],
+			"explanation": "S2 says most new tickets mention environment drift, stale CLI versions, and unclear recovery steps; agents grouped tickets into stale CLI installs, missing env vars, and wrong-workspace credentials, and that the right command was found after support pasted an internal checklist which resolved most cases.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Failures often persist because users restart the quickstart and reproduce the same broken state; tickets reopen when recovery steps aren’t clear/public.",
+			"citedSourceIds": ["S2"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S2"],
+			"missingEvidence": [],
+			"explanation": "S2 explicitly notes tickets reopened when users repeated the quickstart from the top and reproduced the same failed state, and that recovery steps in the internal checklist are not reflected in public docs (implying lack of clear/public recovery guidance).",
+			"failureTags": []
+		},
+		{
+			"claimText": "Pilot expansion is available (two teams next month) but is blocked by the most visible demo risk: setup recovery that looks brittle without documented guidance.",
+			"citedSourceIds": ["S4"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S4"],
+			"missingEvidence": [],
+			"explanation": "S4 says two additional teams are available next month, but the launch owner flagged setup recovery as the visible failure making the demo feel brittle and recommends expanding only after failed-install guidance is observable; expansion should wait until the recovery path has a documented path.",
+			"failureTags": []
+		}
+	],
+	"recommendationJudgment": {
+		"taskAnswerStatus": "partially-answers-task",
+		"overconfidenceStatus": "somewhat-overconfident",
+		"missingImportantEvidence": [
+			"Sources S3/S6/S5 also describe pilot gates and trust/citation transparency; recommendation adds specific product behaviors (e.g., 'stale CLI detection', 'workspace mismatch detection', 'safe re-run behavior') that are only partially evidenced as needed steps versus documentation/checklist publication.",
+			"Evidence that the 'next' improvement should be implemented as a 'first-class setup recovery path' beyond publishing the recovery checklist/guidance; packet emphasizes public recovery steps/guidance, not necessarily new product detection/flows."
+		],
+		"explanation": "The recommendation is directionally consistent with packet themes: setup recovery/public recovery steps are explicit gates (S4; also S6) and support issues center on stale CLI/env vars/credential mismatch (S2). However it becomes more prescriptive than the evidence by specifying implementation details like automated detection and 'first-class' flows; the sources mainly call for public recovery steps/guidance and demonstrability without support pasting internal checklists (S2/S4/S6). It also omits explicit mention of the other stated pilot gates around source citations and evidence separation (S6/S3) while claiming gating release for adding teams.",
+		"failureTags": ["speculation-beyond-evidence", "omitted-evidence"]
+	},
+	"scores": {
+		"overall": 0.66,
+		"grounding": 0.74,
+		"coverage": 0.44,
+		"citationSupport": 0.91
+	},
+	"failureTags": [
+		"causality-overreach",
+		"coverage-gap",
+		"omitted-evidence",
+		"overconfidence",
+		"partial-claim-support",
+		"speculation-beyond-evidence"
+	],
+	"rubricEvidence": [
+		"Hybrid claim support score: 0.91.",
+		"Recommendation task fit: partially-answers-task.",
+		"Overconfidence: somewhat-overconfident.",
+		"Hard-check cap: 1.00."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": false,
+			"note": "S1 appears in a partially supported or unsupported claim judgment."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "S2 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "S4 appears in fully supported claim-level judgments."
+		}
+	],
+	"notes": "Hybrid evaluator output: deterministic hard checks plus structured LLM judge evidence. Manual spot checks are still required before claiming product improvement.",
+	"artifactPaths": [
+		"runs/baseline-openai-20260623165128/evaluations/case-adoption-friction.json",
+		"runs/baseline-openai-20260623165128/briefings/case-adoption-friction.json"
+	]
+}

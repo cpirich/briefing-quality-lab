@@ -1,0 +1,69 @@
+{
+	"runId": "baseline-openai-20260623165128",
+	"createdAt": "2026-06-23T16:54:05.852Z",
+	"variantLabel": "openai generated baseline",
+	"status": "complete",
+	"gitRef": "local-worktree",
+	"command": "bun run eval:baseline --provider=openai --evaluator=hybrid --run-id=baseline-openai-20260623165128",
+	"caseIds": [
+		"case-adoption-friction",
+		"case-code-review-queues",
+		"case-cost-latency-budget",
+		"case-eval-loop",
+		"case-human-approval-boundary",
+		"case-incident-recovery-comms",
+		"case-release-note-drift"
+	],
+	"aggregateMetrics": {
+		"overall": 0.8,
+		"grounding": 0.76,
+		"coverage": 0.79,
+		"citationSupport": 0.89,
+		"unsupportedClaims": 11,
+		"groundingRiskUnits": 11,
+		"medianLatencyMs": 12559,
+		"estimatedCostUsd": 0.07009975,
+		"costRatio": 1,
+		"latencyRatio": 1
+	},
+	"guardrails": [
+		{
+			"id": "citation-support",
+			"label": "Citation support",
+			"status": "pass",
+			"value": "0.89",
+			"threshold": ">= 0.72"
+		},
+		{
+			"id": "cost-ratio",
+			"label": "Cost ratio",
+			"status": "pass",
+			"value": "1.00x",
+			"threshold": "<= 1.15x"
+		}
+	],
+	"artifactPaths": [
+		"runs/baseline-openai-20260623165128/manifest.json",
+		"runs/baseline-openai-20260623165128/briefings/case-adoption-friction.json",
+		"runs/baseline-openai-20260623165128/traces/case-adoption-friction.json",
+		"runs/baseline-openai-20260623165128/evaluations/case-adoption-friction.json",
+		"runs/baseline-openai-20260623165128/briefings/case-code-review-queues.json",
+		"runs/baseline-openai-20260623165128/traces/case-code-review-queues.json",
+		"runs/baseline-openai-20260623165128/evaluations/case-code-review-queues.json",
+		"runs/baseline-openai-20260623165128/briefings/case-cost-latency-budget.json",
+		"runs/baseline-openai-20260623165128/traces/case-cost-latency-budget.json",
+		"runs/baseline-openai-20260623165128/evaluations/case-cost-latency-budget.json",
+		"runs/baseline-openai-20260623165128/briefings/case-eval-loop.json",
+		"runs/baseline-openai-20260623165128/traces/case-eval-loop.json",
+		"runs/baseline-openai-20260623165128/evaluations/case-eval-loop.json",
+		"runs/baseline-openai-20260623165128/briefings/case-human-approval-boundary.json",
+		"runs/baseline-openai-20260623165128/traces/case-human-approval-boundary.json",
+		"runs/baseline-openai-20260623165128/evaluations/case-human-approval-boundary.json",
+		"runs/baseline-openai-20260623165128/briefings/case-incident-recovery-comms.json",
+		"runs/baseline-openai-20260623165128/traces/case-incident-recovery-comms.json",
+		"runs/baseline-openai-20260623165128/evaluations/case-incident-recovery-comms.json",
+		"runs/baseline-openai-20260623165128/briefings/case-release-note-drift.json",
+		"runs/baseline-openai-20260623165128/traces/case-release-note-drift.json",
+		"runs/baseline-openai-20260623165128/evaluations/case-release-note-drift.json"
+	]
+}

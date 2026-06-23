@@ -16,6 +16,7 @@
 		"eval:variant": "bun run scripts/run-eval.ts variant",
 		"preview": "next build && next start",
 		"start": "next start",
+		"test:evaluator": "bun run scripts/evaluator-tests.ts",
 		"typecheck": "tsc --noEmit",
 		"typecheck:native": "tsgo --noEmit"
 	},

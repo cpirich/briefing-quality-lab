@@ -13,6 +13,7 @@ import path from "node:path";
 import { generateBriefing } from "~/genie/generate-briefing";
 import { pricingForOpenAIModel } from "~/genie/openai-pricing";
 import { defaultOpenAIModel } from "~/genie/variants";
+import { type EvaluatorMode, evaluateBriefing } from "~/lab/evaluator";
 import {
 	listBriefingOutputs,
 	listEvalCases,
@@ -26,7 +27,6 @@ import {
 	BriefingOutputSchema,
 	type EvalCase,
 	type EvaluatorOutput,
-	EvaluatorOutputSchema,
 	type GenerationTrace,
 	GenerationTraceSchema,
 	type RunComparison,
@@ -42,6 +42,7 @@ type EvalProvider = "local" | "openai";
 interface EvalOptions {
 	mode: EvalMode;
 	provider: EvalProvider;
+	evaluator: EvaluatorMode;
 	includeHoldouts: boolean;
 	overwriteRun: boolean;
 	runId?: string;
@@ -60,32 +61,6 @@ const repoRoot = process.cwd();
 const seededCandidateRunId = "candidate-citation-gates";
 const generatedBaselinePrefixes = ["baseline-local-", "baseline-openai-"];
 const generatedCandidatePrefixes = ["candidate-local-", "candidate-openai-"];
-const localEvaluatorCalibration = {
-	// This evaluator is a deterministic demo heuristic, not a statistically
-	// calibrated judge. These constants keep the local extractive baseline below
-	// the reference target fixture while preserving stable artifact generation.
-	coverageFloor: 0.25,
-	failureRiskCap: 0.18,
-	failureRiskPerTag: 0.025,
-	localExtractiveCoveragePenalty: 0.18,
-	localExtractiveCoverageCap: 0.72,
-	localExtractiveCoverageFloor: 0.35,
-	localExtractiveCitationSupportPenalty: 0.34,
-	localExtractiveCitationCoverageWeight: 0.12,
-	localExtractiveCitationSupportCap: 0.76,
-	localExtractiveCitationSupportFloor: 0.45,
-	groundingFloor: 0.35,
-	groundingCap: 0.95,
-	groundingCitationWeight: 0.72,
-	groundingCoverageWeight: 0.2,
-	overallFloor: 0.35,
-	overallCap: 0.95,
-	overallCoverageWeight: 0.34,
-	overallCitationWeight: 0.32,
-	overallGroundingWeight: 0.34,
-} as const;
-const coverageTermMinimumLength = 5;
-const coverageTermsPerPoint = 5;
 const fixtureIdPattern = /^[a-z0-9][a-z0-9-]*$/;
 const reservedRunIds = new Set(["comparisons"]);
 
@@ -111,10 +86,18 @@ function parseOptions(): EvalOptions {
 	if (!["local", "openai"].includes(provider)) {
 		throw new Error(`Unknown provider "${provider}". Use local or openai.`);
 	}
+	const evaluator = (optionValue("--evaluator") ??
+		(provider === "openai" ? "hybrid" : "deterministic")) as EvaluatorMode;
+	if (!["deterministic", "hybrid"].includes(evaluator)) {
+		throw new Error(
+			`Unknown evaluator "${evaluator}". Use deterministic or hybrid.`,
+		);
+	}
 
 	return {
 		mode,
 		provider,
+		evaluator,
 		includeHoldouts: hasFlag("--include-holdouts"),
 		overwriteRun:
 			hasFlag("--overwrite-run") || process.env.EVAL_OVERWRITE_RUN === "1",
@@ -148,12 +131,14 @@ function validateFixtureId(value: string, label: string) {
 function commandFor({
 	mode,
 	provider,
+	evaluator,
 	runId,
 	includeHoldouts,
 	referenceManifest,
 }: {
 	mode: Exclude<EvalMode, "report">;
 	provider: EvalProvider;
+	evaluator: EvaluatorMode;
 	runId: string;
 	includeHoldouts: boolean;
 	referenceManifest?: RunManifest;
@@ -161,6 +146,7 @@ function commandFor({
 	const parts = [
 		`bun run eval:${mode}`,
 		`--provider=${provider}`,
+		`--evaluator=${evaluator}`,
 		`--run-id=${runId}`,
 	];
 	if (includeHoldouts) {
@@ -342,26 +328,43 @@ function runIdFor(mode: Exclude<EvalMode, "report">, provider: EvalProvider) {
 }
 
 function assertOpenAIPricingIsConfigured(options: EvalOptions) {
-	if (options.mode === "report" || options.provider !== "openai") {
+	if (options.mode === "report") {
 		return;
 	}
 
-	const modelName = process.env.OPENAI_MODEL ?? defaultOpenAIModel;
-	const pricing = pricingForOpenAIModel(modelName);
-	if (pricing) {
+	if (options.provider === "openai") {
+		const modelName = process.env.OPENAI_MODEL ?? defaultOpenAIModel;
+		const pricing = pricingForOpenAIModel(modelName);
+		if (!pricing) {
+			throw new Error(
+				[
+					`OpenAI pricing is not configured for model "${modelName}".`,
+					"Add the model and reviewed token rates to src/genie/openai-pricing.ts before running live evals.",
+					"This aborts before provider calls so generated traces do not persist unknown estimatedUsd values.",
+				].join(" "),
+			);
+		}
 		console.log(
 			`Using ${pricing.source} for ${modelName}: input $${pricing.inputUsdPer1MTokens}/1M, cached input $${pricing.cachedInputUsdPer1MTokens}/1M, output $${pricing.outputUsdPer1MTokens}/1M.`,
 		);
-		return;
 	}
 
-	throw new Error(
-		[
-			`OpenAI pricing is not configured for model "${modelName}".`,
-			"Add the model and reviewed token rates to src/genie/openai-pricing.ts before running live evals.",
-			"This aborts before provider calls so generated traces do not persist unknown estimatedUsd values.",
-		].join(" "),
-	);
+	if (options.evaluator === "hybrid") {
+		const judgeModel = process.env.OPENAI_EVAL_MODEL ?? defaultOpenAIModel;
+		const pricing = pricingForOpenAIModel(judgeModel);
+		if (!pricing) {
+			throw new Error(
+				[
+					`OpenAI evaluator pricing is not configured for model "${judgeModel}".`,
+					"Set OPENAI_EVAL_MODEL to a priced model or add reviewed token rates to src/genie/openai-pricing.ts.",
+					"This aborts before live judge calls.",
+				].join(" "),
+			);
+		}
+		console.log(
+			`Using ${pricing.source} for evaluator ${judgeModel}: input $${pricing.inputUsdPer1MTokens}/1M, cached input $${pricing.cachedInputUsdPer1MTokens}/1M, output $${pricing.outputUsdPer1MTokens}/1M.`,
+		);
+	}
 }
 
 function sourcePacketById(sourcePackets: SourcePacket[]) {
@@ -443,172 +446,6 @@ function assertVariantCaseSetMatchesBaseline({
 
 function roundMetric(value: number) {
 	return Math.round(value * 100) / 100;
-}
-
-function coverageScore(evalCase: EvalCase, briefing: BriefingOutput) {
-	const briefingText = [
-		briefing.title,
-		briefing.summary,
-		...briefing.claims.map((claim) => claim.text),
-		briefing.recommendation,
-	]
-		.join(" ")
-		.toLowerCase();
-	const hits = evalCase.expectedCoverage.filter((coveragePoint) => {
-		const terms = coveragePoint
-			.toLowerCase()
-			.split(/[^a-z0-9]+/)
-			.filter((term) => term.length >= coverageTermMinimumLength)
-			.slice(0, coverageTermsPerPoint);
-
-		return terms.some((term) => briefingText.includes(term));
-	}).length;
-
-	return Math.max(
-		localEvaluatorCalibration.coverageFloor,
-		hits / evalCase.expectedCoverage.length,
-	);
-}
-
-function citationSupportScore(evalCase: EvalCase, briefing: BriefingOutput) {
-	const acceptedCitations = new Set(evalCase.acceptedCitations);
-	const claimScores = briefing.claims.map((claim) => {
-		if (claim.citations.length === 0) {
-			return 0;
-		}
-
-		const acceptedCount = claim.citations.filter((citation) =>
-			acceptedCitations.has(citation),
-		).length;
-		return acceptedCount / claim.citations.length;
-	});
-
-	return (
-		claimScores.reduce((total, score) => total + score, 0) /
-		Math.max(1, claimScores.length)
-	);
-}
-
-function evaluatorScores(evalCase: EvalCase, briefing: BriefingOutput) {
-	let coverage = coverageScore(evalCase, briefing);
-	let citationSupport = citationSupportScore(evalCase, briefing);
-	const failureRisk = Math.min(
-		localEvaluatorCalibration.failureRiskCap,
-		evalCase.failureTags.length * localEvaluatorCalibration.failureRiskPerTag,
-	);
-	const isLocalExtractive =
-		briefing.metadata.model === "deterministic-extractive";
-
-	if (isLocalExtractive) {
-		coverage = Math.min(
-			localEvaluatorCalibration.localExtractiveCoverageCap,
-			Math.max(
-				localEvaluatorCalibration.localExtractiveCoverageFloor,
-				coverage - localEvaluatorCalibration.localExtractiveCoveragePenalty,
-			),
-		);
-		citationSupport = Math.min(
-			localEvaluatorCalibration.localExtractiveCitationSupportCap,
-			Math.max(
-				localEvaluatorCalibration.localExtractiveCitationSupportFloor,
-				citationSupport -
-					localEvaluatorCalibration.localExtractiveCitationSupportPenalty +
-					coverage *
-						localEvaluatorCalibration.localExtractiveCitationCoverageWeight -
-					failureRisk,
-			),
-		);
-	}
-
-	// Score the run like a lightweight reviewer. Coverage rewards mentioning
-	// expected points, citation support rewards citing allowed evidence, grounding
-	// blends those signals while penalizing risky failure tags, and overall is a
-	// weighted summary. Scores near 1.0 mean strong demo evidence; scores around
-	// 0.6 are useful baselines with visible gaps; lower scores should read as
-	// clear failures.
-	const grounding = Math.max(
-		localEvaluatorCalibration.groundingFloor,
-		Math.min(
-			localEvaluatorCalibration.groundingCap,
-			citationSupport * localEvaluatorCalibration.groundingCitationWeight +
-				coverage * localEvaluatorCalibration.groundingCoverageWeight -
-				failureRisk,
-		),
-	);
-	const overall = Math.max(
-		localEvaluatorCalibration.overallFloor,
-		Math.min(
-			localEvaluatorCalibration.overallCap,
-			coverage * localEvaluatorCalibration.overallCoverageWeight +
-				citationSupport * localEvaluatorCalibration.overallCitationWeight +
-				grounding * localEvaluatorCalibration.overallGroundingWeight,
-		),
-	);
-
-	return {
-		overall: roundMetric(overall),
-		grounding: roundMetric(grounding),
-		coverage: roundMetric(coverage),
-		citationSupport: roundMetric(citationSupport),
-	};
-}
-
-function detectedFailureTags(scores: EvaluatorOutput["scores"]) {
-	const tags = new Set<string>();
-
-	if (scores.coverage < 0.65) {
-		tags.add("coverage-gap");
-	}
-	if (scores.citationSupport < 0.72) {
-		tags.add("citation-grounding");
-	}
-	if (scores.grounding < 0.65) {
-		tags.add("grounding-risk");
-	}
-
-	return [...tags];
-}
-
-function evaluatorOutputFor({
-	runId,
-	evalCase,
-	briefing,
-}: {
-	runId: string;
-	evalCase: EvalCase;
-	briefing: BriefingOutput;
-}) {
-	const acceptedCitations = new Set(evalCase.acceptedCitations);
-	const citationIds = [
-		...new Set(briefing.claims.flatMap((claim) => claim.citations)),
-	];
-	const citationSupport = citationIds.map((citation) => ({
-		citation,
-		supported: acceptedCitations.has(citation),
-		note: acceptedCitations.has(citation)
-			? `${citation} is accepted evidence for ${evalCase.id}.`
-			: `${citation} is not listed as accepted evidence for ${evalCase.id}.`,
-	}));
-	const scores = evaluatorScores(evalCase, briefing);
-
-	return EvaluatorOutputSchema.parse({
-		id: `evaluation-${runId}-${evalCase.id}`,
-		runId,
-		caseId: evalCase.id,
-		scores,
-		failureTags: detectedFailureTags(scores),
-		rubricEvidence: [
-			`Coverage heuristic score: ${scores.coverage.toFixed(2)}.`,
-			`Citation support heuristic score: ${scores.citationSupport.toFixed(2)}.`,
-		],
-		citationSupport,
-		notes:
-			"Deterministic local evaluator output for baseline-run artifact generation. Replace or augment with stronger evaluator logic before making production quality claims.",
-		artifactPaths: [
-			`runs/${runId}/evaluations/${evalCase.id}.json`,
-			`runs/${runId}/briefings/${evalCase.id}.json`,
-		],
-	});
 }
 
 function median(values: number[]) {
@@ -698,6 +535,7 @@ function manifestFor({
 	runId,
 	mode,
 	provider,
+	evaluator,
 	caseIds,
 	evaluations,
 	traces,
@@ -710,6 +548,7 @@ function manifestFor({
 	runId: string;
 	mode: Exclude<EvalMode, "report">;
 	provider: EvalProvider;
+	evaluator: EvaluatorMode;
 	caseIds: string[];
 	evaluations: EvaluatorOutput[];
 	traces: GenerationTrace[];
@@ -743,6 +582,7 @@ function manifestFor({
 		command: commandFor({
 			mode,
 			provider,
+			evaluator,
 			runId,
 			includeHoldouts,
 			referenceManifest,
@@ -846,10 +686,13 @@ async function generateRun(options: EvalOptions) {
 					evaluationPath,
 				],
 			});
-			const evaluation = evaluatorOutputFor({
+			const evaluation = await evaluateBriefing({
 				runId,
 				evalCase,
+				sourcePacket,
 				briefing: rawBriefing,
+				trace,
+				mode: options.evaluator,
 			});
 			console.log(
 				`${casePrefix} Evaluated ${evalCase.id}: overall ${evaluation.scores.overall.toFixed(2)}, citation ${evaluation.scores.citationSupport.toFixed(2)}.`,
@@ -872,6 +715,7 @@ async function generateRun(options: EvalOptions) {
 			runId,
 			mode: options.mode,
 			provider: options.provider,
+			evaluator: options.evaluator,
 			caseIds: selectedEvalCases.map((evalCase) => evalCase.id),
 			evaluations,
 			traces,
@@ -896,6 +740,7 @@ async function generateRun(options: EvalOptions) {
 			runId,
 			mode: options.mode,
 			provider: options.provider,
+			evaluator: options.evaluator,
 			caseIds: evaluations.map((evaluation) => evaluation.caseId),
 			evaluations,
 			traces,
@@ -949,6 +794,10 @@ function isProviderRun(manifest: RunManifest, provider: EvalProvider) {
 	return provider === "openai"
 		? isOpenAIProviderRun(manifest)
 		: isLocalProviderRun(manifest);
+}
+
+function isHybridEvaluatedRun(manifest: RunManifest) {
+	return manifest.command.includes("--evaluator=hybrid");
 }
 
 async function latestRunId(
@@ -1255,6 +1104,9 @@ function evidenceStatusFor({
 		isLocalProviderRun(baselineManifest) ||
 		isLocalProviderRun(candidateManifest);
 	const usesReferenceTarget = !usesGeneratedCandidate;
+	const usesHybridEvaluator =
+		isHybridEvaluatedRun(baselineManifest) &&
+		isHybridEvaluatedRun(candidateManifest);
 
 	if (!usesGeneratedBaseline || !usesGeneratedCandidate || !usesLiveProvider) {
 		const candidateDescription = usesReferenceTarget
@@ -1276,12 +1128,22 @@ function evidenceStatusFor({
 		};
 	}
 
+	if (!usesHybridEvaluator) {
+		return {
+			tone: "amber" as const,
+			label: "Legacy heuristic evidence",
+			text: `${baselineLabel} and ${candidateLabel} are live-provider artifacts, but their quality scores come from deterministic heuristics.`,
+			warning:
+				"Re-run both sides with --evaluator=hybrid before using this as live OpenAI quality improvement evidence.",
+		};
+	}
+
 	return {
 		tone: overallDelta >= 0 ? ("green" as const) : ("amber" as const),
-		label: "Generated comparison",
+		label: "Hybrid judge comparison",
 		text: `Use ${baselineLabel} and ${candidateLabel} as the current inspectable before/after story.`,
 		warning:
-			"Generated evaluator scores are deterministic heuristics; review evaluator quality before claiming production model quality.",
+			"Hybrid LLM judge scores require manual spot checks of claim support, missing evidence, and overconfidence before claiming product improvement.",
 	};
 }
 

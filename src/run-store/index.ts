@@ -74,6 +74,45 @@ interface CaseArtifactDetail {
 	}>;
 	openQuestions: string[];
 	recommendation: string;
+	evaluator: {
+		mode: "deterministic" | "hybrid";
+		provider: string;
+		model: string;
+		promptVersion: string;
+		latencyMs: number;
+		inputTokens: number;
+		cachedInputTokens: number;
+		outputTokens: number;
+		estimatedUsd: number | null;
+	} | null;
+	hardChecks: Array<{
+		id: string;
+		label: string;
+		status: "pass" | "warn" | "fail";
+		value: string;
+		threshold?: string;
+		expectation?: string;
+		note?: string;
+	}>;
+	claimJudgments: Array<{
+		claimText: string;
+		citedSourceIds: string[];
+		supportStatus: "supported" | "partially-supported" | "unsupported";
+		supportingEvidenceIds: string[];
+		missingEvidence: string[];
+		explanation: string;
+		failureTags: string[];
+	}>;
+	recommendationJudgment: {
+		taskAnswerStatus: "answers-task" | "partially-answers-task" | "misses-task";
+		overconfidenceStatus:
+			| "calibrated"
+			| "somewhat-overconfident"
+			| "overconfident";
+		missingImportantEvidence: string[];
+		explanation: string;
+		failureTags: string[];
+	} | null;
 	rubricEvidence: string[];
 	citationSupport: Array<{
 		citation: string;
@@ -559,6 +598,22 @@ function caseArtifactDetailFor(
 		claims: briefing?.claims ?? [],
 		openQuestions: briefing?.openQuestions ?? [],
 		recommendation: briefing?.recommendation ?? "No recommendation available.",
+		evaluator: evaluatorOutput?.evaluator
+			? {
+					mode: evaluatorOutput.evaluator.mode,
+					provider: evaluatorOutput.evaluator.provider,
+					model: evaluatorOutput.evaluator.model,
+					promptVersion: evaluatorOutput.evaluator.promptVersion,
+					latencyMs: evaluatorOutput.evaluator.latencyMs,
+					inputTokens: evaluatorOutput.evaluator.cost.inputTokens,
+					cachedInputTokens: evaluatorOutput.evaluator.cost.cachedInputTokens,
+					outputTokens: evaluatorOutput.evaluator.cost.outputTokens,
+					estimatedUsd: evaluatorOutput.evaluator.cost.estimatedUsd,
+				}
+			: null,
+		hardChecks: evaluatorOutput?.hardChecks ?? [],
+		claimJudgments: evaluatorOutput?.claimJudgments ?? [],
+		recommendationJudgment: evaluatorOutput?.recommendationJudgment ?? null,
 		rubricEvidence: evaluatorOutput?.rubricEvidence ?? [],
 		citationSupport: evaluatorOutput?.citationSupport ?? [],
 		evaluatorNote: evaluatorOutput?.notes ?? "No evaluator note available.",

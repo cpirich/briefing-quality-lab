@@ -1,0 +1,200 @@
+{
+	"id": "evaluation-baseline-openai-20260623165128-case-release-note-drift",
+	"runId": "baseline-openai-20260623165128",
+	"caseId": "case-release-note-drift",
+	"evaluator": {
+		"mode": "hybrid",
+		"provider": "openai",
+		"model": "gpt-5.2",
+		"promptVersion": "hybrid-judge-v1",
+		"settings": {
+			"structuredOutputName": "hybrid_evaluator_output"
+		},
+		"latencyMs": 12326,
+		"cost": {
+			"inputTokens": 2286,
+			"cachedInputTokens": 0,
+			"outputTokens": 1182,
+			"estimatedUsd": 0.0205485,
+			"pricing": {
+				"model": "gpt-5.2",
+				"inputUsdPer1MTokens": 1.75,
+				"cachedInputUsdPer1MTokens": 0.175,
+				"outputUsdPer1MTokens": 14,
+				"currency": "USD",
+				"serviceTier": "standard",
+				"context": "short",
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+			}
+		}
+	},
+	"hardChecks": [
+		{
+			"id": "briefing-schema",
+			"label": "Briefing schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "BriefingOutput schema parses"
+		},
+		{
+			"id": "citation-source-ids",
+			"label": "Citation source ids",
+			"status": "pass",
+			"value": "5 cited ids exist",
+			"expectation": "Every cited source id exists in the source packet"
+		},
+		{
+			"id": "trace-schema",
+			"label": "Trace schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "GenerationTrace schema parses"
+		},
+		{
+			"id": "latency-metadata",
+			"label": "Latency metadata",
+			"status": "pass",
+			"value": "13101ms",
+			"threshold": "> 0ms"
+		},
+		{
+			"id": "cost-metadata",
+			"label": "Cost metadata",
+			"status": "pass",
+			"value": "$0.011396",
+			"expectation": "estimatedUsd is present when pricing is configured"
+		},
+		{
+			"id": "token-metadata",
+			"label": "Token metadata",
+			"status": "pass",
+			"value": "752 in / 0 cached / 720 out",
+			"expectation": "Input, cached-input, and output token counts are coherent"
+		},
+		{
+			"id": "model-metadata",
+			"label": "Provider and model metadata",
+			"status": "pass",
+			"value": "openai gpt-5.2 briefing-genie-v1",
+			"expectation": "Provider, model, and prompt version are present"
+		},
+		{
+			"id": "judge-input-boundary",
+			"label": "Judge input boundary",
+			"status": "pass",
+			"value": "eval-only fields omitted",
+			"expectation": "Judge prompt omits eval-only labels and holdout tuning fields"
+		}
+	],
+	"claimJudgments": [
+		{
+			"claimText": "Current generation covers most merged work (83%), but a significant share of entries (14%) describe behavior that changed after final QA, with the highest-risk errors stemming from stale PR descriptions after scope cuts.",
+			"citedSourceIds": ["S1"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S1"],
+			"missingEvidence": [],
+			"explanation": "S1 explicitly states generated notes covered 83% of merged changes; 14% described behavior that changed after final QA; and the highest-risk errors came from stale PR descriptions never updated after scope cuts.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Stale PR text is unreliable after scope cuts; QA deltas include renamed features, a removed admin toggle, and a migration warning added late, and QA requests generated notes be compared against the delta log before publication.",
+			"citedSourceIds": ["S5"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S5"],
+			"missingEvidence": [],
+			"explanation": "S5 states stale PR text is no longer reliable after scope cuts; the QA delta log includes two feature name changes, one admin toggle removed, and one migration warning added late; and QA asked generated notes to compare against the log before publication.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Customers prefer concise notes, but accuracy of remaining claims is critical; an escalation occurred when notes promised an admin toggle that was removed before release.",
+			"citedSourceIds": ["S2"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S2"],
+			"missingEvidence": [],
+			"explanation": "S2 says customers value concise notes, but concise works only when remaining claims are accurate; and gives an escalated example where a generated note promised an admin toggle removed before release.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Migration warnings and compatibility caveats should be treated as higher-risk items than routine polish because customers plan rollouts around them.",
+			"citedSourceIds": ["S2", "S6"],
+			"supportStatus": "partially-supported",
+			"supportingEvidenceIds": ["S2", "S6"],
+			"missingEvidence": [
+				"Direct evidence that customers specifically plan rollouts around migration warnings/compatibility caveats (as opposed to around removed features such as an admin toggle)."
+			],
+			"explanation": "S2 supports treating migration warnings and compatibility caveats as higher risk than routine polish, and it supports that customers planned rollout steps around a promised (but removed) admin toggle. S6 supports focusing on compatibility warnings and claims customers treat as commitments or migration instructions. However, the specific causal statement that customers plan rollouts around migration/compatibility caveats is an inference; the packet ties rollout planning explicitly to the removed admin toggle example, not directly to migration/compatibility caveats.",
+			"failureTags": ["overgeneralization", "causal-inference"]
+		},
+		{
+			"claimText": "Engineering will tag final-release deltas during QA, but will not maintain a second changelog; they prefer a lightweight review queue that highlights changed/removed/sensitive claims rather than requiring full rewrites.",
+			"citedSourceIds": ["S3"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S3"],
+			"missingEvidence": [],
+			"explanation": "S3 states engineers can/will tag final-release deltas during QA if the queue is lightweight; they will not maintain a second/parallel changelog; and it recommends a review queue highlighting changed/removed/sensitive claims rather than rewriting every note.",
+			"failureTags": []
+		}
+	],
+	"recommendationJudgment": {
+		"taskAnswerStatus": "answers-task",
+		"overconfidenceStatus": "somewhat-overconfident",
+		"missingImportantEvidence": [
+			"For recommendation step 1, the packet recommends checking/compare against QA deltas, but does not establish that the QA delta log should be the singular 'source of truth' or that publication should be 'blocked' until discrepancies are resolved.",
+			"For recommendation step 3, S4 requires explicit human approval for sensitive categories; the added requirements of 'automatic' detection and an 'audit trail' are only partially grounded (approval record is requested; automatic detection is not)."
+		],
+		"explanation": "The recommendations largely track the packet themes: cross-check against QA deltas (S1,S5), lightweight claim-focused review queue (S3,S6), and explicit human approval for sensitive categories (S4). However, a few elements add stronger operational mandates than the sources: making the QA delta log the pre-publish 'source of truth' and 'blocking publication' goes beyond the stated recommendations; and 'automatically detect' sensitive claims is not in S4 (though an approval record/auditability is).",
+		"failureTags": ["policy-overreach", "implementation-detail-not-in-sources"]
+	},
+	"scores": {
+		"overall": 0.82,
+		"grounding": 0.74,
+		"coverage": 0.84,
+		"citationSupport": 0.91
+	},
+	"failureTags": [
+		"causal-inference",
+		"implementation-detail-not-in-sources",
+		"overconfidence",
+		"overgeneralization",
+		"partial-claim-support",
+		"policy-overreach"
+	],
+	"rubricEvidence": [
+		"Hybrid claim support score: 0.91.",
+		"Recommendation task fit: answers-task.",
+		"Overconfidence: somewhat-overconfident.",
+		"Hard-check cap: 1.00."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "S1 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S5",
+			"supported": true,
+			"note": "S5 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S2",
+			"supported": false,
+			"note": "S2 appears in a partially supported or unsupported claim judgment."
+		},
+		{
+			"citation": "S6",
+			"supported": false,
+			"note": "S6 appears in a partially supported or unsupported claim judgment."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "S3 appears in fully supported claim-level judgments."
+		}
+	],
+	"notes": "Hybrid evaluator output: deterministic hard checks plus structured LLM judge evidence. Manual spot checks are still required before claiming product improvement.",
+	"artifactPaths": [
+		"runs/baseline-openai-20260623165128/evaluations/case-release-note-drift.json",
+		"runs/baseline-openai-20260623165128/briefings/case-release-note-drift.json"
+	]
+}

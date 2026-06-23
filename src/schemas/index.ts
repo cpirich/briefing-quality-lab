@@ -208,6 +208,81 @@ export const EvaluatorOutputSchema = z.object({
 	id: fixtureIdSchema,
 	runId: fixtureIdSchema,
 	caseId: fixtureIdSchema,
+	evaluator: z
+		.object({
+			mode: z.enum(["deterministic", "hybrid"]),
+			provider: z.string().min(1),
+			model: z.string().min(1),
+			promptVersion: fixtureIdSchema,
+			settings: z.record(z.unknown()).optional(),
+			latencyMs: z.number().int().nonnegative(),
+			cost: z.object({
+				inputTokens: z.number().int().nonnegative(),
+				cachedInputTokens: z.number().int().nonnegative(),
+				outputTokens: z.number().int().nonnegative(),
+				estimatedUsd: z.number().nonnegative().nullable(),
+				pricing: z
+					.object({
+						model: z.string().min(1),
+						inputUsdPer1MTokens: z.number().nonnegative(),
+						cachedInputUsdPer1MTokens: z.number().nonnegative(),
+						outputUsdPer1MTokens: z.number().nonnegative(),
+						currency: z.literal("USD"),
+						serviceTier: z.string().min(1),
+						context: z.string().min(1),
+						source: z.string().min(1),
+					})
+					.optional(),
+			}),
+		})
+		.optional(),
+	hardChecks: z
+		.array(
+			z.object({
+				id: fixtureIdSchema,
+				label: z.string().min(1),
+				status: z.enum(["pass", "warn", "fail"]),
+				value: z.string().min(1),
+				threshold: z.string().min(1).optional(),
+				expectation: z.string().min(1).optional(),
+				note: z.string().min(1).optional(),
+			}),
+		)
+		.optional(),
+	claimJudgments: z
+		.array(
+			z.object({
+				claimText: z.string().min(1),
+				citedSourceIds: z.array(citationIdSchema),
+				supportStatus: z.enum([
+					"supported",
+					"partially-supported",
+					"unsupported",
+				]),
+				supportingEvidenceIds: z.array(citationIdSchema),
+				missingEvidence: z.array(z.string().min(1)),
+				explanation: z.string().min(1),
+				failureTags: z.array(z.string().min(1)),
+			}),
+		)
+		.optional(),
+	recommendationJudgment: z
+		.object({
+			taskAnswerStatus: z.enum([
+				"answers-task",
+				"partially-answers-task",
+				"misses-task",
+			]),
+			overconfidenceStatus: z.enum([
+				"calibrated",
+				"somewhat-overconfident",
+				"overconfident",
+			]),
+			missingImportantEvidence: z.array(z.string().min(1)),
+			explanation: z.string().min(1),
+			failureTags: z.array(z.string().min(1)),
+		})
+		.optional(),
 	scores: z.object({
 		overall: z.number().min(0).max(1),
 		grounding: z.number().min(0).max(1),

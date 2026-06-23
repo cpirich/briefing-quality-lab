@@ -1,0 +1,40 @@
+{
+	"id": "case-adoption-friction-openai-responses-v1",
+	"sourcePacketId": "packet-dev-adoption",
+	"caseId": "case-adoption-friction",
+	"title": "Adoption risks & next product-quality improvement for pilot expansion",
+	"summary": "Adoption is improving at the top of funnel (quickstart completion up to 58%), but expansion is gated by a brittle setup/credentials experience and lack of visible recovery paths. The highest-leverage next improvement is to ship a public, end-to-end setup recovery path (focused on environment/CLI/credentials) that can be demonstrated without support intervention; this is also explicitly listed as a pilot gate alongside citation transparency.",
+	"claims": [
+		{
+			"text": "Quickstart completion improved from 44% to 58% after the docs copy refresh, with fewer exits at the first API call step.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "The largest remaining onboarding drop is during local setup and credential configuration, driven by environment-specific errors and limited recovery paths.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Support volume is dominated by environment drift, stale CLI versions, missing environment variables, and credentials copied from the wrong workspace; users often need an internal checklist to recover.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Failures often persist because users restart the quickstart and reproduce the same broken state; tickets reopen when recovery steps aren’t clear/public.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Pilot expansion is available (two teams next month) but is blocked by the most visible demo risk: setup recovery that looks brittle without documented guidance.",
+			"citations": ["S4"]
+		}
+	],
+	"openQuestions": [
+		"Which specific setup/credential errors account for the largest share of bounces (top 3) so the recovery checklist can be prioritized accordingly?",
+		"What minimum “recovery successful” telemetry should be added to confirm users can self-heal without restarting the quickstart?",
+		"What is the smallest lab-visible UI/UX change that proves ‘recovery guidance is hardened’ to observers (e.g., a single “Repair setup” flow vs. docs-only checklist)?"
+	],
+	"recommendation": "Next product-quality improvement for pilot expansion: implement and publish a first-class setup recovery path that covers (1) stale CLI detection + upgrade steps, (2) environment variable validation, (3) credential/workspace mismatch detection + reset guidance, and (4) safe re-run behavior after partial setup—so recovery can be demonstrated without support pasting an internal checklist. Treat this as the gating release for adding the two next pilot teams.",
+	"metadata": {
+		"variant": "OpenAI Responses baseline",
+		"runId": "baseline-openai-20260623165128",
+		"model": "gpt-5.2"
+	}
+}
