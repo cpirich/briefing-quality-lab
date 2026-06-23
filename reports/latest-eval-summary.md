@@ -17,10 +17,9 @@ Comparison uses file-backed artifacts for the same eval case so the before/after
 
 ## Failure Clusters
 
-- Setup Recovery: 2 cases (case-adoption-friction, case-incident-recovery-comms)
-- Citation Grounding: 2 cases (case-adoption-friction, case-eval-loop)
-- Cost Guardrail: 2 cases (case-cost-latency-budget, case-eval-loop)
-- Human Approval: 2 cases (case-human-approval-boundary, case-release-note-drift)
+- Citation Grounding: 7 cases (case-adoption-friction, case-code-review-queues, case-cost-latency-budget, case-eval-loop, case-human-approval-boundary, case-incident-recovery-comms, case-release-note-drift)
+- Grounding Risk: 7 cases (case-adoption-friction, case-code-review-queues, case-cost-latency-budget, case-eval-loop, case-human-approval-boundary, case-incident-recovery-comms, case-release-note-drift)
+- Coverage Gap: 1 cases (case-human-approval-boundary)
 
 ## Evidence Status
 
