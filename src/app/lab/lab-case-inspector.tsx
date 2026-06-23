@@ -61,6 +61,14 @@ interface LabCaseInspectorProps {
 type CaseArtifactDetail = NonNullable<
 	CaseBreakdownEntry["diff"]["baselineDetail"]
 >;
+type CaseScoreSummary = NonNullable<CaseBreakdownEntry["baseline"]>;
+
+const scoreMetrics = [
+	["Overall", "overall"],
+	["Grounding", "grounding"],
+	["Coverage", "coverage"],
+	["Citation support", "citationSupport"],
+] as const;
 
 function CitationPills({ citations }: { citations: string[] }) {
 	if (citations.length === 0) {
@@ -108,10 +116,12 @@ function comparisonToneClasses(tone: "danger" | "success") {
 
 function ComparisonCell({
 	children,
+	description,
 	label,
 	tone,
 }: {
 	children: ReactNode;
+	description?: string;
 	label: string;
 	tone: "danger" | "success";
 }) {
@@ -130,9 +140,44 @@ function ComparisonCell({
 			>
 				{label}
 			</p>
+			{description ? (
+				<p className="mt-1 text-[var(--muted-foreground)] text-xs">
+					{description}
+				</p>
+			) : null}
 			<div className="mt-2">{children}</div>
 		</div>
 	);
+}
+
+function scoreNoteFor(label: string) {
+	if (label === "Reference target") {
+		return "Human-authored target scores.";
+	}
+
+	return "Scores from this run's evaluator artifact.";
+}
+
+function evidenceNoteFor(label: string) {
+	if (label === "Reference target") {
+		return "Human-authored reference rationale.";
+	}
+	if (label === "Generated baseline") {
+		return "Deterministic heuristic notes.";
+	}
+
+	return "Evaluator rationale for this run.";
+}
+
+function citationNoteFor(label: string) {
+	if (label === "Reference target") {
+		return "Human-authored support rationale.";
+	}
+	if (label === "Generated baseline") {
+		return "Accepted-citation validator notes.";
+	}
+
+	return "Citation support notes from this run.";
 }
 
 function BriefingComparisonSection({
@@ -230,6 +275,26 @@ function CitationSupportNotes({
 	);
 }
 
+function ScoreSummary({ scores }: { scores: CaseScoreSummary | null }) {
+	if (!scores) {
+		return <p className="text-sm">No evaluator scores available.</p>;
+	}
+
+	return (
+		<div className="grid gap-2 sm:grid-cols-2">
+			{scoreMetrics.map(([label, metric]) => (
+				<div
+					className="rounded-md border border-[var(--border)] bg-[var(--card)] p-2"
+					key={metric}
+				>
+					<p className="text-[var(--muted-foreground)] text-xs">{label}</p>
+					<p className="font-semibold text-lg">{formatScore(scores[metric])}</p>
+				</div>
+			))}
+		</div>
+	);
+}
+
 function ArtifactPathList({ detail }: { detail: CaseArtifactDetail | null }) {
 	if (!detail) {
 		return <p>No evaluator artifact available.</p>;
@@ -249,13 +314,17 @@ function ArtifactPathList({ detail }: { detail: CaseArtifactDetail | null }) {
 }
 
 function EvaluatorOutputPanel({
+	baselineScores,
 	baselineDetail,
 	baselineLabel,
+	candidateScores,
 	candidateDetail,
 	candidateLabel,
 }: {
+	baselineScores: CaseScoreSummary | null;
 	baselineDetail: CaseArtifactDetail | null;
 	baselineLabel: string;
+	candidateScores: CaseScoreSummary | null;
 	candidateDetail: CaseArtifactDetail | null;
 	candidateLabel: string;
 }) {
@@ -263,18 +332,48 @@ function EvaluatorOutputPanel({
 		<div className="space-y-3">
 			<div>
 				<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
-					Evaluator evidence
+					Structured evaluator scores
 				</p>
 				<div className="grid gap-3 lg:grid-cols-2">
-					<ComparisonCell label={baselineLabel} tone="danger">
+					<ComparisonCell
+						description={scoreNoteFor(baselineLabel)}
+						label={baselineLabel}
+						tone="danger"
+					>
+						<ScoreSummary scores={baselineScores} />
+					</ComparisonCell>
+					<ComparisonCell
+						description={scoreNoteFor(candidateLabel)}
+						label={candidateLabel}
+						tone="success"
+					>
+						<ScoreSummary scores={candidateScores} />
+					</ComparisonCell>
+				</div>
+			</div>
+
+			<div>
+				<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
+					Evaluator rationale
+				</p>
+				<div className="grid gap-3 lg:grid-cols-2">
+					<ComparisonCell
+						description={evidenceNoteFor(baselineLabel)}
+						label={baselineLabel}
+						tone="danger"
+					>
 						<DetailList
-							empty="No evaluator evidence available."
+							empty="No evaluator rationale available."
 							items={baselineDetail?.rubricEvidence ?? []}
 						/>
 					</ComparisonCell>
-					<ComparisonCell label={candidateLabel} tone="success">
+					<ComparisonCell
+						description={evidenceNoteFor(candidateLabel)}
+						label={candidateLabel}
+						tone="success"
+					>
 						<DetailList
-							empty="No evaluator evidence available."
+							empty="No evaluator rationale available."
 							items={candidateDetail?.rubricEvidence ?? []}
 						/>
 					</ComparisonCell>
@@ -286,10 +385,18 @@ function EvaluatorOutputPanel({
 					Citation support checks
 				</p>
 				<div className="grid gap-3 lg:grid-cols-2">
-					<ComparisonCell label={baselineLabel} tone="danger">
+					<ComparisonCell
+						description={citationNoteFor(baselineLabel)}
+						label={baselineLabel}
+						tone="danger"
+					>
 						<CitationSupportNotes detail={baselineDetail} />
 					</ComparisonCell>
-					<ComparisonCell label={candidateLabel} tone="success">
+					<ComparisonCell
+						description={citationNoteFor(candidateLabel)}
+						label={candidateLabel}
+						tone="success"
+					>
 						<CitationSupportNotes detail={candidateDetail} />
 					</ComparisonCell>
 				</div>
@@ -590,8 +697,10 @@ export function LabCaseInspector({
 							<EvaluatorOutputPanel
 								baselineDetail={selectedCase.diff.baselineDetail}
 								baselineLabel={baselineLabel}
+								baselineScores={selectedCase.baseline}
 								candidateDetail={selectedCase.diff.candidateDetail}
 								candidateLabel={candidateLabel}
+								candidateScores={selectedCase.candidate}
 							/>
 
 							<div>

@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { access, mkdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -134,11 +135,46 @@ async function artifactExists(relativePath: string) {
 	}
 }
 
+async function formatJsonArtifact(relativePath: string, value: unknown) {
+	const formatterPath = absolutePath(
+		path.join(
+			"node_modules",
+			".bin",
+			process.platform === "win32" ? "biome.cmd" : "biome",
+		),
+	);
+	const formatter = spawn(formatterPath, [
+		"format",
+		"--stdin-file-path",
+		relativePath,
+	]);
+	const stdoutChunks: Buffer[] = [];
+	const stderrChunks: Buffer[] = [];
+
+	formatter.stdout.on("data", (chunk: Buffer) => stdoutChunks.push(chunk));
+	formatter.stderr.on("data", (chunk: Buffer) => stderrChunks.push(chunk));
+	formatter.stdin.end(`${JSON.stringify(value, null, "\t")}\n`);
+
+	const exitCode = await new Promise<number | null>((resolve, reject) => {
+		formatter.on("error", reject);
+		formatter.on("close", resolve);
+	});
+	if (exitCode !== 0) {
+		throw new Error(
+			`Biome failed to format ${relativePath}: ${Buffer.concat(
+				stderrChunks,
+			).toString()}`,
+		);
+	}
+
+	return Buffer.concat(stdoutChunks).toString();
+}
+
 async function writeJsonArtifact(relativePath: string, value: unknown) {
 	const targetPath = absolutePath(relativePath);
 	await mkdir(path.dirname(targetPath), { recursive: true });
 	const tempPath = `${targetPath}.tmp`;
-	await writeFile(tempPath, `${JSON.stringify(value, null, "\t")}\n`);
+	await writeFile(tempPath, await formatJsonArtifact(relativePath, value));
 	await rename(tempPath, targetPath);
 }
 

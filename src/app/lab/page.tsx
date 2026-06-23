@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 	title: "Briefing Genie Improvement Lab",
 };
 
-const lowerIsBetterDeltaMetrics = new Set([
+const lowerIsBetterMetrics = new Set([
 	"Unsupported claims",
 	"Median latency",
 	"Cost ratio",
@@ -73,8 +73,9 @@ function changeTextClass(metric: string, value: string, changeLabel: string) {
 		return "text-[var(--muted-foreground)]";
 	}
 
+	const lowerIsBetter = lowerIsBetterMetrics.has(metric);
+
 	if (changeLabel !== "Gap") {
-		const lowerIsBetter = lowerIsBetterDeltaMetrics.has(metric);
 		const isImprovement = lowerIsBetter ? delta < 0 : delta > 0;
 
 		return isImprovement
@@ -82,13 +83,11 @@ function changeTextClass(metric: string, value: string, changeLabel: string) {
 			: "text-[var(--danger-foreground)]";
 	}
 
-	if (delta > 0) {
+	const hasRemainingGap = lowerIsBetter ? delta < 0 : delta > 0;
+	if (hasRemainingGap) {
 		return "text-[var(--warning-foreground)]";
 	}
-	if (delta < 0) {
-		return "text-[var(--success-foreground)]";
-	}
-	return "text-[var(--muted-foreground)]";
+	return "text-[var(--success-foreground)]";
 }
 
 export default async function LabPage() {
