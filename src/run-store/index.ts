@@ -17,6 +17,7 @@ import {
 	RunComparisonSchema,
 	type RunManifest,
 	RunManifestSchema,
+	type RunModelMetadata,
 	type SourcePacket,
 	SourcePacketSchema,
 } from "~/schemas";
@@ -312,6 +313,16 @@ export async function listGenerationTraces(
 	return sortById(traces);
 }
 
+async function listOptionalGenerationTraces(
+	runId = defaultCandidateRunId,
+): Promise<GenerationTrace[]> {
+	const traces = await loadOptionalJsonFixtures(
+		`runs/${runId}/traces`,
+		GenerationTraceSchema,
+	);
+	return sortById(traces);
+}
+
 export async function listEvaluatorOutputs(
 	runId = defaultCandidateRunId,
 ): Promise<EvaluatorOutput[]> {
@@ -369,6 +380,55 @@ function comparisonRecency(
 		Number.isNaN(baselineCreatedAt) ? 0 : baselineCreatedAt,
 		Number.isNaN(candidateCreatedAt) ? 0 : candidateCreatedAt,
 	);
+}
+
+function traceArtifactPath(trace: GenerationTrace) {
+	return (
+		trace.artifactPaths.find((artifactPath) =>
+			artifactPath.includes("/traces/"),
+		) ?? `runs/${trace.runId}/traces/${trace.caseId}.json`
+	);
+}
+
+function runModelMetadataFromTraces(
+	traces: GenerationTrace[],
+): RunModelMetadata | null {
+	const trace = [...traces].sort((left, right) =>
+		left.caseId.localeCompare(right.caseId),
+	)[0];
+
+	if (!trace) {
+		return null;
+	}
+
+	return {
+		provider: trace.model.provider,
+		model: trace.model.name,
+		promptVersion: trace.model.settings.promptVersion,
+		maxOutputTokens: trace.model.settings.maxOutputTokens,
+		structuredOutputName: trace.model.settings.structuredOutputName,
+		textVerbosity: trace.model.settings.textVerbosity,
+		reasoningEffort: trace.model.settings.reasoningEffort,
+		temperature: trace.model.settings.temperature,
+		traceArtifactPath: traceArtifactPath(trace),
+	};
+}
+
+async function comparisonWithRunMetadata(
+	comparison: RunComparison,
+): Promise<RunComparison> {
+	const [baselineTraces, candidateTraces] = await Promise.all([
+		listOptionalGenerationTraces(comparison.baselineRunId),
+		listOptionalGenerationTraces(comparison.candidateRunId),
+	]);
+
+	return RunComparisonSchema.parse({
+		...comparison,
+		runMetadata: {
+			baseline: runModelMetadataFromTraces(baselineTraces),
+			candidate: runModelMetadataFromTraces(candidateTraces),
+		},
+	});
 }
 
 function latestGeneratedComparison(
@@ -441,7 +501,7 @@ export async function compareRuns(input?: {
 		);
 	}
 
-	return comparison;
+	return comparisonWithRunMetadata(comparison);
 }
 
 function evaluatorOutputByCaseId(evaluatorOutputs: EvaluatorOutput[]) {
@@ -586,14 +646,16 @@ export async function listCaseBreakdown(input?: {
 	});
 }
 
-export async function listArtifacts(): Promise<ArtifactEntry[]> {
-	const comparison = await compareRuns();
+async function artifactEntriesForPaths({
+	artifactPaths,
+	ownerLabel,
+}: {
+	artifactPaths: string[];
+	ownerLabel: string;
+}) {
 	return Promise.all(
-		comparison.artifactPaths.map(async (artifactPath) => {
-			await assertArtifactPathExists(
-				artifactPath,
-				`Run comparison ${comparison.id}`,
-			);
+		artifactPaths.map(async (artifactPath) => {
+			await assertArtifactPathExists(artifactPath, ownerLabel);
 			return ArtifactEntrySchema.parse({
 				label: artifactLabelForPath(artifactPath),
 				path: artifactPath,
@@ -601,6 +663,24 @@ export async function listArtifacts(): Promise<ArtifactEntry[]> {
 			});
 		}),
 	);
+}
+
+export async function listArtifacts(input?: {
+	artifactPaths?: string[];
+	ownerLabel?: string;
+}): Promise<ArtifactEntry[]> {
+	if (input?.artifactPaths) {
+		return artifactEntriesForPaths({
+			artifactPaths: input.artifactPaths,
+			ownerLabel: input.ownerLabel ?? "Selected artifact list",
+		});
+	}
+
+	const comparison = await compareRuns();
+	return artifactEntriesForPaths({
+		artifactPaths: comparison.artifactPaths,
+		ownerLabel: `Run comparison ${comparison.id}`,
+	});
 }
 
 function indexById<T extends { id: string }>(records: T[]) {

@@ -10,7 +10,7 @@
 		"check:write": "biome check --write .",
 		"data:validate": "bun run scripts/validate-data.ts",
 		"data:seed-phase5": "bun run scripts/seed-phase5-fixtures.ts",
-		"dev": "next dev",
+		"dev": "env WATCHPACK_POLLING=true next dev --webpack --port 3000",
 		"eval:baseline": "bun run scripts/run-eval.ts baseline",
 		"eval:report": "bun run scripts/run-eval.ts report",
 		"eval:variant": "bun run scripts/run-eval.ts variant",

@@ -1,0 +1,41 @@
+{
+	"id": "case-adoption-friction-openai-responses-v1",
+	"sourcePacketId": "packet-dev-adoption",
+	"caseId": "case-adoption-friction",
+	"title": "Adoption risks & next product-quality improvement for pilot expansion",
+	"summary": "Adoption is improving at the top of the funnel (quickstart completion up after docs refresh), but pilot expansion is gated by a brittle setup/recovery experience and trust requirements around recommendation provenance. The highest-leverage next quality improvement is to make failed setup/install recovery self-serve and demonstrable without support intervention, because it is both the biggest onboarding drop and the explicit blocker for adding more pilot teams.",
+	"claims": [
+		{
+			"text": "Quickstart completion increased from 44% to 58% after the docs copy refresh, with fewer exits at the first API call step.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "The biggest remaining onboarding drop happens during local setup and credential configuration, where users bounce after environment-specific errors.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Completion gains were concentrated among users who already had a valid token; new users still hit the same environment/setup wall and need a dedicated recovery path for credential setup.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Most new support tickets are about environment drift, stale CLI versions, and unclear recovery steps after failed installs; users often only succeed after support shares an internal checklist that is not in public docs.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Tickets can reopen when users restart the quickstart and reproduce the same failed state, indicating the product/docs do not help users recover from partial setup.",
+			"citations": ["S2"]
+		}
+	],
+	"openQuestions": [
+		"What specific steps are in the internal support checklist (stale CLI, env vars, workspace credential mismatch) that are missing from public docs, and which can be productized vs documented?",
+		"Can the setup flow detect and surface: (a) stale CLI version, (b) missing env vars, (c) credentials from wrong workspace—so recovery becomes guided rather than manual?",
+		"What is the acceptance test for “recovery can be demonstrated in the lab without support pasting an internal checklist,” and who signs it off?",
+		"Are citation/provenance requirements (show source citations; distinguish analytics vs support vs interview evidence) already implemented or still pending for pilot readiness?"
+	],
+	"recommendation": "Next product-quality improvement: ship a first-class, public, self-serve setup recovery path (and validate it in the lab) before adding new pilot teams. Concretely, expose a documented recovery checklist for the top failure modes (stale CLI, missing environment variables, wrong-workspace credentials) and ensure the flow supports recovery from partial/failed installs without requiring users to restart from the beginning. This addresses the largest remaining onboarding drop and the most common support drivers, and it is the explicit gate for pilot expansion readiness.",
+	"metadata": {
+		"variant": "OpenAI Responses baseline",
+		"runId": "baseline-openai-20260623151310",
+		"model": "gpt-5.2"
+	}
+}

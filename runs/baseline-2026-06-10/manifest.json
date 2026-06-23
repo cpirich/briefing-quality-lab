@@ -22,7 +22,8 @@
 		"unsupportedClaims": 26,
 		"medianLatencyMs": 8400,
 		"costRatio": 1,
-		"latencyRatio": 1
+		"latencyRatio": 1,
+		"groundingRiskUnits": 26
 	},
 	"guardrails": [
 		{

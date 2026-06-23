@@ -1,0 +1,43 @@
+{
+	"id": "evaluation-baseline-openai-20260623151310-case-release-note-drift",
+	"runId": "baseline-openai-20260623151310",
+	"caseId": "case-release-note-drift",
+	"scores": {
+		"overall": 0.95,
+		"grounding": 0.85,
+		"coverage": 1,
+		"citationSupport": 1
+	},
+	"failureTags": [],
+	"rubricEvidence": [
+		"Coverage heuristic score: 1.00.",
+		"Citation support heuristic score: 1.00."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "S1 is accepted evidence for case-release-note-drift."
+		},
+		{
+			"citation": "S5",
+			"supported": true,
+			"note": "S5 is accepted evidence for case-release-note-drift."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "S2 is accepted evidence for case-release-note-drift."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "S3 is accepted evidence for case-release-note-drift."
+		}
+	],
+	"notes": "Deterministic local evaluator output for baseline-run artifact generation. Replace or augment with stronger evaluator logic before making production quality claims.",
+	"artifactPaths": [
+		"runs/baseline-openai-20260623151310/evaluations/case-release-note-drift.json",
+		"runs/baseline-openai-20260623151310/briefings/case-release-note-drift.json"
+	]
+}

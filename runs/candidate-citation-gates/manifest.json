@@ -22,7 +22,10 @@
 		"unsupportedClaims": 7,
 		"medianLatencyMs": 7900,
 		"costRatio": 1.1,
-		"latencyRatio": 0.94
+		"latencyRatio": 0.94,
+		"estimatedCostUsd": null,
+		"costBudgetUsd": 0.1,
+		"groundingRiskUnits": 7
 	},
 	"guardrails": [
 		{
@@ -33,11 +36,11 @@
 			"threshold": ">= 0.72"
 		},
 		{
-			"id": "cost-ratio",
-			"label": "Cost ratio",
-			"status": "warn",
-			"value": "1.10x",
-			"threshold": "<= 1.15x"
+			"id": "cost-budget",
+			"label": "Cost budget",
+			"status": "pass",
+			"value": "$0.1000",
+			"threshold": "OpenAI corpus cost target"
 		}
 	],
 	"artifactPaths": [

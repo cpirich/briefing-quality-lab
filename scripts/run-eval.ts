@@ -11,6 +11,8 @@ import {
 import path from "node:path";
 
 import { generateBriefing } from "~/genie/generate-briefing";
+import { pricingForOpenAIModel } from "~/genie/openai-pricing";
+import { defaultOpenAIModel } from "~/genie/variants";
 import {
 	listBriefingOutputs,
 	listEvalCases,
@@ -339,6 +341,29 @@ function runIdFor(mode: Exclude<EvalMode, "report">, provider: EvalProvider) {
 	return `${prefix}-${provider}-${slugTimestamp()}`;
 }
 
+function assertOpenAIPricingIsConfigured(options: EvalOptions) {
+	if (options.mode === "report" || options.provider !== "openai") {
+		return;
+	}
+
+	const modelName = process.env.OPENAI_MODEL ?? defaultOpenAIModel;
+	const pricing = pricingForOpenAIModel(modelName);
+	if (pricing) {
+		console.log(
+			`Using ${pricing.source} for ${modelName}: input $${pricing.inputUsdPer1MTokens}/1M, cached input $${pricing.cachedInputUsdPer1MTokens}/1M, output $${pricing.outputUsdPer1MTokens}/1M.`,
+		);
+		return;
+	}
+
+	throw new Error(
+		[
+			`OpenAI pricing is not configured for model "${modelName}".`,
+			"Add the model and reviewed token rates to src/genie/openai-pricing.ts before running live evals.",
+			"This aborts before provider calls so generated traces do not persist unknown estimatedUsd values.",
+		].join(" "),
+	);
+}
+
 function sourcePacketById(sourcePackets: SourcePacket[]) {
 	return new Map(
 		sourcePackets.map((sourcePacket) => [sourcePacket.id, sourcePacket]),
@@ -618,7 +643,7 @@ function averageScore(
 	);
 }
 
-function unsupportedClaims(evaluations: EvaluatorOutput[]) {
+function groundingRiskUnits(evaluations: EvaluatorOutput[]) {
 	return evaluations.reduce((total, evaluation) => {
 		const riskMultiplier = Math.max(1, evaluation.failureTags.length + 1);
 		return (
@@ -637,6 +662,10 @@ function knownEstimatedCost(traces: GenerationTrace[]) {
 		(total, trace) => total + (trace.cost.estimatedUsd ?? 0),
 		0,
 	);
+}
+
+function roundCostUsd(value: number) {
+	return Math.round(value * 100_000_000) / 100_000_000;
 }
 
 function latencyRatioFor({
@@ -691,6 +720,11 @@ function manifestFor({
 	error?: string;
 }) {
 	const hasUnknownCost = tracesHaveUnknownCost(traces);
+	const groundingRiskUnitCount = groundingRiskUnits(evaluations);
+	const estimatedCostUsd =
+		hasUnknownCost || traces.length === 0
+			? null
+			: roundCostUsd(knownEstimatedCost(traces));
 	const costRatio =
 		mode === "baseline"
 			? 1
@@ -719,8 +753,10 @@ function manifestFor({
 			grounding: averageScore(evaluations, "grounding"),
 			coverage: averageScore(evaluations, "coverage"),
 			citationSupport,
-			unsupportedClaims: unsupportedClaims(evaluations),
+			unsupportedClaims: groundingRiskUnitCount,
+			groundingRiskUnits: groundingRiskUnitCount,
 			medianLatencyMs: median(traces.map((trace) => trace.latencyMs)),
+			estimatedCostUsd,
 			costRatio,
 			latencyRatio: latencyRatioFor({ mode, traces, referenceManifest }),
 		},
@@ -767,10 +803,15 @@ async function generateRun(options: EvalOptions) {
 	const referenceManifest = await referenceManifestForVariant(options);
 	assertVariantCaseSetMatchesBaseline({ referenceManifest, selectedEvalCases });
 
+	console.log(
+		`Starting ${options.provider} ${options.mode} run ${runId} with ${selectedEvalCases.length} cases.`,
+	);
 	await prepareRunOutputDirectories(runId, options.overwriteRun);
 
 	try {
-		for (const evalCase of selectedEvalCases) {
+		for (const [caseIndex, evalCase] of selectedEvalCases.entries()) {
+			const caseNumber = caseIndex + 1;
+			const casePrefix = `[${caseNumber}/${selectedEvalCases.length}]`;
 			const sourcePacket = sourcePacketsById.get(evalCase.sourcePacketId);
 			if (!sourcePacket) {
 				throw new Error(
@@ -778,12 +819,16 @@ async function generateRun(options: EvalOptions) {
 				);
 			}
 
+			console.log(`${casePrefix} Generating ${evalCase.id}...`);
 			const result = await generateBriefing({
 				sourcePacket,
 				userRequest: evalCase.task,
 				runId,
 				provider: options.provider,
 			});
+			console.log(
+				`${casePrefix} Generated ${evalCase.id} in ${(result.trace.latencyMs / 1000).toFixed(1)}s.`,
+			);
 			const rawBriefing = result.briefing;
 			const persistedBriefing = BriefingOutputSchema.parse(
 				briefingWithAcceptedCitationsOnly(result.briefing, evalCase),
@@ -806,6 +851,9 @@ async function generateRun(options: EvalOptions) {
 				evalCase,
 				briefing: rawBriefing,
 			});
+			console.log(
+				`${casePrefix} Evaluated ${evalCase.id}: overall ${evaluation.scores.overall.toFixed(2)}, citation ${evaluation.scores.citationSupport.toFixed(2)}.`,
+			);
 
 			await Promise.all([
 				writeJsonArtifact(briefingPath, persistedBriefing),
@@ -817,6 +865,7 @@ async function generateRun(options: EvalOptions) {
 			traces.push(trace);
 			evaluations.push(evaluation);
 			artifactPaths.push(briefingPath, tracePath, evaluationPath);
+			console.log(`${casePrefix} Wrote artifacts for ${evalCase.id}.`);
 		}
 
 		const manifest = manifestFor({
@@ -831,6 +880,9 @@ async function generateRun(options: EvalOptions) {
 			includeHoldouts: options.includeHoldouts,
 		});
 		await writeJsonArtifact(`runs/${runId}/manifest.json`, manifest);
+		console.log(
+			`Completed ${runId}: overall ${manifest.aggregateMetrics.overall.toFixed(2)}, citation ${manifest.aggregateMetrics.citationSupport.toFixed(2)}, median latency ${(manifest.aggregateMetrics.medianLatencyMs / 1000).toFixed(1)}s.`,
+		);
 
 		return {
 			manifest,
@@ -854,6 +906,7 @@ async function generateRun(options: EvalOptions) {
 			error: message,
 		});
 		await writeJsonArtifact(`runs/${runId}/manifest.json`, failedManifest);
+		console.log(`Failed ${runId}: ${message}`);
 		throw error;
 	}
 }
@@ -880,14 +933,14 @@ function isGeneratedCandidateRun(manifest: RunManifest) {
 
 function isOpenAIProviderRun(manifest: RunManifest) {
 	return (
-		manifest.runId.includes("-openai-") ||
+		manifest.command.includes("--provider=openai") ||
 		manifest.variantLabel.startsWith("openai generated")
 	);
 }
 
 function isLocalProviderRun(manifest: RunManifest) {
 	return (
-		manifest.runId.includes("-local-") ||
+		manifest.command.includes("--provider=local") ||
 		manifest.variantLabel.startsWith("local generated")
 	);
 }
@@ -1046,6 +1099,111 @@ function targetGapTone(delta: number) {
 		return "green" as const;
 	}
 	return "blue" as const;
+}
+
+function lowerIsBetterTargetGapTone(delta: number) {
+	if (delta > 0.03) {
+		return "green" as const;
+	}
+	if (delta >= -0.03) {
+		return "green" as const;
+	}
+	return "red" as const;
+}
+
+function estimatedCostUsdFor(artifacts: RunArtifacts) {
+	const manifestCost = artifacts.manifest.aggregateMetrics.estimatedCostUsd;
+	if (manifestCost !== undefined) {
+		return manifestCost;
+	}
+
+	if (tracesHaveUnknownCost(artifacts.traces)) {
+		return null;
+	}
+
+	return roundCostUsd(knownEstimatedCost(artifacts.traces));
+}
+
+function formatUsd(value: number) {
+	return `$${value.toFixed(4)}`;
+}
+
+function referenceCostBudgetMetric({
+	baseline,
+	candidate,
+	baselineLabel,
+	candidateLabel,
+}: {
+	baseline: RunArtifacts;
+	candidate: RunArtifacts;
+	baselineLabel: string;
+	candidateLabel: string;
+}) {
+	const estimatedCostUsd = estimatedCostUsdFor(baseline);
+	const costBudgetUsd = candidate.manifest.aggregateMetrics.costBudgetUsd;
+
+	if (estimatedCostUsd === null || costBudgetUsd === undefined) {
+		return {
+			label: "Estimated cost",
+			value:
+				estimatedCostUsd === null ? "unknown" : formatUsd(estimatedCostUsd),
+			delta: "unknown",
+			status:
+				costBudgetUsd === undefined
+					? `${candidateLabel} budget not set`
+					: `${baselineLabel} vs ${candidateLabel} budget <= ${formatUsd(costBudgetUsd)}`,
+			tone: "amber" as const,
+		};
+	}
+
+	const remainingBudgetUsd = roundCostUsd(costBudgetUsd - estimatedCostUsd);
+	const isUnderBudget = remainingBudgetUsd >= 0;
+
+	return {
+		label: "Estimated cost",
+		value: formatUsd(estimatedCostUsd),
+		delta: `${formatUsd(Math.abs(remainingBudgetUsd))} ${
+			isUnderBudget ? "under budget" : "over budget"
+		}`,
+		status: `${baselineLabel} vs ${candidateLabel} budget <= ${formatUsd(costBudgetUsd)}`,
+		tone: isUnderBudget ? ("green" as const) : ("red" as const),
+	};
+}
+
+function referenceCostBudgetRow({
+	baseline,
+	candidate,
+}: {
+	baseline: RunArtifacts;
+	candidate: RunArtifacts;
+}) {
+	const estimatedCostUsd = estimatedCostUsdFor(baseline);
+	const costBudgetUsd = candidate.manifest.aggregateMetrics.costBudgetUsd;
+
+	if (estimatedCostUsd === null || costBudgetUsd === undefined) {
+		return {
+			metric: "Estimated cost",
+			baseline:
+				estimatedCostUsd === null ? "unknown" : formatUsd(estimatedCostUsd),
+			candidate:
+				costBudgetUsd === undefined
+					? "budget not set"
+					: `<= ${formatUsd(costBudgetUsd)}`,
+			delta: "unknown",
+		};
+	}
+
+	const remainingBudgetUsd = roundCostUsd(costBudgetUsd - estimatedCostUsd);
+	const isUnderBudget = remainingBudgetUsd >= 0;
+
+	return {
+		metric: "Estimated cost",
+		baseline: formatUsd(estimatedCostUsd),
+		candidate: `<= ${formatUsd(costBudgetUsd)}`,
+		delta: `${formatUsd(Math.abs(remainingBudgetUsd))} ${
+			isUnderBudget ? "under budget" : "over budget"
+		}`,
+	};
 }
 
 function comparisonStatus(candidateManifest: RunManifest) {
@@ -1353,6 +1511,9 @@ async function writeComparisonAndReport(input: {
 		artifactsFor(baselineRunId),
 		artifactsFor(candidateRunId),
 	]);
+	console.log(
+		`Comparing ${baselineRunId} with ${candidateRunId} across ${baseline.manifest.caseIds.length} cases.`,
+	);
 	assertMatchingCaseSets(baseline.manifest, candidate.manifest);
 	const baselineMetrics = baseline.manifest.aggregateMetrics;
 	const candidateMetrics = candidate.manifest.aggregateMetrics;
@@ -1366,6 +1527,44 @@ async function writeComparisonAndReport(input: {
 	const baselineLabel = trendLabelFor(baseline.manifest, "baseline");
 	const candidateLabel = trendLabelFor(candidate.manifest, "candidate");
 	const changeLabel = comparisonChangeLabel(candidate.manifest);
+	const usesReferenceCostBudget =
+		changeLabel === "Gap" &&
+		candidate.manifest.aggregateMetrics.costBudgetUsd !== undefined;
+	const costMetric = usesReferenceCostBudget
+		? referenceCostBudgetMetric({
+				baseline,
+				candidate,
+				baselineLabel,
+				candidateLabel,
+			})
+		: {
+				label: "Cost ratio",
+				value: costRatioLabel(candidate.manifest),
+				delta: costRatioDeltaLabel(candidate.manifest, baseline.manifest),
+				status:
+					changeLabel === "Gap"
+						? `${candidateLabel} cost ratio`
+						: "Cost guardrail",
+				tone:
+					hasUnknownCost(candidate.manifest) ||
+					hasUnknownCost(baseline.manifest)
+						? ("amber" as const)
+						: changeLabel === "Gap"
+							? lowerIsBetterTargetGapTone(
+									candidateMetrics.costRatio - baselineMetrics.costRatio,
+								)
+							: candidateMetrics.costRatio <= 1.15
+								? ("amber" as const)
+								: ("red" as const),
+			};
+	const costRow = usesReferenceCostBudget
+		? referenceCostBudgetRow({ baseline, candidate })
+		: {
+				metric: "Cost ratio",
+				baseline: costRatioLabel(baseline.manifest),
+				candidate: costRatioLabel(candidate.manifest),
+				delta: costRatioDeltaLabel(candidate.manifest, baseline.manifest),
+			};
 	const failureClusterEvaluations =
 		changeLabel === "Gap" ? baseline.evaluations : candidate.evaluations;
 	const comparison = RunComparisonSchema.parse({
@@ -1419,22 +1618,7 @@ async function writeComparisonAndReport(input: {
 							)
 						: metricTone(candidateMetrics.coverage - baselineMetrics.coverage),
 			},
-			{
-				label: "Cost ratio",
-				value: costRatioLabel(candidate.manifest),
-				delta: costRatioDeltaLabel(candidate.manifest, baseline.manifest),
-				status:
-					changeLabel === "Gap"
-						? `${candidateLabel} cost ratio`
-						: "Cost guardrail",
-				tone:
-					hasUnknownCost(candidate.manifest) ||
-					hasUnknownCost(baseline.manifest)
-						? "amber"
-						: candidateMetrics.costRatio <= 1.15
-							? "amber"
-							: "red",
-			},
+			costMetric,
 			{
 				label: "Latency ratio",
 				value: latencyMetric.value,
@@ -1473,12 +1657,20 @@ async function writeComparisonAndReport(input: {
 				),
 			},
 			{
-				metric: "Unsupported claims",
-				baseline: String(baselineMetrics.unsupportedClaims),
-				candidate: String(candidateMetrics.unsupportedClaims),
-				delta: String(
-					candidateMetrics.unsupportedClaims -
+				metric: "Grounding risk units",
+				baseline: String(
+					baselineMetrics.groundingRiskUnits ??
 						baselineMetrics.unsupportedClaims,
+				),
+				candidate: String(
+					candidateMetrics.groundingRiskUnits ??
+						candidateMetrics.unsupportedClaims,
+				),
+				delta: String(
+					(candidateMetrics.groundingRiskUnits ??
+						candidateMetrics.unsupportedClaims) -
+						(baselineMetrics.groundingRiskUnits ??
+							baselineMetrics.unsupportedClaims),
 				),
 			},
 			{
@@ -1498,12 +1690,7 @@ async function writeComparisonAndReport(input: {
 						1000
 				).toFixed(1)}s`,
 			},
-			{
-				metric: "Cost ratio",
-				baseline: costRatioLabel(baseline.manifest),
-				candidate: costRatioLabel(candidate.manifest),
-				delta: costRatioDeltaLabel(candidate.manifest, baseline.manifest),
-			},
+			costRow,
 		],
 		failureClusters: failureClusters(failureClusterEvaluations),
 		featuredCase: featuredCaseFor(evalCases, baseline, candidate),
@@ -1532,6 +1719,7 @@ async function writeComparisonAndReport(input: {
 		"reports/latest-eval-summary.md",
 		reportFor(comparison),
 	);
+	console.log(`Wrote comparison ${comparison.id} and latest eval summary.`);
 	return comparison;
 }
 
@@ -1548,6 +1736,7 @@ async function main() {
 	}
 
 	await assertBaselineComparisonIsValid(options);
+	assertOpenAIPricingIsConfigured(options);
 	const run = await generateRun(options);
 	const comparison = await writeComparisonAndReport({
 		baselineRunId:

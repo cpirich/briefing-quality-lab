@@ -1,6 +1,6 @@
 {
-	"id": "case-adoption-friction-local-extractive-v1-trace",
-	"runId": "baseline-local-20260622-160000",
+	"id": "case-adoption-friction-openai-responses-v1-trace",
+	"runId": "baseline-openai-20260623151310",
 	"caseId": "case-adoption-friction",
 	"sourcePacketId": "packet-dev-adoption",
 	"input": {
@@ -18,64 +18,85 @@
 		}
 	],
 	"model": {
-		"provider": "local",
-		"name": "deterministic-extractive",
+		"provider": "openai",
+		"name": "gpt-5.2",
 		"settings": {
 			"promptVersion": "briefing-genie-v1",
-			"maxOutputTokens": 900,
-			"structuredOutputName": null,
+			"maxOutputTokens": 1200,
+			"structuredOutputName": "briefing_genie_output",
 			"textVerbosity": null,
 			"reasoningEffort": null,
 			"reasoningSummary": null,
-			"temperature": 0,
+			"temperature": null,
 			"topP": null,
 			"truncation": null,
-			"toolChoice": "none",
-			"parallelToolCalls": false
+			"toolChoice": null,
+			"parallelToolCalls": null
 		}
 	},
 	"output": {
-		"id": "case-adoption-friction-local-extractive-v1",
+		"id": "case-adoption-friction-openai-responses-v1",
 		"sourcePacketId": "packet-dev-adoption",
 		"caseId": "case-adoption-friction",
-		"title": "Developer Adoption Review Briefing",
-		"summary": "Product signals from docs usage, support tickets, onboarding interviews, and pilot-team notes. Briefing focus: Summarize adoption risks and recommend the next product-quality improvement for pilot expansion.",
+		"title": "Adoption risks & next product-quality improvement for pilot expansion",
+		"summary": "Adoption is improving at the top of the funnel (quickstart completion up after docs refresh), but pilot expansion is gated by a brittle setup/recovery experience and trust requirements around recommendation provenance. The highest-leverage next quality improvement is to make failed setup/install recovery self-serve and demonstrable without support intervention, because it is both the biggest onboarding drop and the explicit blocker for adding more pilot teams.",
 		"claims": [
 			{
-				"text": "Docs analytics: Quickstart completion rose from 44% to 58% after the copy refresh, and the first API call step now has fewer exits.",
+				"text": "Quickstart completion increased from 44% to 58% after the docs copy refresh, with fewer exits at the first API call step.",
 				"citations": ["S1"]
 			},
 			{
-				"text": "Support digest: Most new tickets mention environment drift, stale CLI versions, and unclear recovery steps after failed installs.",
+				"text": "The biggest remaining onboarding drop happens during local setup and credential configuration, where users bounce after environment-specific errors.",
+				"citations": ["S1"]
+			},
+			{
+				"text": "Completion gains were concentrated among users who already had a valid token; new users still hit the same environment/setup wall and need a dedicated recovery path for credential setup.",
+				"citations": ["S1"]
+			},
+			{
+				"text": "Most new support tickets are about environment drift, stale CLI versions, and unclear recovery steps after failed installs; users often only succeed after support shares an internal checklist that is not in public docs.",
 				"citations": ["S2"]
 			},
 			{
-				"text": "Pilot interviews: Senior engineers said they trust generated recommendations only when each claim points back to source snippets they can inspect.",
-				"citations": ["S3"]
+				"text": "Tickets can reopen when users restart the quickstart and reproduce the same failed state, indicating the product/docs do not help users recover from partial setup.",
+				"citations": ["S2"]
 			}
 		],
 		"openQuestions": [
-			"Confirm whether pilot expansion note has newer follow-up data.",
-			"Confirm whether onboarding triage notes has newer follow-up data."
+			"What specific steps are in the internal support checklist (stale CLI, env vars, workspace credential mismatch) that are missing from public docs, and which can be productized vs documented?",
+			"Can the setup flow detect and surface: (a) stale CLI version, (b) missing env vars, (c) credentials from wrong workspace—so recovery becomes guided rather than manual?",
+			"What is the acceptance test for “recovery can be demonstrated in the lab without support pasting an internal checklist,” and who signs it off?",
+			"Are citation/provenance requirements (show source citations; distinguish analytics vs support vs interview evidence) already implemented or still pending for pilot readiness?"
 		],
-		"recommendation": "Use this as a fast first pass, then inspect source tension and citation support in the lab before treating the recommendation as shippable.",
+		"recommendation": "Next product-quality improvement: ship a first-class, public, self-serve setup recovery path (and validate it in the lab) before adding new pilot teams. Concretely, expose a documented recovery checklist for the top failure modes (stale CLI, missing environment variables, wrong-workspace credentials) and ensure the flow supports recovery from partial/failed installs without requiring users to restart from the beginning. This addresses the largest remaining onboarding drop and the most common support drivers, and it is the explicit gate for pilot expansion readiness.",
 		"metadata": {
-			"variant": "Local extractive baseline",
-			"runId": "baseline-local-20260622-160000",
-			"model": "deterministic-extractive"
+			"variant": "OpenAI Responses baseline",
+			"runId": "baseline-openai-20260623151310",
+			"model": "gpt-5.2"
 		}
 	},
 	"toolCalls": [],
 	"cost": {
-		"inputTokens": 989,
-		"outputTokens": 334,
-		"estimatedUsd": 0
+		"inputTokens": 864,
+		"cachedInputTokens": 0,
+		"outputTokens": 554,
+		"estimatedUsd": 0.009268,
+		"pricing": {
+			"model": "gpt-5.2",
+			"inputUsdPer1MTokens": 1.75,
+			"cachedInputUsdPer1MTokens": 0.175,
+			"outputUsdPer1MTokens": 14,
+			"currency": "USD",
+			"serviceTier": "standard",
+			"context": "short",
+			"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+		}
 	},
-	"latencyMs": 2,
+	"latencyMs": 13441,
 	"artifactPaths": [
 		"data/source-packets/packet-dev-adoption.json",
-		"runs/baseline-local-20260622-160000/briefings/case-adoption-friction.json",
-		"runs/baseline-local-20260622-160000/traces/case-adoption-friction.json",
-		"runs/baseline-local-20260622-160000/evaluations/case-adoption-friction.json"
+		"runs/baseline-openai-20260623151310/briefings/case-adoption-friction.json",
+		"runs/baseline-openai-20260623151310/traces/case-adoption-friction.json",
+		"runs/baseline-openai-20260623151310/evaluations/case-adoption-friction.json"
 	]
 }
