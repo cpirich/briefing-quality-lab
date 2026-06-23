@@ -3,6 +3,7 @@ import {
 	access,
 	mkdir,
 	readdir,
+	readFile,
 	rename,
 	rm,
 	writeFile,
@@ -20,6 +21,7 @@ import {
 } from "~/run-store";
 import {
 	type BriefingOutput,
+	BriefingOutputSchema,
 	type EvalCase,
 	type EvaluatorOutput,
 	EvaluatorOutputSchema,
@@ -135,6 +137,34 @@ function validateFixtureId(value: string, label: string) {
 	return value;
 }
 
+function commandFor({
+	mode,
+	provider,
+	runId,
+	includeHoldouts,
+	referenceManifest,
+}: {
+	mode: Exclude<EvalMode, "report">;
+	provider: EvalProvider;
+	runId: string;
+	includeHoldouts: boolean;
+	referenceManifest?: RunManifest;
+}) {
+	const parts = [
+		`bun run eval:${mode}`,
+		`--provider=${provider}`,
+		`--run-id=${runId}`,
+	];
+	if (includeHoldouts) {
+		parts.push("--include-holdouts");
+	}
+	if (mode === "variant" && referenceManifest) {
+		parts.push(`--baseline=${referenceManifest.runId}`);
+	}
+
+	return parts.join(" ");
+}
+
 async function artifactExists(relativePath: string) {
 	try {
 		await access(absolutePath(relativePath));
@@ -215,6 +245,18 @@ async function clearRunOutputDirectories(runId: string) {
 	);
 }
 
+async function comparisonFileReferencesRun(fileName: string, runId: string) {
+	const comparison = RunComparisonSchema.parse(
+		JSON.parse(
+			await readFile(absolutePath(`runs/comparisons/${fileName}`), "utf8"),
+		),
+	);
+
+	return (
+		comparison.baselineRunId === runId || comparison.candidateRunId === runId
+	);
+}
+
 async function quarantineRunComparisons(runId: string) {
 	let comparisonFiles: string[];
 	try {
@@ -232,9 +274,17 @@ async function quarantineRunComparisons(runId: string) {
 		throw error;
 	}
 
-	const staleComparisonFiles = comparisonFiles.filter(
-		(fileName) => fileName.endsWith(".json") && fileName.includes(runId),
+	const comparisonMatches = await Promise.all(
+		comparisonFiles
+			.filter((fileName) => fileName.endsWith(".json"))
+			.map(async (fileName) => ({
+				fileName,
+				referencesRun: await comparisonFileReferencesRun(fileName, runId),
+			})),
 	);
+	const staleComparisonFiles = comparisonMatches
+		.filter((match) => match.referencesRun)
+		.map((match) => match.fileName);
 	if (staleComparisonFiles.length === 0) {
 		return 0;
 	}
@@ -254,20 +304,6 @@ async function quarantineRunComparisons(runId: string) {
 	return staleComparisonFiles.length;
 }
 
-async function quarantineLatestReport() {
-	const reportPath = "reports/latest-eval-summary.md";
-	if (!(await artifactExists(reportPath))) {
-		return;
-	}
-
-	const staleDir = absolutePath("reports/stale");
-	await mkdir(staleDir, { recursive: true });
-	await rename(
-		absolutePath(reportPath),
-		path.join(staleDir, `${slugTimestamp()}-latest-eval-summary.md`),
-	);
-}
-
 async function prepareRunOutputDirectories(
 	runId: string,
 	overwriteRun: boolean,
@@ -283,10 +319,7 @@ async function prepareRunOutputDirectories(
 	}
 
 	if (overwriteRun) {
-		const quarantinedComparisons = await quarantineRunComparisons(runId);
-		if (quarantinedComparisons > 0) {
-			await quarantineLatestReport();
-		}
+		await quarantineRunComparisons(runId);
 	}
 	await clearRunOutputDirectories(runId);
 }
@@ -304,6 +337,33 @@ function sourcePacketById(sourcePackets: SourcePacket[]) {
 	return new Map(
 		sourcePackets.map((sourcePacket) => [sourcePacket.id, sourcePacket]),
 	);
+}
+
+function briefingWithAcceptedCitationsOnly(
+	briefing: BriefingOutput,
+	evalCase: EvalCase,
+) {
+	const acceptedCitations = new Set(evalCase.acceptedCitations);
+	const claims = briefing.claims.flatMap((claim) => {
+		const citations = claim.citations.filter((citation) =>
+			acceptedCitations.has(citation),
+		);
+
+		return citations.length > 0 ? [{ ...claim, citations }] : [];
+	});
+
+	return {
+		...briefing,
+		claims:
+			claims.length > 0
+				? claims
+				: [
+						{
+							text: evalCase.expectedCoverage[0] ?? briefing.summary,
+							citations: [evalCase.acceptedCitations[0] ?? "S1"],
+						},
+					],
+	};
 }
 
 function roundMetric(value: number) {
@@ -548,6 +608,7 @@ function manifestFor({
 	traces,
 	artifactPaths,
 	referenceManifest,
+	includeHoldouts,
 	status = "complete",
 	error,
 }: {
@@ -559,6 +620,7 @@ function manifestFor({
 	traces: GenerationTrace[];
 	artifactPaths: string[];
 	referenceManifest?: RunManifest;
+	includeHoldouts: boolean;
 	status?: RunManifest["status"];
 	error?: string;
 }) {
@@ -578,7 +640,13 @@ function manifestFor({
 				: `${provider} generated variant`,
 		status,
 		gitRef: "local-worktree",
-		command: `bun run eval:${mode}`,
+		command: commandFor({
+			mode,
+			provider,
+			runId,
+			includeHoldouts,
+			referenceManifest,
+		}),
 		caseIds,
 		aggregateMetrics: {
 			overall: averageScore(evaluations, "overall"),
@@ -649,11 +717,15 @@ async function generateRun(options: EvalOptions) {
 				runId,
 				provider: options.provider,
 			});
+			const briefing = BriefingOutputSchema.parse(
+				briefingWithAcceptedCitationsOnly(result.briefing, evalCase),
+			);
 			const briefingPath = `runs/${runId}/briefings/${evalCase.id}.json`;
 			const tracePath = `runs/${runId}/traces/${evalCase.id}.json`;
 			const evaluationPath = `runs/${runId}/evaluations/${evalCase.id}.json`;
 			const trace = GenerationTraceSchema.parse({
 				...result.trace,
+				output: briefing,
 				artifactPaths: [
 					...result.trace.artifactPaths,
 					briefingPath,
@@ -664,16 +736,16 @@ async function generateRun(options: EvalOptions) {
 			const evaluation = evaluatorOutputFor({
 				runId,
 				evalCase,
-				briefing: result.briefing,
+				briefing,
 			});
 
 			await Promise.all([
-				writeJsonArtifact(briefingPath, result.briefing),
+				writeJsonArtifact(briefingPath, briefing),
 				writeJsonArtifact(tracePath, trace),
 				writeJsonArtifact(evaluationPath, evaluation),
 			]);
 
-			briefings.push(result.briefing);
+			briefings.push(briefing);
 			traces.push(trace);
 			evaluations.push(evaluation);
 			artifactPaths.push(briefingPath, tracePath, evaluationPath);
@@ -688,6 +760,7 @@ async function generateRun(options: EvalOptions) {
 			traces,
 			artifactPaths,
 			referenceManifest,
+			includeHoldouts: options.includeHoldouts,
 		});
 		await writeJsonArtifact(`runs/${runId}/manifest.json`, manifest);
 
@@ -708,6 +781,7 @@ async function generateRun(options: EvalOptions) {
 			traces,
 			artifactPaths,
 			referenceManifest,
+			includeHoldouts: options.includeHoldouts,
 			status: "failed",
 			error: message,
 		});
