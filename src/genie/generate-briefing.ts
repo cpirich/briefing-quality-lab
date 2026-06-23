@@ -12,7 +12,12 @@ import {
 	type GenerationVariant,
 	type SourcePacket,
 } from "~/schemas";
-import { localExtractiveVariant, openAIResponsesVariant } from "./variants";
+import { estimateOpenAIUsd, type OpenAIPricing } from "./openai-pricing";
+import {
+	defaultOpenAIModel,
+	localExtractiveVariant,
+	openAIResponsesVariant,
+} from "./variants";
 
 interface GenerateBriefingInput {
 	sourcePacket: SourcePacket;
@@ -39,7 +44,6 @@ const GeneratedBriefingContentSchema = z.object({
 type GeneratedBriefingContent = z.infer<typeof GeneratedBriefingContentSchema>;
 
 const sentenceBoundaryPattern = /(?<=[.!?])\s+/;
-const defaultOpenAIModel = "gpt-5.2";
 const structuredOutputName = "briefing_genie_output";
 const openAIApiKey = process.env.OPENAI_API_KEY;
 const openAIModel = process.env.OPENAI_MODEL ?? defaultOpenAIModel;
@@ -189,8 +193,10 @@ function traceFromBriefing({
 	prompt,
 	startedAt,
 	inputTokens,
+	cachedInputTokens,
 	outputTokens,
 	estimatedUsd,
+	pricing,
 }: {
 	briefing: BriefingOutput;
 	sourcePacket: SourcePacket;
@@ -201,8 +207,10 @@ function traceFromBriefing({
 	prompt: string;
 	startedAt: number;
 	inputTokens: number;
+	cachedInputTokens?: number;
 	outputTokens: number;
 	estimatedUsd: number | null;
+	pricing?: OpenAIPricing;
 }) {
 	return GenerationTraceSchema.parse({
 		id: `${briefing.id}-trace`,
@@ -236,8 +244,10 @@ function traceFromBriefing({
 		toolCalls: [],
 		cost: {
 			inputTokens,
+			...(cachedInputTokens !== undefined ? { cachedInputTokens } : {}),
 			outputTokens,
 			estimatedUsd,
+			...(pricing ? { pricing } : {}),
 		},
 		latencyMs: Math.max(1, Date.now() - startedAt),
 		artifactPaths: [`data/source-packets/${sourcePacket.id}.json`],
@@ -294,6 +304,7 @@ function generateLocalBriefing({
 		prompt,
 		startedAt,
 		inputTokens: estimateTokens(prompt),
+		cachedInputTokens: 0,
 		outputTokens: estimateTokens(outputText),
 		estimatedUsd: 0,
 	});
@@ -358,6 +369,17 @@ async function generateOpenAIResponsesBriefing({
 		runId,
 		variant,
 	});
+	const inputTokens = response.usage?.input_tokens ?? estimateTokens(prompt);
+	const outputTokens =
+		response.usage?.output_tokens ?? estimateTokens(JSON.stringify(briefing));
+	const cachedInputTokens =
+		response.usage?.input_tokens_details?.cached_tokens ?? 0;
+	const costEstimate = estimateOpenAIUsd({
+		modelName: variant.model,
+		inputTokens,
+		cachedInputTokens,
+		outputTokens,
+	});
 	const trace = traceFromBriefing({
 		briefing,
 		sourcePacket,
@@ -367,10 +389,11 @@ async function generateOpenAIResponsesBriefing({
 		settings,
 		prompt,
 		startedAt,
-		inputTokens: response.usage?.input_tokens ?? estimateTokens(prompt),
-		outputTokens:
-			response.usage?.output_tokens ?? estimateTokens(JSON.stringify(briefing)),
-		estimatedUsd: null,
+		inputTokens,
+		cachedInputTokens,
+		outputTokens,
+		estimatedUsd: costEstimate.estimatedUsd,
+		pricing: costEstimate.pricing,
 	});
 
 	return {

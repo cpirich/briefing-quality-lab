@@ -1,0 +1,102 @@
+{
+	"id": "case-eval-loop-openai-responses-v1-trace",
+	"runId": "baseline-openai-20260623151310",
+	"caseId": "case-eval-loop",
+	"sourcePacketId": "packet-eval-loop",
+	"input": {
+		"userRequest": "Recommend whether to expand automated evals, balancing coverage, citation support, trace utility, and cost.",
+		"sourcePacketPath": "data/source-packets/packet-eval-loop.json"
+	},
+	"messages": [
+		{
+			"role": "system",
+			"content": "You are Briefing Genie. Return a short briefing with source citations."
+		},
+		{
+			"role": "user",
+			"content": "User request: Recommend whether to expand automated evals, balancing coverage, citation support, trace utility, and cost.\n\nSource packet: Eval Loop Strategy\n\nPacket summary: Notes comparing weekly human review, automated scoring, holdout cases, and release guardrails.\n\nSources:\n\n[S1] Quality review memo\nType: quality memo\nTeams need smaller eval batches with visible failure clusters before expanding model coverage. The last broad run increased the number of cases scored, but reviewers could not tell which failures were repeated patterns and which were one-off mistakes.\n\nThe memo compares a broad dry run with a smaller reviewed batch. The broad run produced more scores, but reviewers spent extra time rediscovering whether each failure was new. The smaller batch made repeated citation issues easier to group and produced more actionable prompt changes.\n\n[S2] Release guardrail notes\nType: release notes\nCoverage can improve while grounding regresses, so citation support needs an explicit shipping gate. The suggested threshold is not a leaderboard target; it is a release block when candidate outputs make unsupported claims.\n\nThe guardrail note came from a release review where the candidate covered more requested points but attached weak citations to several claims. Reviewers agreed that coverage and grounding must be tracked separately. A candidate can look better in aggregate and still be blocked if unsupported claims reach customer-facing recommendations.\n\n[S3] Cost review\nType: cost review\nLong traces help debug failures, but unchecked retries created a 1.34x cost increase in the last dry run. The finance reviewer accepted trace retention only if retries are capped and summarized in the run manifest.\n\nThe cost review separates trace usefulness from retry sprawl. Long traces helped diagnose why a claim failed, but retries created duplicate traces that nobody read. Finance accepted keeping detailed traces when the run manifest shows retry count, cost ratio, and a short explanation of what the trace helped resolve.\n\n[S4] Holdout protocol\nType: governance note\nHoldout cases should appear in dashboards as summaries and aggregate scores, but their tuning labels should stay out of prompt-iteration workflows. Reviewers want confidence that prompt changes are not simply memorizing visible examples.\n\nThe holdout protocol distinguishes dashboard visibility from tuning visibility. Aggregate holdout scores may appear in the lab so reviewers know the set exists, but labels and expected answers should not appear in prompt-editing screens. The goal is to catch overfitting to the visible demo cases.\n\n[S5] Reviewer retro notes\nType: retro notes\nThe reviewer retro says the last eval review felt slower than expected because failures were not grouped by pattern. Reviewers asked for a dashboard that clusters unsupported claims, weak citations, cost regressions, and holdout concerns separately. They preferred fewer cases with clearer evidence over a larger run where every row required manual interpretation.\n\n[S6] Experiment proposal\nType: experiment proposal\nThe experiment proposal recommends one more visible batch before live orchestration. It asks the team to hold citation support as a shipping gate, keep retry counts in the manifest, and report holdout performance only in aggregate. The proposal frames expansion as acceptable only if the next candidate improves grounding without exceeding the cost guardrail."
+		}
+	],
+	"model": {
+		"provider": "openai",
+		"name": "gpt-5.2",
+		"settings": {
+			"promptVersion": "briefing-genie-v1",
+			"maxOutputTokens": 1200,
+			"structuredOutputName": "briefing_genie_output",
+			"textVerbosity": null,
+			"reasoningEffort": null,
+			"reasoningSummary": null,
+			"temperature": null,
+			"topP": null,
+			"truncation": null,
+			"toolChoice": null,
+			"parallelToolCalls": null
+		}
+	},
+	"output": {
+		"id": "case-eval-loop-openai-responses-v1",
+		"sourcePacketId": "packet-eval-loop",
+		"caseId": "case-eval-loop",
+		"title": "Recommendation: Expand automated evals cautiously (stage-gated), not broad coverage-first",
+		"summary": "Proceed with a limited expansion focused on higher signal per case, explicit citation/grounding guardrails, and cost controls. Do not immediately scale to broad coverage until dashboards reliably cluster failure patterns and reviewers can distinguish repeated vs one-off issues. Gate any expansion on citation support (grounding) and on capped retries with manifest reporting; keep holdout labels out of tuning workflows while reporting aggregate holdout performance.",
+		"claims": [
+			{
+				"text": "Broad automated runs increased the number of scored cases but reduced review utility because failures weren’t clearly grouped into repeatable patterns, making reviewers spend extra time re-identifying whether issues were novel or recurring.",
+				"citations": ["S1", "S5"]
+			},
+			{
+				"text": "Smaller eval batches with visible failure clusters produced more actionable prompt changes and made repeated citation issues easier to group than broad, hard-to-interpret runs.",
+				"citations": ["S1"]
+			},
+			{
+				"text": "Coverage improvements can coincide with grounding regressions; citation support needs an explicit shipping gate that can block releases when outputs make unsupported claims, independent of aggregate coverage metrics.",
+				"citations": ["S2"]
+			},
+			{
+				"text": "Long traces are useful for debugging, but uncapped retries drove a 1.34x cost increase; finance accepts trace retention only if retries are capped and summarized in the run manifest (retry count, cost ratio, and what the trace resolved).",
+				"citations": ["S3"]
+			},
+			{
+				"text": "Holdout cases should be visible in dashboards via summaries and aggregate scores, but their labels/expected answers should be excluded from prompt-iteration workflows to avoid memorization/overfitting to visible examples.",
+				"citations": ["S4"]
+			}
+		],
+		"openQuestions": [
+			"What concrete dashboard clustering taxonomy and UI will be implemented (e.g., unsupported claims vs weak citations vs cost regressions vs holdout concerns), and what is the minimum viable version before expanding coverage?",
+			"What are the exact shipping-gate thresholds/criteria for citation support (grounding) that trigger a release block, and how will disputed/ambiguous citation cases be adjudicated?",
+			"What retry cap will be set (and under what exception policy), and what is the acceptable cost ratio ceiling relative to baseline?",
+			"What is the definition of “one more visible batch” (size, scope, and success criteria) before moving to live orchestration?"
+		],
+		"recommendation": "Expand automated evals in a stage-gated way: run one more smaller, reviewer-friendly batch with dashboards that cluster failures by pattern; enforce citation support as a release-blocking gate tracked separately from coverage; cap retries and require manifest summaries for trace/cost accountability; report holdout performance only in aggregate and keep holdout labels out of tuning workflows. Only broaden coverage after this loop demonstrates improved grounding without exceeding the cost guardrail and with clear, pattern-level trace utility.",
+		"metadata": {
+			"variant": "OpenAI Responses baseline",
+			"runId": "baseline-openai-20260623151310",
+			"model": "gpt-5.2"
+		}
+	},
+	"toolCalls": [],
+	"cost": {
+		"inputTokens": 786,
+		"cachedInputTokens": 0,
+		"outputTokens": 589,
+		"estimatedUsd": 0.0096215,
+		"pricing": {
+			"model": "gpt-5.2",
+			"inputUsdPer1MTokens": 1.75,
+			"cachedInputUsdPer1MTokens": 0.175,
+			"outputUsdPer1MTokens": 14,
+			"currency": "USD",
+			"serviceTier": "standard",
+			"context": "short",
+			"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+		}
+	},
+	"latencyMs": 12434,
+	"artifactPaths": [
+		"data/source-packets/packet-eval-loop.json",
+		"runs/baseline-openai-20260623151310/briefings/case-eval-loop.json",
+		"runs/baseline-openai-20260623151310/traces/case-eval-loop.json",
+		"runs/baseline-openai-20260623151310/evaluations/case-eval-loop.json"
+	]
+}

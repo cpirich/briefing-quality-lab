@@ -1558,6 +1558,8 @@ function runManifestFor(
 					citationSupport: 0.8,
 					unsupportedClaims: 7,
 					medianLatencyMs: 7900,
+					estimatedCostUsd: null,
+					costBudgetUsd: 0.1,
 					costRatio: 1.1,
 					latencyRatio: 0.94,
 				}
@@ -1568,6 +1570,7 @@ function runManifestFor(
 					citationSupport: 0.51,
 					unsupportedClaims: 26,
 					medianLatencyMs: 8400,
+					estimatedCostUsd: 0.098,
 					costRatio: 1,
 					latencyRatio: 1,
 				},
@@ -1580,11 +1583,11 @@ function runManifestFor(
 				threshold: ">= 0.72",
 			},
 			{
-				id: "cost-ratio",
-				label: "Cost ratio",
-				status: isCandidate ? "warn" : "pass",
-				value: isCandidate ? "1.10x" : "1.00x",
-				threshold: "<= 1.15x",
+				id: isCandidate ? "cost-budget" : "cost-ratio",
+				label: isCandidate ? "Cost budget" : "Cost ratio",
+				status: "pass",
+				value: isCandidate ? "$0.1000" : "1.00x",
+				threshold: isCandidate ? "OpenAI corpus cost target" : "<= 1.15x",
 			},
 		],
 		artifactPaths: [

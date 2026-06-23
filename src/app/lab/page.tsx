@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 const lowerIsBetterMetrics = new Set([
 	"Unsupported claims",
 	"Median latency",
+	"Estimated cost",
 	"Cost ratio",
 ]);
 
@@ -68,6 +69,14 @@ function numericDelta(value: string) {
 }
 
 function changeTextClass(metric: string, value: string, changeLabel: string) {
+	const normalizedValue = value.toLowerCase();
+	if (normalizedValue.includes("under budget")) {
+		return "text-[var(--success-foreground)]";
+	}
+	if (normalizedValue.includes("over budget")) {
+		return "text-[var(--danger-foreground)]";
+	}
+
 	const delta = numericDelta(value);
 
 	if (delta === 0 || value === "unknown") {
@@ -85,7 +94,9 @@ function changeTextClass(metric: string, value: string, changeLabel: string) {
 	}
 
 	if (lowerIsBetter) {
-		return "text-[var(--warning-foreground)]";
+		return delta > 0
+			? "text-[var(--success-foreground)]"
+			: "text-[var(--danger-foreground)]";
 	}
 
 	const hasRemainingGap = delta > 0;

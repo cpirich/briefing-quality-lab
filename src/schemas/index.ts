@@ -149,8 +149,21 @@ export const GenerationTraceSchema = z
 		toolCalls: z.array(ToolCallTraceSchema),
 		cost: z.object({
 			inputTokens: z.number().int().nonnegative(),
+			cachedInputTokens: z.number().int().nonnegative().optional(),
 			outputTokens: z.number().int().nonnegative(),
 			estimatedUsd: z.number().nonnegative().nullable(),
+			pricing: z
+				.object({
+					model: z.string().min(1),
+					inputUsdPer1MTokens: z.number().nonnegative(),
+					cachedInputUsdPer1MTokens: z.number().nonnegative(),
+					outputUsdPer1MTokens: z.number().nonnegative(),
+					currency: z.literal("USD"),
+					serviceTier: z.string().min(1),
+					context: z.string().min(1),
+					source: z.string().min(1),
+				})
+				.optional(),
 		}),
 		latencyMs: z.number().int().nonnegative(),
 		artifactPaths: z.array(artifactPathSchema).min(1),
@@ -229,6 +242,8 @@ export const RunManifestSchema = z.object({
 		citationSupport: z.number().min(0).max(1),
 		unsupportedClaims: z.number().int().nonnegative(),
 		medianLatencyMs: z.number().int().nonnegative(),
+		estimatedCostUsd: z.number().nonnegative().nullable().optional(),
+		costBudgetUsd: z.number().positive().optional(),
 		costRatio: z.number().positive(),
 		latencyRatio: z.number().positive(),
 	}),
