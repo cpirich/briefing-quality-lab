@@ -16,22 +16,22 @@ The first OpenAI pass is a provider shakedown, not a final improvement claim. It
 ## Prerequisites
 
 - Phase 8 generated-run work is merged or otherwise stable on the working branch.
-- `.env` contains `OPENAI_API_KEY`.
-- Optional: `.env` contains `OPENAI_MODEL` when testing a model other than the app default.
+- `.env.local` contains `OPENAI_API_KEY`.
+- Optional: `.env.local` contains `OPENAI_MODEL` when testing a model other than the app default.
 - The visible non-holdout eval corpus validates.
 - The local generated-run path remains available as a cheap offline rehearsal and regression path.
 
 ## Environment Setup
 
-Source `.env` into the same shell that runs the eval commands:
+Source `.env.local` into the same shell that runs the eval commands:
 
 ```bash
 set -a
-source .env
+source .env.local
 set +a
 ```
 
-Do not commit `.env`, provider keys, private traces, or local-only planning paths.
+Do not commit `.env.local`, provider keys, private traces, or local-only planning paths.
 
 ## Preflight Checks
 
