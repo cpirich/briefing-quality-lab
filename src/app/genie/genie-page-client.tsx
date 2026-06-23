@@ -13,6 +13,73 @@ type GeniePageClientProps = {
 	sourcePackets: SourcePacket[];
 };
 
+function metadataValue(value: number | string | boolean | null | undefined) {
+	if (value === null || value === undefined || value === "") {
+		return "provider default";
+	}
+
+	return String(value);
+}
+
+function formatLatency(milliseconds: number) {
+	return `${(milliseconds / 1000).toFixed(1)}s`;
+}
+
+function formatUsd(value: number | null) {
+	return value === null ? "unknown" : `$${value.toFixed(4)}`;
+}
+
+function TraceMetadataPanel({ trace }: { trace: GenerationTrace }) {
+	const settings = trace.model.settings;
+	const metadataRows = [
+		["Provider", trace.model.provider],
+		["Model", trace.model.name],
+		["Prompt version", settings.promptVersion],
+		["Latency", formatLatency(trace.latencyMs)],
+		["Estimated cost", formatUsd(trace.cost.estimatedUsd)],
+		["Input tokens", trace.cost.inputTokens],
+		["Cached input tokens", trace.cost.cachedInputTokens ?? 0],
+		["Output tokens", trace.cost.outputTokens],
+		["Max output tokens", settings.maxOutputTokens],
+		["Structured output", settings.structuredOutputName],
+		["Verbosity", settings.textVerbosity],
+		["Reasoning effort", settings.reasoningEffort],
+		["Temperature", settings.temperature],
+		["Tool choice", settings.toolChoice],
+	] as const;
+
+	return (
+		<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-3">
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				<h4 className="font-semibold text-sm">Generation Metadata</h4>
+				<Badge tone={trace.cost.estimatedUsd === null ? "amber" : "green"}>
+					{trace.cost.estimatedUsd === null
+						? "cost unknown"
+						: formatUsd(trace.cost.estimatedUsd)}
+				</Badge>
+			</div>
+			<dl className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+				{metadataRows.map(([label, value]) => (
+					<div
+						className="rounded-md border border-[var(--border)] bg-[var(--card)] p-2"
+						key={label}
+					>
+						<dt className="text-[var(--muted-foreground)] text-xs">{label}</dt>
+						<dd className="mt-1 break-words font-medium text-sm">
+							{metadataValue(value)}
+						</dd>
+					</div>
+				))}
+			</dl>
+			{trace.cost.pricing ? (
+				<p className="mt-3 text-[var(--muted-foreground)] text-xs">
+					Pricing: {trace.cost.pricing.source}
+				</p>
+			) : null}
+		</div>
+	);
+}
+
 export function GeniePageClient({ sourcePackets }: GeniePageClientProps) {
 	const fallbackPacket = sourcePackets[0];
 	const [selectedPacketId, setSelectedPacketId] = useState(fallbackPacket?.id);
@@ -176,6 +243,9 @@ export function GeniePageClient({ sourcePackets }: GeniePageClientProps) {
 											{briefingPreview.summary}
 										</p>
 									</div>
+									{activeTrace ? (
+										<TraceMetadataPanel trace={activeTrace} />
+									) : null}
 									<div>
 										<h4 className="font-semibold text-sm">Claims</h4>
 										<div className="mt-2 grid gap-2">

@@ -71,7 +71,7 @@
 			"delta": "+0.29"
 		},
 		{
-			"metric": "Unsupported claims",
+			"metric": "Grounding risk units",
 			"baseline": "26",
 			"candidate": "7",
 			"delta": "-19"

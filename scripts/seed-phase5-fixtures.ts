@@ -1557,6 +1557,7 @@ function runManifestFor(
 					coverage: 0.86,
 					citationSupport: 0.8,
 					unsupportedClaims: 7,
+					groundingRiskUnits: 7,
 					medianLatencyMs: 7900,
 					estimatedCostUsd: null,
 					costBudgetUsd: 0.1,
@@ -1569,6 +1570,7 @@ function runManifestFor(
 					coverage: 0.74,
 					citationSupport: 0.51,
 					unsupportedClaims: 26,
+					groundingRiskUnits: 26,
 					medianLatencyMs: 8400,
 					estimatedCostUsd: 0.098,
 					costRatio: 1,
@@ -1672,7 +1674,7 @@ function comparisonFor(): RunComparison {
 				delta: "+0.29",
 			},
 			{
-				metric: "Unsupported claims",
+				metric: "Grounding risk units",
 				baseline: "26",
 				candidate: "7",
 				delta: "-19",
@@ -1843,7 +1845,7 @@ This synthetic report compares \`${baselineRunId}\` with \`${candidateRunId}\` o
 
 The dataset now contains 9 synthetic eval cases: 7 visible cases for demo walkthroughs and 2 holdout cases that stay out of the Genie product flow. Source packets now include 3-6 richer documents with distractors, overlapping evidence, caveats, and explicit citation traps.
 
-The candidate improves overall quality from \`0.66\` to \`0.83\` and citation support from \`0.51\` to \`0.80\`. Unsupported claims drop from \`26\` to \`7\`, while cost stays inside the \`1.15x\` guardrail at \`1.10x\`.
+The candidate improves overall quality from \`0.66\` to \`0.83\` and citation support from \`0.51\` to \`0.80\`. Grounding risk units drop from \`26\` to \`7\`, while cost stays inside the \`1.15x\` guardrail at \`1.10x\`.
 
 Featured case: \`case-release-note-drift\`. The baseline recommends publishing generated release notes because coverage is high. The candidate keeps the automation benefit but gates publication on stale-claim drift review and explicit approval for sensitive customer-facing statements.
 `,

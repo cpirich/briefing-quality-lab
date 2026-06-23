@@ -23,7 +23,8 @@
 		"medianLatencyMs": 13328,
 		"costRatio": 1,
 		"latencyRatio": 1,
-		"estimatedCostUsd": 0.07334775
+		"estimatedCostUsd": 0.07334775,
+		"groundingRiskUnits": 7
 	},
 	"guardrails": [
 		{

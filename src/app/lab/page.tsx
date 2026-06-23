@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 const lowerIsBetterMetrics = new Set([
-	"Unsupported claims",
+	"Grounding risk units",
 	"Median latency",
 	"Estimated cost",
 	"Cost ratio",

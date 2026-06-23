@@ -6,7 +6,7 @@ Generated comparison: OpenAI baseline `baseline-openai-20260623151310` vs Refere
 | --- | --- | --- | --- |
 | Overall score | 0.95 | 0.83 | -0.12 |
 | Citation support | 1.00 | 0.80 | -0.20 |
-| Unsupported claims | 7 | 7 | 0 |
+| Grounding risk units | 7 | 7 | 0 |
 | Eval cases | 7 | 7 | 0 |
 | Median latency | 13.3s | 7.9s | -5.4s |
 | Estimated cost | $0.0733 | <= $0.1000 | $0.0267 under budget |

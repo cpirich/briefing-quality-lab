@@ -643,7 +643,7 @@ function averageScore(
 	);
 }
 
-function unsupportedClaims(evaluations: EvaluatorOutput[]) {
+function groundingRiskUnits(evaluations: EvaluatorOutput[]) {
 	return evaluations.reduce((total, evaluation) => {
 		const riskMultiplier = Math.max(1, evaluation.failureTags.length + 1);
 		return (
@@ -720,6 +720,7 @@ function manifestFor({
 	error?: string;
 }) {
 	const hasUnknownCost = tracesHaveUnknownCost(traces);
+	const groundingRiskUnitCount = groundingRiskUnits(evaluations);
 	const estimatedCostUsd =
 		hasUnknownCost || traces.length === 0
 			? null
@@ -752,7 +753,8 @@ function manifestFor({
 			grounding: averageScore(evaluations, "grounding"),
 			coverage: averageScore(evaluations, "coverage"),
 			citationSupport,
-			unsupportedClaims: unsupportedClaims(evaluations),
+			unsupportedClaims: groundingRiskUnitCount,
+			groundingRiskUnits: groundingRiskUnitCount,
 			medianLatencyMs: median(traces.map((trace) => trace.latencyMs)),
 			estimatedCostUsd,
 			costRatio,
@@ -1655,12 +1657,20 @@ async function writeComparisonAndReport(input: {
 				),
 			},
 			{
-				metric: "Unsupported claims",
-				baseline: String(baselineMetrics.unsupportedClaims),
-				candidate: String(candidateMetrics.unsupportedClaims),
-				delta: String(
-					candidateMetrics.unsupportedClaims -
+				metric: "Grounding risk units",
+				baseline: String(
+					baselineMetrics.groundingRiskUnits ??
 						baselineMetrics.unsupportedClaims,
+				),
+				candidate: String(
+					candidateMetrics.groundingRiskUnits ??
+						candidateMetrics.unsupportedClaims,
+				),
+				delta: String(
+					(candidateMetrics.groundingRiskUnits ??
+						candidateMetrics.unsupportedClaims) -
+						(baselineMetrics.groundingRiskUnits ??
+							baselineMetrics.unsupportedClaims),
 				),
 			},
 			{

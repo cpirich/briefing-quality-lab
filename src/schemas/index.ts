@@ -241,6 +241,7 @@ export const RunManifestSchema = z.object({
 		coverage: z.number().min(0).max(1),
 		citationSupport: z.number().min(0).max(1),
 		unsupportedClaims: z.number().int().nonnegative(),
+		groundingRiskUnits: z.number().int().nonnegative().optional(),
 		medianLatencyMs: z.number().int().nonnegative(),
 		estimatedCostUsd: z.number().nonnegative().nullable().optional(),
 		costBudgetUsd: z.number().positive().optional(),
