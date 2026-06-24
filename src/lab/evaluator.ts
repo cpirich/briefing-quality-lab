@@ -89,6 +89,8 @@ const HybridJudgeResultSchema = z.object({
 export type HybridJudgeResult = z.infer<typeof HybridJudgeResultSchema>;
 type ClaimJudgment = HybridJudgeResult["claimJudgments"][number];
 
+const citationIdPattern = /^[A-Z][0-9]+$/;
+
 const evaluatorCalibration = {
 	coverageFloor: 0.25,
 	failureRiskCap: 0.18,
@@ -534,7 +536,41 @@ function normalizeClaimJudgments({
 			if (!matchingJudgment) {
 				throw new Error("Matched claim judgment index was not available.");
 			}
-			return matchingJudgment;
+			const invalidSupportingEvidenceIds =
+				matchingJudgment.supportingEvidenceIds.filter(
+					(citationId) => !citationIdPattern.test(citationId),
+				);
+			const invalidCitationIds = matchingJudgment.citedSourceIds.filter(
+				(citationId) => !citationIdPattern.test(citationId),
+			);
+			const hadInvalidCitationIds =
+				invalidCitationIds.length > 0 ||
+				invalidSupportingEvidenceIds.length > 0;
+
+			return {
+				...matchingJudgment,
+				citedSourceIds: claim.citations,
+				supportingEvidenceIds: matchingJudgment.supportingEvidenceIds.filter(
+					(citationId) => citationIdPattern.test(citationId),
+				),
+				failureTags: hadInvalidCitationIds
+					? [
+							...new Set([
+								...matchingJudgment.failureTags,
+								"judge-invalid-citation-id",
+							]),
+						]
+					: matchingJudgment.failureTags,
+				missingEvidence: hadInvalidCitationIds
+					? [
+							...matchingJudgment.missingEvidence,
+							`Judge returned invalid citation ids: ${[
+								...invalidCitationIds,
+								...invalidSupportingEvidenceIds,
+							].join(", ")}.`,
+						]
+					: matchingJudgment.missingEvidence,
+			};
 		}
 
 		return {
