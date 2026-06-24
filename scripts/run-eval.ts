@@ -1027,6 +1027,10 @@ async function assertBaselineComparisonIsValid(options: EvalOptions) {
 	const evalCases = await listEvalCases();
 	const selectedCaseIds = evalCases
 		.filter((evalCase) => options.includeHoldouts || !evalCase.holdout)
+		.filter(
+			(evalCase) =>
+				options.caseIds.length === 0 || options.caseIds.includes(evalCase.id),
+		)
 		.map((evalCase) => evalCase.id);
 
 	assertMatchingCaseIds({
