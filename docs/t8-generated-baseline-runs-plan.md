@@ -136,7 +136,8 @@ Track the path from current breakdown table to an LLM-driven improvement loop:
 - Cluster repeated observations across cases to form improvement hypotheses.
 - Store the hypothesis or experiment note with the generated candidate run so the before/after story is explicit.
 - Add regression checks that flag cases where a targeted fix improves one cluster while worsening another.
-- Keep holdout cases separate so the loop can test whether the hypothesis generalizes.
+- Keep holdout cases separate so a future private validation run can test whether the hypothesis generalizes.
+- For the current demo loop, do not use holdouts in `/genie`, the public `/lab` dashboard, or default eval/report scripts. Treat `--include-holdouts` as an explicit internal validation mode until an authenticated holdout-results surface exists.
 
 ## Failure Theme Reality Check
 

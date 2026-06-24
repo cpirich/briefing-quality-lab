@@ -155,6 +155,12 @@ function publicSafeTrend(
 	];
 }
 
+function withoutTargetDelta(metric: RunComparison["metrics"][number]) {
+	const { targetDelta: _redactedTargetDelta, ...safeMetric } = metric;
+
+	return safeMetric;
+}
+
 function publicSafeMetrics(
 	comparison: RunComparison,
 	caseBreakdown: CaseBreakdownEntry[],
@@ -166,7 +172,7 @@ function publicSafeMetrics(
 	return comparison.metrics.map((metric) => {
 		if (metric.label === "Overall quality" && overall) {
 			return {
-				...metric,
+				...withoutTargetDelta(metric),
 				value: overall.candidate,
 				delta: overall.delta,
 				status: "Visible cases only; holdout aggregates redacted",
@@ -175,7 +181,7 @@ function publicSafeMetrics(
 		}
 		if (metric.label === "Citation grounding" && citation) {
 			return {
-				...metric,
+				...withoutTargetDelta(metric),
 				value: citation.candidate,
 				delta: citation.delta,
 				status: "Visible cases only; holdout aggregates redacted",
@@ -184,7 +190,7 @@ function publicSafeMetrics(
 		}
 
 		return {
-			...metric,
+			...withoutTargetDelta(metric),
 			value: "redacted",
 			delta: "holdouts redacted",
 			status: "Public endpoint redacts holdout aggregate metrics",

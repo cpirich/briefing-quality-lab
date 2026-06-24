@@ -728,6 +728,7 @@ async function generateRun(options: EvalOptions & { mode: RunRole }) {
 			const trace = GenerationTraceSchema.parse({
 				...result.trace,
 				output: persistedBriefing,
+				rawOutput: rawBriefing,
 				artifactPaths: [
 					...result.trace.artifactPaths,
 					briefingPath,
@@ -1081,7 +1082,23 @@ async function rejudgeRun(options: EvalOptions): Promise<RejudgedRunArtifacts> {
 			throw new Error(`Run ${runId} is missing briefing for ${evalCase.id}.`);
 		}
 
-		const briefing = BriefingOutputSchema.parse(trace.output);
+		if (
+			(isGeneratedBaselineRun(existingManifest) ||
+				isGeneratedCandidateRun(existingManifest)) &&
+			!trace.rawOutput
+		) {
+			throw new Error(
+				[
+					`Cannot rejudge ${runId} case ${evalCase.id} because its trace is missing rawOutput.`,
+					"Older generated traces only persisted sanitized trace.output, which can inflate citation and grounding scores.",
+					"Create a fresh baseline or variant run so rejudge can evaluate the raw generated briefing.",
+				].join(" "),
+			);
+		}
+
+		const briefing = BriefingOutputSchema.parse(
+			trace.rawOutput ?? trace.output,
+		);
 		const briefingPath = `runs/${runId}/briefings/${evalCase.id}.json`;
 		const tracePath = `runs/${runId}/traces/${evalCase.id}.json`;
 		const evaluationPath = `runs/${runId}/evaluations/${evalCase.id}.json`;

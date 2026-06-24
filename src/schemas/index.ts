@@ -146,6 +146,7 @@ export const GenerationTraceSchema = z
 			settings: GenerationModelSettingsSchema,
 		}),
 		output: BriefingOutputSchema,
+		rawOutput: BriefingOutputSchema.optional(),
 		toolCalls: z.array(ToolCallTraceSchema),
 		cost: z.object({
 			inputTokens: z.number().int().nonnegative(),
@@ -201,6 +202,33 @@ export const GenerationTraceSchema = z
 				message: "Trace output metadata.runId must match trace runId",
 				path: ["output", "metadata", "runId"],
 			});
+		}
+
+		if (trace.rawOutput) {
+			if (trace.rawOutput.caseId !== trace.caseId) {
+				context.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "Trace rawOutput caseId must match trace caseId",
+					path: ["rawOutput", "caseId"],
+				});
+			}
+
+			if (trace.rawOutput.sourcePacketId !== trace.sourcePacketId) {
+				context.addIssue({
+					code: z.ZodIssueCode.custom,
+					message:
+						"Trace rawOutput sourcePacketId must match trace sourcePacketId",
+					path: ["rawOutput", "sourcePacketId"],
+				});
+			}
+
+			if (trace.rawOutput.metadata.runId !== trace.runId) {
+				context.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "Trace rawOutput metadata.runId must match trace runId",
+					path: ["rawOutput", "metadata", "runId"],
+				});
+			}
 		}
 	});
 

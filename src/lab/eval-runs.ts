@@ -40,7 +40,10 @@ function toSlugTimestamp(date: Date) {
 }
 
 function runIdFor(provider: EvalRunProvider, now: Date) {
-	return `candidate-${provider}-${toSlugTimestamp(now)}-${crypto.randomUUID().slice(0, 8)}`;
+	const rolePrefix =
+		provider === "openai" ? "candidate-openai" : "preview-local";
+
+	return `${rolePrefix}-${toSlugTimestamp(now)}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
 function absolutePath(relativePath: string) {
@@ -84,10 +87,13 @@ function buildManifest({
 		variantLabel:
 			provider === "openai"
 				? "OpenAI Responses generated run"
-				: "Local extractive generated run",
+				: "Local extractive preview run",
 		status,
 		gitRef: "local-worktree",
-		command: `lab.startEvalRun provider=${provider}`,
+		command:
+			provider === "openai"
+				? "lab.startEvalRun provider=openai"
+				: "lab.startEvalRun generation-preview provider=local",
 		caseIds,
 		aggregateMetrics: {
 			overall: 0,
