@@ -48,6 +48,7 @@ interface EvalOptions {
 	provider: EvalProvider;
 	evaluator: EvaluatorMode;
 	includeHoldouts: boolean;
+	caseIds: string[];
 	overwriteRun: boolean;
 	runId?: string;
 	baselineRunId?: string;
@@ -76,6 +77,19 @@ function optionValue(name: string) {
 	const prefix = `${name}=`;
 	const match = process.argv.find((argument) => argument.startsWith(prefix));
 	return match?.slice(prefix.length);
+}
+
+function optionValues(name: string) {
+	const prefix = `${name}=`;
+	return process.argv
+		.filter((argument) => argument.startsWith(prefix))
+		.flatMap((argument) =>
+			argument
+				.slice(prefix.length)
+				.split(",")
+				.map((value) => value.trim())
+				.filter(Boolean),
+		);
 }
 
 function hasFlag(name: string) {
@@ -107,6 +121,9 @@ function parseOptions(): EvalOptions {
 		provider,
 		evaluator,
 		includeHoldouts: hasFlag("--include-holdouts"),
+		caseIds: optionValues("--case-id").map((caseId) =>
+			validateFixtureId(caseId, "case id"),
+		),
 		overwriteRun:
 			hasFlag("--overwrite-run") || process.env.EVAL_OVERWRITE_RUN === "1",
 		runId: optionValue("--run-id") ?? process.env.EVAL_RUN_ID,
@@ -664,9 +681,35 @@ async function generateRun(options: EvalOptions & { mode: RunRole }) {
 		listSourcePackets(),
 	]);
 	const sourcePacketsById = sourcePacketById(sourcePackets);
-	const selectedEvalCases = evalCases.filter(
-		(evalCase) => options.includeHoldouts || !evalCase.holdout,
-	);
+	const selectedEvalCases = evalCases.filter((evalCase) => {
+		if (!options.includeHoldouts && evalCase.holdout) {
+			return false;
+		}
+
+		return (
+			options.caseIds.length === 0 || options.caseIds.includes(evalCase.id)
+		);
+	});
+	if (options.caseIds.length > 0) {
+		const selectedCaseIds = new Set(
+			selectedEvalCases.map((evalCase) => evalCase.id),
+		);
+		const missingCaseIds = options.caseIds.filter(
+			(caseId) => !selectedCaseIds.has(caseId),
+		);
+		if (missingCaseIds.length > 0) {
+			throw new Error(
+				`Requested eval cases were not selected: ${missingCaseIds.join(", ")}`,
+			);
+		}
+	}
+	if (selectedEvalCases.length === 0) {
+		throw new Error(
+			options.caseIds.length > 0
+				? `No eval cases selected for requested case ids: ${options.caseIds.join(", ")}`
+				: "No visible eval cases are available for this run.",
+		);
+	}
 	const runId = options.runId ?? runIdFor(options.mode, options.provider);
 	validateFixtureId(runId, "run id");
 	const artifactPaths = [`runs/${runId}/manifest.json`];

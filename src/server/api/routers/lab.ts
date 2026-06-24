@@ -373,6 +373,9 @@ export const labRouter = createTRPCRouter({
 			return publicSafeComparison(input);
 		}),
 
+	// Local demo control surface only: this repo has no production deployment,
+	// auth layer, or hosted public endpoint. Do not reuse this public mutation for
+	// a deployed environment without adding an admin/auth gate for OpenAI spend.
 	startEvalRun: publicProcedure
 		.input(
 			z

@@ -124,7 +124,7 @@ async function executeEvalRun(
 	input: Required<StartEvalRunInput>,
 ) {
 	if (input.provider === "openai") {
-		await executeOpenAIEvalRun(jobId);
+		await executeOpenAIEvalRun(jobId, input);
 		return;
 	}
 
@@ -306,11 +306,17 @@ async function refreshJobProgress(job: EvalRunJob) {
 	return job;
 }
 
-async function executeOpenAIEvalRun(jobId: string) {
+async function executeOpenAIEvalRun(
+	jobId: string,
+	input: Required<StartEvalRunInput>,
+) {
 	const job = jobs.get(jobId);
 	if (!job) {
 		return;
 	}
+	// This launcher is intentionally scoped to the local demo server. A hosted
+	// version needs an authenticated/admin job-control path before allowing live
+	// provider runs that can spend against OPENAI_API_KEY.
 	if (!process.env.OPENAI_API_KEY) {
 		job.status = "failed";
 		job.error =
@@ -320,24 +326,23 @@ async function executeOpenAIEvalRun(jobId: string) {
 	}
 
 	job.status = "running";
-	const child = spawn(
-		"mise",
-		[
-			"exec",
-			"--",
-			"bun",
-			"run",
-			"eval:variant",
-			"--provider=openai",
-			"--evaluator=hybrid",
-			`--run-id=${job.runId}`,
-		],
-		{
-			cwd: repoRoot,
-			env: process.env,
-			stdio: ["ignore", "ignore", "pipe"],
-		},
-	);
+	const args = [
+		"exec",
+		"--",
+		"bun",
+		"run",
+		"eval:variant",
+		"--provider=openai",
+		"--evaluator=hybrid",
+		`--run-id=${job.runId}`,
+		...(input.includeHoldouts ? ["--include-holdouts"] : []),
+		...input.caseIds.map((caseId) => `--case-id=${caseId}`),
+	];
+	const child = spawn("mise", args, {
+		cwd: repoRoot,
+		env: process.env,
+		stdio: ["ignore", "ignore", "pipe"],
+	});
 	const stderrChunks: Buffer[] = [];
 
 	child.stderr.on("data", (chunk: Buffer) => {
