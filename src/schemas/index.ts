@@ -368,6 +368,7 @@ export const RunComparisonSchema = z.object({
 			label: z.string().min(1),
 			value: z.string().min(1),
 			delta: z.string().min(1),
+			targetDelta: z.string().min(1).optional(),
 			status: z.string().min(1),
 			tone: MetricToneSchema,
 		}),
@@ -383,7 +384,9 @@ export const RunComparisonSchema = z.object({
 			metric: z.string().min(1),
 			baseline: z.string().min(1),
 			candidate: z.string().min(1),
+			referenceTarget: z.string().min(1).optional(),
 			delta: z.string().min(1),
+			gapToTarget: z.string().min(1).optional(),
 		}),
 	),
 	failureClusters: z.array(

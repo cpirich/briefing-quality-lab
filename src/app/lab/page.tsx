@@ -144,7 +144,7 @@ function metricDeltaTone(
 	}
 
 	if (lowerIsBetter) {
-		return delta > 0 ? "green" : "red";
+		return delta < 0 ? "green" : "red";
 	}
 
 	const hasRemainingGap = delta > 0;
@@ -154,9 +154,21 @@ function metricDeltaTone(
 	return "green";
 }
 
-function changeTextClass(metric: string, value: string, changeLabel: string) {
-	const tone = metricDeltaTone(metric, value, changeLabel);
+function targetGapDeltaTone(metric: string, value: string): MetricDeltaTone {
+	const delta = numericDelta(value);
 
+	if (delta === 0 || value === "unknown") {
+		return "slate";
+	}
+
+	if (delta <= 0) {
+		return "green";
+	}
+
+	return lowerIsBetterMetrics.has(metric) ? "red" : "amber";
+}
+
+function toneTextClass(tone: MetricDeltaTone) {
 	if (tone === "green") {
 		return "text-[var(--success-foreground)]";
 	}
@@ -170,6 +182,14 @@ function changeTextClass(metric: string, value: string, changeLabel: string) {
 		return "text-[var(--info-foreground)]";
 	}
 	return "text-[var(--muted-foreground)]";
+}
+
+function changeTextClass(metric: string, value: string, changeLabel: string) {
+	return toneTextClass(metricDeltaTone(metric, value, changeLabel));
+}
+
+function targetGapTextClass(metric: string, value: string) {
+	return toneTextClass(targetGapDeltaTone(metric, value));
 }
 
 function metadataValue(value: number | string | null | undefined) {
@@ -291,10 +311,17 @@ export default async function LabPage() {
 		candidateLabel,
 		runComparison.candidateRunId,
 	);
-	const summaryTitle =
-		changeLabel === "Gap" ? "Reference Target Summary" : "Candidate Summary";
-	const summaryDescription =
-		changeLabel === "Gap"
+	const hasReferenceTargetColumns = runComparison.comparisonRows.some(
+		(row) => row.referenceTarget || row.gapToTarget,
+	);
+	const summaryTitle = hasReferenceTargetColumns
+		? "Candidate vs Reference Target"
+		: changeLabel === "Gap"
+			? "Reference Target Summary"
+			: "Candidate Summary";
+	const summaryDescription = hasReferenceTargetColumns
+		? `Large values are ${candidateLabel} metrics; badges show the gap to the Reference target.`
+		: changeLabel === "Gap"
 			? `Large values are ${candidateLabel} metrics; badges show the gap from ${baselineLabel}.`
 			: `Large values are ${candidateLabel} metrics; badges show deltas from ${baselineLabel}.`;
 	const comparedCaseCount = caseBreakdown.length;
@@ -356,37 +383,40 @@ export default async function LabPage() {
 							</p>
 						</div>
 						<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-							{runComparison.metrics.map((metric) => (
-								<Card className="min-h-32" key={metric.label}>
-									<CardBody className="space-y-3 p-3 xl:p-4">
-										<div className="grid min-h-8 grid-cols-[minmax(0,1fr)_auto] items-start gap-1.5 xl:gap-2">
-											<p className="min-w-0 font-medium text-[var(--muted-foreground)] text-xs uppercase leading-4">
-												{metric.label}
+							{runComparison.metrics.map((metric) => {
+								const badgeValue = metric.targetDelta ?? metric.delta;
+								const badgeChangeLabel = metric.targetDelta
+									? "Gap"
+									: changeLabel;
+								const badgeTone = metric.targetDelta
+									? targetGapDeltaTone(metric.label, metric.targetDelta)
+									: metricDeltaTone(metric.label, metric.delta, changeLabel);
+
+								return (
+									<Card className="min-h-32" key={metric.label}>
+										<CardBody className="space-y-3 p-3 xl:p-4">
+											<div className="grid min-h-8 grid-cols-[minmax(0,1fr)_auto] items-start gap-1.5 xl:gap-2">
+												<p className="min-w-0 font-medium text-[var(--muted-foreground)] text-xs uppercase leading-4">
+													{metric.label}
+												</p>
+												<Badge className="justify-self-end" tone={badgeTone}>
+													{metricBadgeLabel(
+														metric.label,
+														badgeValue,
+														badgeChangeLabel,
+													)}
+												</Badge>
+											</div>
+											<p className="font-semibold text-3xl">
+												{displayMetricValue(metric.label, metric.value)}
 											</p>
-											<Badge
-												className="justify-self-end"
-												tone={metricDeltaTone(
-													metric.label,
-													metric.delta,
-													changeLabel,
-												)}
-											>
-												{metricBadgeLabel(
-													metric.label,
-													metric.delta,
-													changeLabel,
-												)}
-											</Badge>
-										</div>
-										<p className="font-semibold text-3xl">
-											{displayMetricValue(metric.label, metric.value)}
-										</p>
-										<p className="text-[var(--muted-foreground)] text-xs">
-											{displayMetricValue(metric.label, metric.status)}
-										</p>
-									</CardBody>
-								</Card>
-							))}
+											<p className="text-[var(--muted-foreground)] text-xs">
+												{displayMetricValue(metric.label, metric.status)}
+											</p>
+										</CardBody>
+									</Card>
+								);
+							})}
 						</div>
 					</div>
 
@@ -442,7 +472,19 @@ export default async function LabPage() {
 											<th className="px-3 py-2 font-medium">
 												{candidateLabel}
 											</th>
-											<th className="px-3 py-2 font-medium">{changeLabel}</th>
+											{hasReferenceTargetColumns ? (
+												<>
+													<th className="px-3 py-2 font-medium">
+														Reference target
+													</th>
+													<th className="px-3 py-2 font-medium">Delta</th>
+													<th className="px-3 py-2 font-medium">
+														Gap to target
+													</th>
+												</>
+											) : (
+												<th className="px-3 py-2 font-medium">{changeLabel}</th>
+											)}
 										</tr>
 									</thead>
 									<tbody>
@@ -458,14 +500,45 @@ export default async function LabPage() {
 												<td className="px-3 py-2 text-[var(--foreground)]">
 													{displayMetricValue(row.metric, row.candidate)}
 												</td>
+												{hasReferenceTargetColumns ? (
+													<td className="px-3 py-2 text-[var(--muted-foreground)]">
+														{row.referenceTarget
+															? displayMetricValue(
+																	row.metric,
+																	row.referenceTarget,
+																)
+															: "n/a"}
+													</td>
+												) : null}
 												<td
 													className={cn(
 														"px-3 py-2 font-medium",
-														changeTextClass(row.metric, row.delta, changeLabel),
+														changeTextClass(
+															row.metric,
+															row.delta,
+															hasReferenceTargetColumns ? "Delta" : changeLabel,
+														),
 													)}
 												>
 													{displayMetricValue(row.metric, row.delta)}
 												</td>
+												{hasReferenceTargetColumns ? (
+													<td
+														className={cn(
+															"px-3 py-2 font-medium",
+															row.gapToTarget
+																? targetGapTextClass(
+																		row.metric,
+																		row.gapToTarget,
+																	)
+																: "text-[var(--muted-foreground)]",
+														)}
+													>
+														{row.gapToTarget
+															? displayMetricValue(row.metric, row.gapToTarget)
+															: "n/a"}
+													</td>
+												) : null}
 											</tr>
 										))}
 									</tbody>

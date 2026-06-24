@@ -1,0 +1,198 @@
+{
+	"id": "evaluation-candidate-openai-demo-variant-case-human-approval-boundary",
+	"runId": "candidate-openai-demo-variant",
+	"caseId": "case-human-approval-boundary",
+	"evaluator": {
+		"mode": "hybrid",
+		"provider": "openai",
+		"model": "gpt-5.5",
+		"promptVersion": "hybrid-judge-v1",
+		"settings": {
+			"structuredOutputName": "hybrid_evaluator_output"
+		},
+		"latencyMs": 19684,
+		"cost": {
+			"inputTokens": 2162,
+			"cachedInputTokens": 0,
+			"outputTokens": 891,
+			"estimatedUsd": 0.03754,
+			"pricing": {
+				"model": "gpt-5.5",
+				"inputUsdPer1MTokens": 5,
+				"cachedInputUsdPer1MTokens": 0.5,
+				"outputUsdPer1MTokens": 30,
+				"currency": "USD",
+				"serviceTier": "standard",
+				"context": "short",
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-24"
+			}
+		}
+	},
+	"hardChecks": [
+		{
+			"id": "briefing-schema",
+			"label": "Briefing schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "BriefingOutput schema parses"
+		},
+		{
+			"id": "citation-source-ids",
+			"label": "Citation source ids",
+			"status": "pass",
+			"value": "6 cited ids exist",
+			"expectation": "Every cited source id exists in the source packet"
+		},
+		{
+			"id": "trace-schema",
+			"label": "Trace schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "GenerationTrace schema parses"
+		},
+		{
+			"id": "latency-metadata",
+			"label": "Latency metadata",
+			"status": "pass",
+			"value": "9569ms",
+			"threshold": "> 0ms"
+		},
+		{
+			"id": "cost-metadata",
+			"label": "Cost metadata",
+			"status": "pass",
+			"value": "0.009534",
+			"expectation": "estimatedUsd is present when pricing is configured"
+		},
+		{
+			"id": "token-metadata",
+			"label": "Token metadata",
+			"status": "pass",
+			"value": "720 in / 0 cached / 591 out",
+			"expectation": "Input, cached-input, and output token counts are coherent"
+		},
+		{
+			"id": "model-metadata",
+			"label": "Provider and model metadata",
+			"status": "pass",
+			"value": "openai gpt-5.2 briefing-genie-v1",
+			"expectation": "Provider, model, and prompt version are present"
+		},
+		{
+			"id": "judge-input-boundary",
+			"label": "Judge input boundary",
+			"status": "pass",
+			"value": "eval-only fields omitted",
+			"expectation": "Judge prompt omits eval-only object keys and holdout tuning fields"
+		},
+		{
+			"id": "judge-claim-coverage",
+			"label": "Judge claim coverage",
+			"status": "pass",
+			"value": "5/5 claims judged, 0 extra",
+			"expectation": "LLM judge returns exactly one judgment for every briefing claim"
+		}
+	],
+	"claimJudgments": [
+		{
+			"claimText": "Automate drafting, summarization, and artifact linking when outputs are clearly marked as AI-generated and intended for human inspection.",
+			"citedSourceIds": ["S1", "S5"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S1", "S5"],
+			"missingEvidence": [],
+			"explanation": "S1 explicitly approves automatic drafting, summarization, and artifact linking when outputs are clearly marked as generated and framed for human inspection before action. S5 also lists drafting and artifact linking as safe defaults.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Require human approval for policy changes, customer commitments, and release blocking because they change obligations or stop work and need accountable authority.",
+			"citedSourceIds": ["S1", "S5"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S1", "S5"],
+			"missingEvidence": [],
+			"explanation": "S1 says participants rejected automatic policy changes, customer commitments, and release blocking because they change obligations or stop work without accountable approval. S5 also requires an approver for those categories.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Any automated message that could be interpreted as a customer commitment must have an accountable human reviewer; internal draft summaries are acceptable only if they cannot be confused with final commitments.",
+			"citedSourceIds": ["S4"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S4"],
+			"missingEvidence": [],
+			"explanation": "S4 directly states that automated messages interpretable as customer commitments need an accountable human reviewer and that internal draft summaries are approved only if not confused with final commitments.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Mislabeling recommendations as decisions can cause operational disruption (e.g., teams pausing rollouts), so explicit status labels are necessary: draft, recommendation, approved action, blocked.",
+			"citedSourceIds": ["S2"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S2"],
+			"missingEvidence": [],
+			"explanation": "S2 describes a recommendation posted as if approved, causing two teams to pause rollout work, and asks for explicit labels: draft, recommendation, approved action, and blocked.",
+			"failureTags": []
+		},
+		{
+			"claimText": "User acceptance improves when evidence, recommendation, and action controls are visually separated; combining recommendation and execution controls increases cancellations and clarification clicks.",
+			"citedSourceIds": ["S3", "S6"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S3", "S6"],
+			"missingEvidence": [],
+			"explanation": "S3 provides the analytics claim: higher acceptance with separated evidence/recommendation/action controls and more cancellations/clarification clicks when recommendation and action are clustered. S6 independently recommends separation and warns against placing execution beside recommendations.",
+			"failureTags": []
+		}
+	],
+	"recommendationJudgment": {
+		"taskAnswerStatus": "answers-task",
+		"overconfidenceStatus": "somewhat-overconfident",
+		"missingImportantEvidence": [],
+		"explanation": "The recommendation directly answers which actions can be automated versus require approval and includes supported guardrails: labels, UI separation, and approver trail. Most categories are well supported. Minor overreach: it treats proposing recommendations as automatable by default and includes release unblocking, while the packet is clearest about automating drafts/summaries/linking and requiring approval for release blocking, not explicitly unblocking.",
+		"failureTags": ["minor-extrapolation"]
+	},
+	"scores": {
+		"overall": 0.93,
+		"grounding": 0.88,
+		"coverage": 0.98,
+		"citationSupport": 1
+	},
+	"failureTags": ["minor-extrapolation", "overconfidence"],
+	"rubricEvidence": [
+		"Fake demo variant score for visual rehearsal: overall 0.93.",
+		"Generated to preview the Run Score Trend and pairwise comparison layout before recording a real candidate run."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "S1 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S5",
+			"supported": true,
+			"note": "S5 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "S4 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "S2 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "S3 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S6",
+			"supported": true,
+			"note": "S6 appears in fully supported claim-level judgments."
+		}
+	],
+	"notes": "Temporary fake demo variant evaluator artifact for layout rehearsal only.",
+	"artifactPaths": [
+		"runs/candidate-openai-demo-variant/evaluations/case-human-approval-boundary.json",
+		"runs/candidate-openai-demo-variant/briefings/case-human-approval-boundary.json"
+	]
+}

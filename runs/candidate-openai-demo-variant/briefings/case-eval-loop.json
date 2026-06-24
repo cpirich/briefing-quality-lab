@@ -1,0 +1,41 @@
+{
+	"id": "case-eval-loop-openai-responses-v1",
+	"sourcePacketId": "packet-eval-loop",
+	"caseId": "case-eval-loop",
+	"title": "Recommendation: Expand automated evals, but stage the rollout with stronger clustering, grounding gates, and cost controls",
+	"summary": "Proceed with expanding automated evals only after one more “visible batch” iteration that improves failure interpretability and enforces explicit grounding and cost guardrails. The last broad run increased scored coverage but reduced reviewer efficiency and actionability because failure patterns weren’t clustered, making it harder to distinguish repeated issues from one-offs. Expansion is acceptable if automated evals preserve (1) separate tracking of coverage vs citation support, (2) trace utility without retry sprawl, and (3) holdout integrity via aggregate-only reporting.",
+	"claims": [
+		{
+			"text": "Do not expand coverage via broad runs until failures are clustered; smaller reviewed batches made repeated citation issues easier to group and yielded more actionable prompt changes.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Reviewer throughput and perceived speed regressed in the last eval review because failures were not grouped by pattern; reviewers preferred fewer cases with clearer evidence over larger runs requiring manual interpretation per row.",
+			"citations": ["S5"]
+		},
+		{
+			"text": "Coverage improvements can mask regressions in grounding; citation support needs an explicit shipping gate that blocks releases when outputs contain unsupported claims.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Long traces are valuable for debugging why a claim failed, but uncontrolled retries drove a 1.34x cost increase; trace retention is acceptable if retries are capped and summarized in the run manifest (retry count, cost ratio, and what the trace resolved).",
+			"citations": ["S3"]
+		},
+		{
+			"text": "Holdout cases should be visible only as summaries/aggregate scores in dashboards; labels/expected answers must stay out of prompt-iteration workflows to reduce memorization risk.",
+			"citations": ["S4"]
+		}
+	],
+	"openQuestions": [
+		"What is the concrete citation-support blocking threshold and how will “unsupported claim” be operationally detected in automated scoring? (Threshold concept exists but numeric policy is not specified.)",
+		"What retry cap will be enforced to prevent cost blowups while preserving enough trace data for debugging?",
+		"What clustering taxonomy and UI will be used to separate unsupported claims, weak citations, cost regressions, and holdout concerns in the dashboard?",
+		"What constitutes “enough” coverage to justify expansion after the next visible batch (e.g., target domains/tasks), given the preference for smaller batches?"
+	],
+	"recommendation": "Adopt a staged expansion: run one more smaller, highly-instrumented visible batch before scaling automated eval coverage, and gate expansion on three criteria: (1) grounding/citation support is enforced as a release block (tracked separately from coverage), (2) retries are capped with manifest reporting to keep costs within guardrails while retaining traces for debuggability, and (3) holdout performance is reported only in aggregate with labels hidden from tuning workflows. Only after the next candidate demonstrates improved grounding without exceeding the cost guardrail should you broaden automated eval coverage or move toward live orchestration.",
+	"metadata": {
+		"variant": "OpenAI demo candidate",
+		"runId": "candidate-openai-demo-variant",
+		"model": "gpt-5.4-mini"
+	}
+}

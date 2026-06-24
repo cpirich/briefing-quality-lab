@@ -1,0 +1,41 @@
+{
+	"id": "case-human-approval-boundary-openai-responses-v1",
+	"sourcePacketId": "packet-human-approval",
+	"caseId": "case-human-approval-boundary",
+	"title": "Automation vs Human Approval Boundaries for Briefing Genie",
+	"summary": "Automate “preparation” work (drafting, summarization, artifact linking) as safe defaults, but require explicit human approval for any action that changes obligations, blocks work, or could be interpreted as an external/customer commitment. Ensure clear status labeling (draft/recommendation/approved action/blocked) and UI separation between evidence, recommendations, and execution controls to prevent accidental execution or misinterpretation.",
+	"claims": [
+		{
+			"text": "Automate drafting, summarization, and artifact linking when outputs are clearly marked as AI-generated and intended for human inspection.",
+			"citations": ["S1", "S5"]
+		},
+		{
+			"text": "Require human approval for policy changes, customer commitments, and release blocking because they change obligations or stop work and need accountable authority.",
+			"citations": ["S1", "S5"]
+		},
+		{
+			"text": "Any automated message that could be interpreted as a customer commitment must have an accountable human reviewer; internal draft summaries are acceptable only if they cannot be confused with final commitments.",
+			"citations": ["S4"]
+		},
+		{
+			"text": "Mislabeling recommendations as decisions can cause operational disruption (e.g., teams pausing rollouts), so explicit status labels are necessary: draft, recommendation, approved action, blocked.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "User acceptance improves when evidence, recommendation, and action controls are visually separated; combining recommendation and execution controls increases cancellations and clarification clicks.",
+			"citations": ["S3", "S6"]
+		}
+	],
+	"openQuestions": [
+		"What specific action types besides release blocks/policy changes/customer commitments should be categorized as “changes obligations” (e.g., SLA updates, pricing exceptions, security sign-offs)?",
+		"Which channels are considered “external messages” vs internal, and what safeguards prevent an internal draft from being forwarded/treated as official?",
+		"What is the required approver identity and audit trail format (e.g., role-based approvers, recorded in artifact trail) for each high-risk action category?",
+		"What is the minimum UI/UX and API-level enforcement to make it “impossible to confuse” drafts/recommendations with approved commitments (e.g., watermarking, disabled copy-to-external, gated publish flows)?"
+	],
+	"recommendation": "Automate by default: (1) generating draft briefings and summaries, (2) proposing recommendations as non-binding, and (3) linking/collecting supporting artifacts—each with prominent generated-status labeling. Require human approval (recorded in the artifact trail) for: (a) release blocking/unblocking, (b) any policy change, (c) any customer commitment or customer-facing/external message, and (d) any action that changes obligations or halts work. Implement guardrails: enforce status labels (draft/recommendation/approved action/blocked) and separate evidence, recommendation, and action controls so execution cannot be mistaken as implied approval.",
+	"metadata": {
+		"variant": "OpenAI demo candidate",
+		"runId": "candidate-openai-demo-variant",
+		"model": "gpt-5.4-mini"
+	}
+}

@@ -1187,16 +1187,6 @@ function targetGapTone(delta: number) {
 	return "blue" as const;
 }
 
-function lowerIsBetterTargetGapTone(delta: number) {
-	if (delta > 0.03) {
-		return "green" as const;
-	}
-	if (delta >= -0.03) {
-		return "green" as const;
-	}
-	return "red" as const;
-}
-
 function estimatedCostUsdFor(artifacts: RunArtifacts) {
 	const manifestCost = artifacts.manifest.aggregateMetrics.estimatedCostUsd;
 	if (manifestCost !== undefined) {
@@ -1217,6 +1207,19 @@ function formatCostNumber(value: number) {
 function formatSignedCostNumber(value: number) {
 	const roundedValue = roundCostUsd(value);
 	return roundedValue > 0 ? `+${roundedValue}` : String(roundedValue);
+}
+
+function formatSignedInteger(value: number) {
+	return value > 0 ? `+${value}` : String(value);
+}
+
+function formatSignedSeconds(value: number) {
+	const sign = value >= 0 ? "+" : "";
+	return `${sign}${value.toFixed(1)}s`;
+}
+
+function targetGapForLowerIsBetter(candidate: number, target: number) {
+	return candidate - target;
 }
 
 function referenceCostBudgetMetric({
@@ -1261,6 +1264,50 @@ function referenceCostBudgetMetric({
 	};
 }
 
+function estimatedCostMetric({
+	baseline,
+	candidate,
+	referenceTarget,
+}: {
+	baseline: RunArtifacts;
+	candidate: RunArtifacts;
+	referenceTarget?: RunArtifacts;
+}) {
+	const baselineCostUsd = estimatedCostUsdFor(baseline);
+	const candidateCostUsd = estimatedCostUsdFor(candidate);
+	const referenceCostBudgetUsd =
+		referenceTarget?.manifest.aggregateMetrics.costBudgetUsd;
+
+	if (candidateCostUsd === null || baselineCostUsd === null) {
+		return {
+			label: "Estimated cost",
+			value:
+				candidateCostUsd === null
+					? "unknown"
+					: formatCostNumber(candidateCostUsd),
+			delta: "unknown",
+			targetDelta: undefined,
+			status: "Generation trace cost",
+			tone: "amber" as const,
+		};
+	}
+
+	const deltaUsd = roundCostUsd(candidateCostUsd - baselineCostUsd);
+	const targetDelta =
+		referenceCostBudgetUsd === undefined
+			? undefined
+			: formatSignedCostNumber(candidateCostUsd - referenceCostBudgetUsd);
+
+	return {
+		label: "Estimated cost",
+		value: formatCostNumber(candidateCostUsd),
+		delta: formatSignedCostNumber(deltaUsd),
+		targetDelta,
+		status: "Generation trace cost",
+		tone: deltaUsd <= 0 ? ("green" as const) : ("amber" as const),
+	};
+}
+
 function referenceCostBudgetRow({
 	baseline,
 	candidate,
@@ -1293,6 +1340,43 @@ function referenceCostBudgetRow({
 		baseline: formatCostNumber(estimatedCostUsd),
 		candidate: `<= ${formatCostNumber(costBudgetUsd)}`,
 		delta: formatSignedCostNumber(budgetDeltaUsd),
+	};
+}
+
+function estimatedCostRow({
+	baseline,
+	candidate,
+	referenceTarget,
+}: {
+	baseline: RunArtifacts;
+	candidate: RunArtifacts;
+	referenceTarget?: RunArtifacts;
+}) {
+	const baselineCostUsd = estimatedCostUsdFor(baseline);
+	const candidateCostUsd = estimatedCostUsdFor(candidate);
+	const referenceCostBudgetUsd =
+		referenceTarget?.manifest.aggregateMetrics.costBudgetUsd;
+
+	return {
+		metric: "Estimated cost",
+		baseline:
+			baselineCostUsd === null ? "unknown" : formatCostNumber(baselineCostUsd),
+		candidate:
+			candidateCostUsd === null
+				? "unknown"
+				: formatCostNumber(candidateCostUsd),
+		referenceTarget:
+			referenceCostBudgetUsd === undefined
+				? undefined
+				: `<= ${formatCostNumber(referenceCostBudgetUsd)}`,
+		delta:
+			baselineCostUsd === null || candidateCostUsd === null
+				? "unknown"
+				: formatSignedCostNumber(candidateCostUsd - baselineCostUsd),
+		gapToTarget:
+			candidateCostUsd === null || referenceCostBudgetUsd === undefined
+				? undefined
+				: formatSignedCostNumber(candidateCostUsd - referenceCostBudgetUsd),
 	};
 }
 
@@ -1386,31 +1470,6 @@ function evidenceStatusFor({
 		warning:
 			"Hybrid LLM judge scores require manual spot checks of claim support, missing evidence, and overconfidence before claiming product improvement.",
 	};
-}
-
-function hasUnknownCost(manifest: RunManifest) {
-	return manifest.guardrails.some(
-		(guardrail) =>
-			guardrail.id === "cost-ratio" && guardrail.value === "unknown",
-	);
-}
-
-function costRatioLabel(manifest: RunManifest) {
-	return hasUnknownCost(manifest)
-		? "unknown"
-		: `${manifest.aggregateMetrics.costRatio.toFixed(2)}x`;
-}
-
-function costRatioDeltaLabel(candidate: RunManifest, baseline: RunManifest) {
-	if (hasUnknownCost(candidate) || hasUnknownCost(baseline)) {
-		return "unknown";
-	}
-
-	return formatDelta(
-		candidate.aggregateMetrics.costRatio,
-		baseline.aggregateMetrics.costRatio,
-		"x",
-	);
 }
 
 function selectedPairLatencyMetric(
@@ -1545,10 +1604,14 @@ function comparisonLabelsFor(comparison: RunComparison) {
 function reportFor(comparison: RunComparison) {
 	const { baselineLabel, candidateLabel } = comparisonLabelsFor(comparison);
 	const changeLabel = comparisonChangeLabel(comparison);
+	const hasReferenceTargetColumns = comparison.comparisonRows.some(
+		(row) => row.referenceTarget || row.gapToTarget,
+	);
 	const rows = comparison.comparisonRows
-		.map(
-			(row) =>
-				`| ${row.metric} | ${row.baseline} | ${row.candidate} | ${row.delta} |`,
+		.map((row) =>
+			hasReferenceTargetColumns
+				? `| ${row.metric} | ${row.baseline} | ${row.candidate} | ${row.referenceTarget ?? "n/a"} | ${row.delta} | ${row.gapToTarget ?? "n/a"} |`
+				: `| ${row.metric} | ${row.baseline} | ${row.candidate} | ${row.delta} |`,
 		)
 		.join("\n");
 	const clusters = comparison.failureClusters
@@ -1562,9 +1625,15 @@ function reportFor(comparison: RunComparison) {
 
 Generated comparison: ${baselineLabel} \`${comparison.baselineRunId}\` vs ${candidateLabel} \`${comparison.candidateRunId}\`.
 
-| Metric | ${baselineLabel} | ${candidateLabel} | ${changeLabel} |
+${
+	hasReferenceTargetColumns
+		? `| Metric | ${baselineLabel} | ${candidateLabel} | Reference target | Delta | Gap to target |
+| --- | --- | --- | --- | --- | --- |
+${rows}`
+		: `| Metric | ${baselineLabel} | ${candidateLabel} | ${changeLabel} |
 | --- | --- | --- | --- |
-${rows}
+${rows}`
+}
 
 Featured case: \`${comparison.featuredCase.id}\` - ${comparison.featuredCase.title}.
 
@@ -1580,6 +1649,14 @@ ${comparison.recommendation.text}
 
 ${comparison.recommendation.warning}
 `;
+}
+
+async function optionalArtifactsFor(runId: string) {
+	try {
+		return await artifactsFor(runId);
+	} catch {
+		return undefined;
+	}
 }
 
 async function writeComparisonAndReport(input: {
@@ -1608,11 +1685,30 @@ async function writeComparisonAndReport(input: {
 		`Comparing ${baselineRunId} with ${candidateRunId} across ${baseline.manifest.caseIds.length} cases.`,
 	);
 	assertMatchingCaseSets(baseline.manifest, candidate.manifest);
+	const referenceTarget =
+		isGeneratedCandidateRun(candidate.manifest) &&
+		candidate.manifest.runId !== seededCandidateRunId
+			? await optionalArtifactsFor(seededCandidateRunId)
+			: undefined;
+	if (referenceTarget) {
+		assertMatchingCaseSets(candidate.manifest, referenceTarget.manifest);
+	}
 	const baselineMetrics = baseline.manifest.aggregateMetrics;
 	const candidateMetrics = candidate.manifest.aggregateMetrics;
+	const targetMetrics = referenceTarget?.manifest.aggregateMetrics;
+	const targetCaseCount = referenceTarget?.manifest.caseIds.length;
+	const baselineRiskUnits =
+		baselineMetrics.groundingRiskUnits ?? baselineMetrics.unsupportedClaims;
+	const candidateRiskUnits =
+		candidateMetrics.groundingRiskUnits ?? candidateMetrics.unsupportedClaims;
+	const targetRiskUnits =
+		targetMetrics === undefined
+			? undefined
+			: (targetMetrics.groundingRiskUnits ?? targetMetrics.unsupportedClaims);
 	const overallDelta = candidateMetrics.overall - baselineMetrics.overall;
 	const citationDelta =
 		candidateMetrics.citationSupport - baselineMetrics.citationSupport;
+	const coverageDelta = candidateMetrics.coverage - baselineMetrics.coverage;
 	const latencyMetric = selectedPairLatencyMetric(
 		candidate.manifest,
 		baseline.manifest,
@@ -1630,34 +1726,10 @@ async function writeComparisonAndReport(input: {
 				baselineLabel,
 				candidateLabel,
 			})
-		: {
-				label: "Cost ratio",
-				value: costRatioLabel(candidate.manifest),
-				delta: costRatioDeltaLabel(candidate.manifest, baseline.manifest),
-				status:
-					changeLabel === "Gap"
-						? `${candidateLabel} cost ratio`
-						: "Cost guardrail",
-				tone:
-					hasUnknownCost(candidate.manifest) ||
-					hasUnknownCost(baseline.manifest)
-						? ("amber" as const)
-						: changeLabel === "Gap"
-							? lowerIsBetterTargetGapTone(
-									candidateMetrics.costRatio - baselineMetrics.costRatio,
-								)
-							: candidateMetrics.costRatio <= 1.15
-								? ("amber" as const)
-								: ("red" as const),
-			};
+		: estimatedCostMetric({ baseline, candidate, referenceTarget });
 	const costRow = usesReferenceCostBudget
 		? referenceCostBudgetRow({ baseline, candidate })
-		: {
-				metric: "Cost ratio",
-				baseline: costRatioLabel(baseline.manifest),
-				candidate: costRatioLabel(candidate.manifest),
-				delta: costRatioDeltaLabel(candidate.manifest, baseline.manifest),
-			};
+		: estimatedCostRow({ baseline, candidate, referenceTarget });
 	const failureClusterEvaluations =
 		changeLabel === "Gap" ? baseline.evaluations : candidate.evaluations;
 	const comparison = RunComparisonSchema.parse({
@@ -1671,6 +1743,10 @@ async function writeComparisonAndReport(input: {
 				label: "Overall quality",
 				value: candidateMetrics.overall.toFixed(2),
 				delta: formatDelta(candidateMetrics.overall, baselineMetrics.overall),
+				targetDelta:
+					targetMetrics === undefined
+						? undefined
+						: formatDelta(targetMetrics.overall, candidateMetrics.overall),
 				status:
 					changeLabel === "Gap"
 						? `${candidateLabel} score`
@@ -1687,6 +1763,13 @@ async function writeComparisonAndReport(input: {
 					candidateMetrics.citationSupport,
 					baselineMetrics.citationSupport,
 				),
+				targetDelta:
+					targetMetrics === undefined
+						? undefined
+						: formatDelta(
+								targetMetrics.citationSupport,
+								candidateMetrics.citationSupport,
+							),
 				status:
 					changeLabel === "Gap"
 						? `${candidateLabel} citation score`
@@ -1700,22 +1783,33 @@ async function writeComparisonAndReport(input: {
 				label: "Coverage",
 				value: candidateMetrics.coverage.toFixed(2),
 				delta: formatDelta(candidateMetrics.coverage, baselineMetrics.coverage),
+				targetDelta:
+					targetMetrics === undefined
+						? undefined
+						: formatDelta(targetMetrics.coverage, candidateMetrics.coverage),
 				status:
 					changeLabel === "Gap"
 						? `${candidateLabel} coverage score`
 						: "Expected points covered",
 				tone:
 					changeLabel === "Gap"
-						? targetGapTone(
-								candidateMetrics.coverage - baselineMetrics.coverage,
-							)
-						: metricTone(candidateMetrics.coverage - baselineMetrics.coverage),
+						? targetGapTone(coverageDelta)
+						: metricTone(coverageDelta),
 			},
 			costMetric,
 			{
 				label: "Median latency",
 				value: latencyMetric.value,
 				delta: latencyMetric.delta,
+				targetDelta:
+					targetMetrics === undefined
+						? undefined
+						: formatSignedSeconds(
+								targetGapForLowerIsBetter(
+									candidateMetrics.medianLatencyMs,
+									targetMetrics.medianLatencyMs,
+								) / 1000,
+							),
 				status:
 					changeLabel === "Gap"
 						? `${candidateLabel} median latency`
@@ -1738,56 +1832,90 @@ async function writeComparisonAndReport(input: {
 				metric: "Overall score",
 				baseline: baselineMetrics.overall.toFixed(2),
 				candidate: candidateMetrics.overall.toFixed(2),
+				referenceTarget: targetMetrics?.overall.toFixed(2),
 				delta: formatDelta(candidateMetrics.overall, baselineMetrics.overall),
+				gapToTarget:
+					targetMetrics === undefined
+						? undefined
+						: formatDelta(targetMetrics.overall, candidateMetrics.overall),
 			},
 			{
 				metric: "Citation support",
 				baseline: baselineMetrics.citationSupport.toFixed(2),
 				candidate: candidateMetrics.citationSupport.toFixed(2),
+				referenceTarget: targetMetrics?.citationSupport.toFixed(2),
 				delta: formatDelta(
 					candidateMetrics.citationSupport,
 					baselineMetrics.citationSupport,
 				),
+				gapToTarget:
+					targetMetrics === undefined
+						? undefined
+						: formatDelta(
+								targetMetrics.citationSupport,
+								candidateMetrics.citationSupport,
+							),
 			},
 			{
 				metric: "Coverage",
 				baseline: baselineMetrics.coverage.toFixed(2),
 				candidate: candidateMetrics.coverage.toFixed(2),
+				referenceTarget: targetMetrics?.coverage.toFixed(2),
 				delta: formatDelta(candidateMetrics.coverage, baselineMetrics.coverage),
+				gapToTarget:
+					targetMetrics === undefined
+						? undefined
+						: formatDelta(targetMetrics.coverage, candidateMetrics.coverage),
 			},
 			{
 				metric: "Grounding risk units",
-				baseline: String(
-					baselineMetrics.groundingRiskUnits ??
-						baselineMetrics.unsupportedClaims,
-				),
-				candidate: String(
-					candidateMetrics.groundingRiskUnits ??
-						candidateMetrics.unsupportedClaims,
-				),
-				delta: String(
-					(candidateMetrics.groundingRiskUnits ??
-						candidateMetrics.unsupportedClaims) -
-						(baselineMetrics.groundingRiskUnits ??
-							baselineMetrics.unsupportedClaims),
-				),
+				baseline: String(baselineRiskUnits),
+				candidate: String(candidateRiskUnits),
+				referenceTarget:
+					targetRiskUnits === undefined ? undefined : String(targetRiskUnits),
+				delta: formatSignedInteger(candidateRiskUnits - baselineRiskUnits),
+				gapToTarget:
+					targetRiskUnits === undefined
+						? undefined
+						: formatSignedInteger(candidateRiskUnits - targetRiskUnits),
 			},
 			{
 				metric: "Eval cases",
 				baseline: String(baseline.manifest.caseIds.length),
 				candidate: String(candidate.manifest.caseIds.length),
-				delta: String(
+				referenceTarget:
+					targetCaseCount === undefined ? undefined : String(targetCaseCount),
+				delta: formatSignedInteger(
 					candidate.manifest.caseIds.length - baseline.manifest.caseIds.length,
 				),
+				gapToTarget:
+					targetCaseCount === undefined
+						? undefined
+						: formatSignedInteger(
+								targetCaseCount - candidate.manifest.caseIds.length,
+							),
 			},
 			{
 				metric: "Median latency",
 				baseline: `${(baselineMetrics.medianLatencyMs / 1000).toFixed(1)}s`,
 				candidate: `${(candidateMetrics.medianLatencyMs / 1000).toFixed(1)}s`,
-				delta: `${(
+				referenceTarget:
+					targetMetrics === undefined
+						? undefined
+						: `${(targetMetrics.medianLatencyMs / 1000).toFixed(1)}s`,
+				delta: formatSignedSeconds(
 					(candidateMetrics.medianLatencyMs - baselineMetrics.medianLatencyMs) /
-						1000
-				).toFixed(1)}s`,
+						1000,
+				),
+				gapToTarget:
+					targetMetrics === undefined
+						? undefined
+						: formatSignedSeconds(
+								targetGapForLowerIsBetter(
+									candidateMetrics.medianLatencyMs,
+									targetMetrics.medianLatencyMs,
+								) / 1000,
+							),
 			},
 			costRow,
 		],
