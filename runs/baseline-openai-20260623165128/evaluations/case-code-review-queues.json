@@ -5,26 +5,26 @@
 	"evaluator": {
 		"mode": "hybrid",
 		"provider": "openai",
-		"model": "gpt-5.2",
+		"model": "gpt-5.5",
 		"promptVersion": "hybrid-judge-v1",
 		"settings": {
 			"structuredOutputName": "hybrid_evaluator_output"
 		},
-		"latencyMs": 7092,
+		"latencyMs": 18728,
 		"cost": {
 			"inputTokens": 2293,
 			"cachedInputTokens": 0,
-			"outputTokens": 724,
-			"estimatedUsd": 0.01414875,
+			"outputTokens": 822,
+			"estimatedUsd": 0.036125,
 			"pricing": {
-				"model": "gpt-5.2",
-				"inputUsdPer1MTokens": 1.75,
-				"cachedInputUsdPer1MTokens": 0.175,
-				"outputUsdPer1MTokens": 14,
+				"model": "gpt-5.5",
+				"inputUsdPer1MTokens": 5,
+				"cachedInputUsdPer1MTokens": 0.5,
+				"outputUsdPer1MTokens": 30,
 				"currency": "USD",
 				"serviceTier": "standard",
 				"context": "short",
-				"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-24"
 			}
 		}
 	},
@@ -100,7 +100,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S1"],
 			"missingEvidence": [],
-			"explanation": "S1 explicitly reports median improved 19h→13h after rotation and P90 is 46h because complex changes often wait for the same two senior reviewers.",
+			"explanation": "S1 states median wait improved from 19 to 13 hours after reviewer rotation and P90 is still 46 hours because complex changes wait for the same two senior reviewers.",
 			"failureTags": []
 		},
 		{
@@ -109,7 +109,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S1"],
 			"missingEvidence": [],
-			"explanation": "S1 says documentation and configuration reviews moved quickly after rotation; changes touching shared services still waited on scarce reviewers.",
+			"explanation": "S1 says documentation and configuration reviews moved quickly after rotation, while shared-service/cross-service changes still waited on scarce reviewers. “Overloaded expert reviewers” is a reasonable paraphrase of the same two senior/scarce reviewers bottleneck.",
 			"failureTags": []
 		},
 		{
@@ -118,7 +118,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S1"],
 			"missingEvidence": [],
-			"explanation": "S1 recommends treating tail latency as an ownership-routing problem, not only a staffing problem; it ties the issue to shared-service/complex changes.",
+			"explanation": "S1 explicitly recommends treating tail latency as an ownership-routing problem, not only a staffing problem, and identifies shared/cross-service changes as the tail-latency driver.",
 			"failureTags": []
 		},
 		{
@@ -127,7 +127,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S2"],
 			"missingEvidence": [],
-			"explanation": "S2 states reviewers like auto-assignment for routine changes and distrust bot approvals when tests are flaky or ownership unclear.",
+			"explanation": "S2 states reviewers like auto-assignment for routine changes but distrust bot approvals when tests are flaky or ownership is unclear.",
 			"failureTags": []
 		},
 		{
@@ -136,7 +136,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S2"],
 			"missingEvidence": [],
-			"explanation": "S2 says reviewers asked for risk labels explaining low risk (ownership metadata, test health, file categories) and that a fast-track label would be useful only if it could be challenged before merge.",
+			"explanation": "S2 says reviewers asked for risk labels explaining why a change is safe to fast-track, including ownership metadata, test health, and file categories, and that the label should be challengeable before merge.",
 			"failureTags": []
 		}
 	],
@@ -144,7 +144,7 @@
 		"taskAnswerStatus": "answers-task",
 		"overconfidenceStatus": "calibrated",
 		"missingImportantEvidence": [],
-		"explanation": "Recommendations are consistent with packet themes: reduce P90 via ownership routing (S1, S5), keep automation to organizing/suggesting not bypass approvals (S4, S6), constrain fast-track to docs/config with healthy tests and challengeable labels (S2, S6), and require owning-team review for cross-service changes due to prior incidents (S3, S6). No claims of capabilities beyond sources.",
+		"explanation": "The recommendation is well aligned with the packet: it targets P90 latency through ownership routing (S1, S5), limits automation to organization/routing rather than approval bypass (S3, S4, S6), constrains fast-track to docs/config with healthy tests and challengeable labels (S2, S6), and requires owning-team review for cross-service changes to avoid repeat incidents (S3, S6). Some implementation details such as “CODEOWNERS” and explicit escalation are operational extrapolations, but they are consistent with the evidence and not overclaimed.",
 		"failureTags": []
 	},
 	"scores": {

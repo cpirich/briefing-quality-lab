@@ -39,7 +39,8 @@ import {
 	type SourcePacket,
 } from "~/schemas";
 
-type EvalMode = "baseline" | "variant" | "report";
+type RunRole = "baseline" | "variant";
+type EvalMode = RunRole | "report" | "rejudge";
 type EvalProvider = "local" | "openai";
 
 interface EvalOptions {
@@ -58,6 +59,10 @@ interface RunArtifacts {
 	briefings: BriefingOutput[];
 	evaluations: EvaluatorOutput[];
 	traces: GenerationTrace[];
+}
+
+interface RejudgedRunArtifacts extends RunArtifacts {
+	role: RunRole;
 }
 
 const repoRoot = process.cwd();
@@ -79,9 +84,9 @@ function hasFlag(name: string) {
 
 function parseOptions(): EvalOptions {
 	const mode = (process.argv[2] ?? "report") as EvalMode;
-	if (!["baseline", "variant", "report"].includes(mode)) {
+	if (!["baseline", "variant", "report", "rejudge"].includes(mode)) {
 		throw new Error(
-			`Unknown eval mode "${mode}". Use baseline, variant, or report.`,
+			`Unknown eval mode "${mode}". Use baseline, variant, rejudge, or report.`,
 		);
 	}
 
@@ -133,13 +138,15 @@ function validateFixtureId(value: string, label: string) {
 
 function commandFor({
 	mode,
+	commandMode = mode,
 	provider,
 	evaluator,
 	runId,
 	includeHoldouts,
 	referenceManifest,
 }: {
-	mode: Exclude<EvalMode, "report">;
+	mode: RunRole;
+	commandMode?: RunRole | "rejudge";
 	provider: EvalProvider;
 	evaluator: EvaluatorMode;
 	runId: string;
@@ -147,7 +154,7 @@ function commandFor({
 	referenceManifest?: RunManifest;
 }) {
 	const parts = [
-		`bun run eval:${mode}`,
+		`bun run eval:${commandMode}`,
 		`--provider=${provider}`,
 		`--evaluator=${evaluator}`,
 		`--run-id=${runId}`,
@@ -157,6 +164,9 @@ function commandFor({
 	}
 	if (mode === "variant" && referenceManifest) {
 		parts.push(`--baseline=${referenceManifest.runId}`);
+	}
+	if (mode === "baseline" && commandMode === "rejudge" && referenceManifest) {
+		parts.push(`--candidate=${referenceManifest.runId}`);
 	}
 
 	return parts.join(" ");
@@ -325,7 +335,7 @@ function slugTimestamp(date = new Date()) {
 	return date.toISOString().replace(/\D/g, "").slice(0, 14);
 }
 
-function runIdFor(mode: Exclude<EvalMode, "report">, provider: EvalProvider) {
+function runIdFor(mode: RunRole, provider: EvalProvider) {
 	const prefix = mode === "baseline" ? "baseline" : "candidate";
 	return `${prefix}-${provider}-${slugTimestamp()}`;
 }
@@ -335,7 +345,7 @@ function assertOpenAIPricingIsConfigured(options: EvalOptions) {
 		return;
 	}
 
-	if (options.provider === "openai") {
+	if (options.mode !== "rejudge" && options.provider === "openai") {
 		const modelName = process.env.OPENAI_MODEL ?? defaultOpenAIModel;
 		const pricing = pricingForOpenAIModel(modelName);
 		if (!pricing) {
@@ -552,6 +562,7 @@ function latencyRatioFor({
 function manifestFor({
 	runId,
 	mode,
+	commandMode,
 	provider,
 	evaluator,
 	caseIds,
@@ -564,7 +575,8 @@ function manifestFor({
 	error,
 }: {
 	runId: string;
-	mode: Exclude<EvalMode, "report">;
+	mode: RunRole;
+	commandMode?: RunRole | "rejudge";
 	provider: EvalProvider;
 	evaluator: EvaluatorMode;
 	caseIds: string[];
@@ -604,6 +616,7 @@ function manifestFor({
 		gitRef: "local-worktree",
 		command: commandFor({
 			mode,
+			commandMode,
 			provider,
 			evaluator,
 			runId,
@@ -645,11 +658,7 @@ function manifestFor({
 	});
 }
 
-async function generateRun(options: EvalOptions) {
-	if (options.mode === "report") {
-		throw new Error("Report mode does not generate a run.");
-	}
-
+async function generateRun(options: EvalOptions & { mode: RunRole }) {
 	const [evalCases, sourcePackets] = await Promise.all([
 		listEvalCases(),
 		listSourcePackets(),
@@ -820,6 +829,32 @@ function isProviderRun(manifest: RunManifest, provider: EvalProvider) {
 		: isLocalProviderRun(manifest);
 }
 
+function runRoleForManifest(manifest: RunManifest): RunRole {
+	if (isGeneratedCandidateRun(manifest)) {
+		return "variant";
+	}
+	if (isGeneratedBaselineRun(manifest)) {
+		return "baseline";
+	}
+
+	throw new Error(
+		`Cannot infer whether run ${manifest.runId} is a generated baseline or variant.`,
+	);
+}
+
+function providerForManifest(manifest: RunManifest): EvalProvider {
+	if (isOpenAIProviderRun(manifest)) {
+		return "openai";
+	}
+	if (isLocalProviderRun(manifest)) {
+		return "local";
+	}
+
+	throw new Error(
+		`Cannot infer provider for run ${manifest.runId}. Rejudge supports generated local and OpenAI runs.`,
+	);
+}
+
 function isHybridEvaluatedRun(manifest: RunManifest) {
 	return manifest.command.includes("--evaluator=hybrid");
 }
@@ -922,6 +957,150 @@ async function assertBaselineComparisonIsValid(options: EvalOptions) {
 		referenceLabel: `candidate ${referenceManifest.runId}`,
 		referenceCaseIds: referenceManifest.caseIds,
 	});
+}
+
+async function rejudgeRun(options: EvalOptions): Promise<RejudgedRunArtifacts> {
+	if (options.mode !== "rejudge") {
+		throw new Error("Rejudge mode is required to rejudge an existing run.");
+	}
+	if (!options.runId) {
+		throw new Error("Rejudge mode requires --run-id=<existing-run-id>.");
+	}
+
+	const runId = validateFixtureId(options.runId, "run id");
+	const existingManifest = await completeManifestForRunId(runId, "rejudge");
+	const role = runRoleForManifest(existingManifest);
+	const provider = providerForManifest(existingManifest);
+	const [evalCases, sourcePackets, briefings, traces] = await Promise.all([
+		listEvalCases(),
+		listSourcePackets(),
+		listBriefingOutputs(runId),
+		listGenerationTraces(runId),
+	]);
+	const evalCasesById = new Map(
+		evalCases.map((evalCase) => [evalCase.id, evalCase]),
+	);
+	const sourcePacketsById = sourcePacketById(sourcePackets);
+	const briefingsByCaseId = new Map(
+		briefings.map((briefing) => [briefing.caseId, briefing]),
+	);
+	const tracesByCaseId = new Map(traces.map((trace) => [trace.caseId, trace]));
+	const selectedEvalCases = existingManifest.caseIds.map((caseId) => {
+		const evalCase = evalCasesById.get(caseId);
+		if (!evalCase) {
+			throw new Error(`Run ${runId} references missing eval case ${caseId}.`);
+		}
+
+		return evalCase;
+	});
+	const referenceManifest =
+		role === "variant"
+			? await referenceManifestForVariant({
+					...options,
+					mode: "variant",
+					provider,
+				})
+			: await referenceManifestForBaselineComparison({
+					...options,
+					mode: "baseline",
+					provider,
+				});
+
+	if (role === "variant") {
+		assertVariantCaseSetMatchesBaseline({
+			referenceManifest,
+			selectedEvalCases,
+		});
+	} else if (referenceManifest) {
+		assertMatchingCaseIds({
+			actualLabel: `rejudged baseline ${runId}`,
+			actualCaseIds: selectedEvalCases.map((evalCase) => evalCase.id),
+			referenceLabel: `candidate ${referenceManifest.runId}`,
+			referenceCaseIds: referenceManifest.caseIds,
+		});
+	}
+
+	console.log(
+		`Rejudging ${role} run ${runId} with ${options.evaluator} evaluator across ${selectedEvalCases.length} cases.`,
+	);
+
+	const evaluations: EvaluatorOutput[] = [];
+	const orderedTraces: GenerationTrace[] = [];
+	const orderedBriefings: BriefingOutput[] = [];
+	const artifactPaths = [`runs/${runId}/manifest.json`];
+
+	for (const [caseIndex, evalCase] of selectedEvalCases.entries()) {
+		const caseNumber = caseIndex + 1;
+		const casePrefix = `[${caseNumber}/${selectedEvalCases.length}]`;
+		const sourcePacket = sourcePacketsById.get(evalCase.sourcePacketId);
+		const trace = tracesByCaseId.get(evalCase.id);
+		const persistedBriefing = briefingsByCaseId.get(evalCase.id);
+		if (!sourcePacket) {
+			throw new Error(
+				`Eval case ${evalCase.id} references missing source packet ${evalCase.sourcePacketId}`,
+			);
+		}
+		if (!trace) {
+			throw new Error(`Run ${runId} is missing trace for ${evalCase.id}.`);
+		}
+		if (!persistedBriefing) {
+			throw new Error(`Run ${runId} is missing briefing for ${evalCase.id}.`);
+		}
+
+		const briefing = BriefingOutputSchema.parse(trace.output);
+		const briefingPath = `runs/${runId}/briefings/${evalCase.id}.json`;
+		const tracePath = `runs/${runId}/traces/${evalCase.id}.json`;
+		const evaluationPath = `runs/${runId}/evaluations/${evalCase.id}.json`;
+		console.log(`${casePrefix} Rejudging ${evalCase.id}...`);
+		const evaluation = await evaluateBriefing({
+			runId,
+			evalCase,
+			sourcePacket,
+			briefing,
+			trace,
+			mode: options.evaluator,
+		});
+		await writeJsonArtifact(evaluationPath, evaluation);
+		console.log(
+			`${casePrefix} Rejudged ${evalCase.id}: overall ${evaluation.scores.overall.toFixed(2)}, citation ${evaluation.scores.citationSupport.toFixed(2)}.`,
+		);
+
+		orderedBriefings.push(persistedBriefing);
+		orderedTraces.push(trace);
+		evaluations.push(evaluation);
+		artifactPaths.push(briefingPath, tracePath, evaluationPath);
+	}
+
+	const manifest = manifestFor({
+		runId,
+		mode: role,
+		commandMode: "rejudge",
+		provider,
+		evaluator: options.evaluator,
+		caseIds: selectedEvalCases.map((evalCase) => evalCase.id),
+		evaluations,
+		traces: orderedTraces,
+		artifactPaths,
+		referenceManifest,
+		includeHoldouts: selectedEvalCases.some((evalCase) => evalCase.holdout),
+	});
+	await writeJsonArtifact(`runs/${runId}/manifest.json`, manifest);
+	console.log(
+		`Rejudged ${runId}: overall ${manifest.aggregateMetrics.overall.toFixed(2)}, citation ${manifest.aggregateMetrics.citationSupport.toFixed(2)}, evaluator cost ${
+			manifest.aggregateMetrics.evaluatorEstimatedCostUsd === null ||
+			manifest.aggregateMetrics.evaluatorEstimatedCostUsd === undefined
+				? "unknown"
+				: `$${manifest.aggregateMetrics.evaluatorEstimatedCostUsd.toFixed(4)}`
+		}.`,
+	);
+
+	return {
+		role,
+		manifest,
+		briefings: orderedBriefings,
+		evaluations,
+		traces: orderedTraces,
+	};
 }
 
 async function artifactsFor(runId: string): Promise<RunArtifacts> {
@@ -1621,18 +1800,46 @@ async function main() {
 		return;
 	}
 
-	await assertBaselineComparisonIsValid(options);
-	assertOpenAIPricingIsConfigured(options);
-	const run = await generateRun(options);
+	if (options.mode === "rejudge") {
+		assertOpenAIPricingIsConfigured(options);
+		const run = await rejudgeRun(options);
+		const comparison = await writeComparisonAndReport({
+			baselineRunId:
+				run.role === "baseline" ? run.manifest.runId : options.baselineRunId,
+			candidateRunId:
+				run.role === "variant" ? run.manifest.runId : options.candidateRunId,
+		});
+
+		console.log(
+			`Wrote rejudged ${run.role} run ${run.manifest.runId} with ${run.manifest.caseIds.length} cases and comparison ${comparison.id}.`,
+		);
+		return;
+	}
+
+	if (options.mode !== "baseline" && options.mode !== "variant") {
+		throw new Error(`Unsupported eval mode "${options.mode}".`);
+	}
+	const generationOptions: EvalOptions & { mode: RunRole } = {
+		...options,
+		mode: options.mode,
+	};
+
+	await assertBaselineComparisonIsValid(generationOptions);
+	assertOpenAIPricingIsConfigured(generationOptions);
+	const run = await generateRun(generationOptions);
 	const comparison = await writeComparisonAndReport({
 		baselineRunId:
-			options.mode === "baseline" ? run.manifest.runId : options.baselineRunId,
+			generationOptions.mode === "baseline"
+				? run.manifest.runId
+				: generationOptions.baselineRunId,
 		candidateRunId:
-			options.mode === "variant" ? run.manifest.runId : options.candidateRunId,
+			generationOptions.mode === "variant"
+				? run.manifest.runId
+				: generationOptions.candidateRunId,
 	});
 
 	console.log(
-		`Wrote ${options.mode} run ${run.manifest.runId} with ${run.manifest.caseIds.length} cases and comparison ${comparison.id}.`,
+		`Wrote ${generationOptions.mode} run ${run.manifest.runId} with ${run.manifest.caseIds.length} cases and comparison ${comparison.id}.`,
 	);
 }
 

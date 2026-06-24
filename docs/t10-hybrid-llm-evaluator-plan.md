@@ -80,6 +80,7 @@ Add an evaluator option:
 ```bash
 mise exec -- bun run eval:baseline --provider=openai --evaluator=hybrid
 mise exec -- bun run eval:variant --provider=openai --evaluator=hybrid
+mise exec -- bun run eval:rejudge --run-id=<existing-run-id> --evaluator=hybrid
 ```
 
 Defaults:
@@ -88,7 +89,9 @@ Defaults:
 - `--provider=local` defaults to `--evaluator=deterministic`
 - `--evaluator=deterministic` remains available for offline rehearsal and regression work
 
-Use `OPENAI_EVAL_MODEL` for the judge model when set. Otherwise, default to the app OpenAI model. The run scripts should abort before live judge calls when the judge model is missing from the pricing table.
+Use `OPENAI_EVAL_MODEL` for the judge model when set. Otherwise, default to the dedicated evaluator model, currently `gpt-5.5`, so generation baselines can remain pinned separately from judge quality. The run scripts should abort before live judge calls when the judge model is missing from the pricing table.
+
+Use `eval:rejudge` when evaluator policy or judge model changes but the generated briefings and traces should stay fixed. Rejudge mode should reuse the existing run's briefing and trace artifacts, rewrite only evaluator outputs plus aggregate manifest metrics, and refresh the comparison/report for that run.
 
 ## Scoring Guidance
 
@@ -112,8 +115,20 @@ Update `/lab` so reviewers can see:
 - missing evidence and unsupported-claim explanations
 - recommendation judgment, including overconfidence and task-answer quality
 - evaluator cost and latency metadata separate from product generation cost
+- a curated variant progression in Run Score Trend that avoids overwhelming the demo audience
 
 Old deterministic OpenAI scores should be labeled as legacy heuristic evidence or de-emphasized once hybrid evaluator artifacts exist.
+
+### Variant Progression Display
+
+Once generated candidate variants exist, keep the primary Run Score Trend focused on a small set of demo-relevant anchors instead of every historical run:
+
+- With no generated candidate variants, show `Baseline -> Reference Target`.
+- With one generated candidate variant, show `Baseline -> Latest Variant -> Reference Target`.
+- With multiple generated candidate variants, show `Baseline -> Best Previous -> Latest Variant -> Reference Target`.
+- If the latest variant is also the best previous variant, omit the duplicate and show `Baseline -> Latest Variant -> Reference Target`.
+
+Define `Latest Variant` as the newest completed generated candidate run for the active case set. Define `Best Previous` conservatively as the earlier completed generated candidate with the highest overall score, using lower grounding risk units, lower median latency, and newer run timestamp as tie-breakers. Keep full variant history available later through a secondary history/debug surface, not the primary demo chart.
 
 ## Manual Spot Check
 
@@ -138,6 +153,8 @@ Do not claim product or prompt improvement until the manual spot check supports 
 6. Update comparison and report labels to distinguish hybrid LLM judge evidence from legacy deterministic heuristic evidence.
 7. Update `/lab` to show evaluator metadata, hard checks, claim judgments, and recommendation judgments.
 8. Re-run the OpenAI baseline and candidate after hybrid eval lands.
+9. Add curated variant progression support for Run Score Trend: baseline, latest variant, reference target, and best previous only when it adds a distinct comparison point.
+10. Add a rejudge command for rerunning the evaluator against existing generated artifacts when judge model or scoring policy changes.
 
 ## Test Plan
 
@@ -156,5 +173,6 @@ mise exec -- bun run data:validate
 
 - A new OpenAI baseline no longer shows uniform deterministic `0.95` overall scores and `1.00` citation scores across all cases.
 - `/lab` shows numeric quality improvement plus claim-level evidence explaining the delta.
+- `/lab` keeps the primary Run Score Trend readable by showing at most baseline, best previous, latest variant, and reference target, with no duplicate best/latest bar.
 - Deterministic eval remains useful for hard validity, cost, latency, and metadata checks.
 - Live OpenAI quality claims are based on hybrid evaluator evidence and manual spot checks, not deterministic heuristics alone.

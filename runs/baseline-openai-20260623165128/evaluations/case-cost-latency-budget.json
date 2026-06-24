@@ -5,26 +5,26 @@
 	"evaluator": {
 		"mode": "hybrid",
 		"provider": "openai",
-		"model": "gpt-5.2",
+		"model": "gpt-5.5",
 		"promptVersion": "hybrid-judge-v1",
 		"settings": {
 			"structuredOutputName": "hybrid_evaluator_output"
 		},
-		"latencyMs": 9896,
+		"latencyMs": 33620,
 		"cost": {
 			"inputTokens": 2037,
 			"cachedInputTokens": 0,
-			"outputTokens": 863,
-			"estimatedUsd": 0.01564675,
+			"outputTokens": 897,
+			"estimatedUsd": 0.037095,
 			"pricing": {
-				"model": "gpt-5.2",
-				"inputUsdPer1MTokens": 1.75,
-				"cachedInputUsdPer1MTokens": 0.175,
-				"outputUsdPer1MTokens": 14,
+				"model": "gpt-5.5",
+				"inputUsdPer1MTokens": 5,
+				"cachedInputUsdPer1MTokens": 0.5,
+				"outputUsdPer1MTokens": 30,
 				"currency": "USD",
 				"serviceTier": "standard",
 				"context": "short",
-				"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-24"
 			}
 		}
 	},
@@ -100,7 +100,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S1"],
 			"missingEvidence": [],
-			"explanation": "S1 explicitly states median token usage increased by 11% and latency improved by 6%, attributing the latency improvement to fewer repeated/manual reruns rather than shorter generations.",
+			"explanation": "S1 directly states token usage rose 11%, latency improved 6%, and the improvement came from fewer repeated/manual reruns rather than shorter single generations.",
 			"failureTags": []
 		},
 		{
@@ -109,7 +109,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S2"],
 			"missingEvidence": [],
-			"explanation": "S2 sets a 1.15x cost ceiling conditioned on explaining review-time reduction benefits; it also specifies that above-threshold runs need smaller batches, stricter retry caps, or more aggressive trace summarization.",
+			"explanation": "S2 directly supports the 1.15x ceiling, the condition that extra tokens reduce review time, and the remedies if the threshold is exceeded.",
 			"failureTags": []
 		},
 		{
@@ -118,7 +118,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S3"],
 			"missingEvidence": [],
-			"explanation": "S3 says long traces help only when summarized next to the failed claim and that raw payload dumps slow review because reviewers must search for relevant evidence.",
+			"explanation": "S3 says long traces are useful only when summarized next to the failed claim and that raw payloads slowed review because reviewers had to search for relevant evidence.",
 			"failureTags": []
 		},
 		{
@@ -127,7 +127,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S4"],
 			"missingEvidence": [],
-			"explanation": "S4 specifies the under-10-second single-briefing target and that longer full runs were tolerated when UI continuously showed current case/progress and artifact path updates.",
+			"explanation": "S4 supports the under-10-second single-briefing threshold and tolerance for longer full runs if progress, current case, elapsed time, and artifact path are visible.",
 			"failureTags": []
 		},
 		{
@@ -136,30 +136,36 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S5"],
 			"missingEvidence": [],
-			"explanation": "S5 proposes a small retry cap with one automatic retry for transient provider errors, requires a manifest entry when retries change cost/latency, and rejects silent repeated generations.",
+			"explanation": "S5 directly states the one-retry cap for transient provider errors, manifest requirement for cost/latency changes, and rejection of silent repeated generations.",
 			"failureTags": []
 		}
 	],
 	"recommendationJudgment": {
 		"taskAnswerStatus": "answers-task",
-		"overconfidenceStatus": "calibrated",
+		"overconfidenceStatus": "somewhat-overconfident",
 		"missingImportantEvidence": [
-			"S6 trace summary mock preference for dashboard summaries + keeping detailed traces on disk (recommendation uses this idea but does not cite S6)"
+			"Actual projected cost ratio for the next demo configuration, especially with full raw trace retention on disk versus dashboard display.",
+			"Operational criteria for distinguishing transient provider errors from quality failures.",
+			"Whether the next demo run is a single-briefing flow, full batch eval, or both."
 		],
-		"explanation": "The recommendation to keep claim-level trace summaries in the UI, store full raw traces on disk, and cap retries to one transient-error retry with manifest logging aligns with S3/S5 and the cost/latency/demo constraints in S1/S2/S4. However, the specific UI content list (selected source ids, missing evidence, retry count, output path) and the 'keep detailed traces on disk while dashboard stays readable' concept are directly supported by S6, which is not cited in the generated briefing’s claims/recommendation section.",
-		"failureTags": ["missing-citation-for-key-recommendation-detail"]
+		"explanation": "The recommendation is well aligned with the packet: claim-level summaries in the dashboard and raw traces on disk are supported by S3 and S6; one automatic retry for transient provider errors with manifest logging is supported by S5; cost guardrails are supported by S2; and responsiveness guidance is supported by S4. The main overconfidence is the summary implication that this setup will stay within the 1.15x cost ceiling; the packet gives an 11% median token increase and a finance ceiling but not an actual cost projection for the proposed demo configuration.",
+		"failureTags": ["cost-projection-missing", "minor-overclaim"]
 	},
 	"scores": {
-		"overall": 0.92,
-		"grounding": 0.85,
-		"coverage": 0.92,
+		"overall": 0.83,
+		"grounding": 0.8,
+		"coverage": 0.76,
 		"citationSupport": 1
 	},
-	"failureTags": ["missing-citation-for-key-recommendation-detail"],
+	"failureTags": [
+		"cost-projection-missing",
+		"minor-overclaim",
+		"overconfidence"
+	],
 	"rubricEvidence": [
 		"Hybrid claim support score: 1.00.",
 		"Recommendation task fit: answers-task.",
-		"Overconfidence: calibrated.",
+		"Overconfidence: somewhat-overconfident.",
 		"Hard-check cap: 1.00."
 	],
 	"citationSupport": [

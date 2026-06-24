@@ -5,26 +5,26 @@
 	"evaluator": {
 		"mode": "hybrid",
 		"provider": "openai",
-		"model": "gpt-5.2",
+		"model": "gpt-5.5",
 		"promptVersion": "hybrid-judge-v1",
 		"settings": {
 			"structuredOutputName": "hybrid_evaluator_output"
 		},
-		"latencyMs": 15164,
+		"latencyMs": 26065,
 		"cost": {
 			"inputTokens": 2145,
 			"cachedInputTokens": 0,
-			"outputTokens": 1144,
-			"estimatedUsd": 0.01976975,
+			"outputTokens": 1136,
+			"estimatedUsd": 0.044805,
 			"pricing": {
-				"model": "gpt-5.2",
-				"inputUsdPer1MTokens": 1.75,
-				"cachedInputUsdPer1MTokens": 0.175,
-				"outputUsdPer1MTokens": 14,
+				"model": "gpt-5.5",
+				"inputUsdPer1MTokens": 5,
+				"cachedInputUsdPer1MTokens": 0.5,
+				"outputUsdPer1MTokens": 30,
 				"currency": "USD",
 				"serviceTier": "standard",
 				"context": "short",
-				"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-24"
 			}
 		}
 	},
@@ -100,19 +100,17 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S1"],
 			"missingEvidence": [],
-			"explanation": "S1 states quickstart completion rose 44%→58% after the copy refresh and that the first API call step has fewer exits.",
+			"explanation": "S1 directly states completion rose from 44% to 58% after the copy refresh and that the first API call step has fewer exits.",
 			"failureTags": []
 		},
 		{
 			"claimText": "The largest remaining onboarding drop is during local setup and credential configuration, driven by environment-specific errors and limited recovery paths.",
 			"citedSourceIds": ["S1"],
-			"supportStatus": "partially-supported",
+			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S1"],
-			"missingEvidence": [
-				"Evidence that 'limited recovery paths' (or lack of recovery path) is a driver of the drop, not just a note about how metrics should be framed."
-			],
-			"explanation": "S1 clearly supports that the biggest remaining drop happens during local setup/credential configuration and mentions users bounce after environment-specific errors. It also notes onboarding should not be framed as end-to-end until credential setup has its own recovery path, but it does not directly attribute the drop to 'limited recovery paths' as a causal driver—more a caution about measurement/presentation.",
-			"failureTags": ["causality-overreach"]
+			"missingEvidence": [],
+			"explanation": "S1 says the biggest remaining drop happens during local setup and credential configuration, where users bounce after environment-specific errors, and warns credential setup needs its own recovery path.",
+			"failureTags": []
 		},
 		{
 			"claimText": "Support volume is dominated by environment drift, stale CLI versions, missing environment variables, and credentials copied from the wrong workspace; users often need an internal checklist to recover.",
@@ -120,17 +118,20 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S2"],
 			"missingEvidence": [],
-			"explanation": "S2 says most new tickets mention environment drift, stale CLI versions, and unclear recovery steps; agents grouped tickets into stale CLI installs, missing env vars, and wrong-workspace credentials, and that the right command was found after support pasted an internal checklist which resolved most cases.",
+			"explanation": "S2 says most new tickets mention environment drift, stale CLI versions, and unclear recovery; support grouped tickets into stale CLI installs, missing environment variables, and wrong-workspace credentials. It also says the internal checklist resolved most cases and several teams only found the right command after support pasted it.",
 			"failureTags": []
 		},
 		{
 			"claimText": "Failures often persist because users restart the quickstart and reproduce the same broken state; tickets reopen when recovery steps aren’t clear/public.",
 			"citedSourceIds": ["S2"],
-			"supportStatus": "supported",
+			"supportStatus": "partially-supported",
 			"supportingEvidenceIds": ["S2"],
-			"missingEvidence": [],
-			"explanation": "S2 explicitly notes tickets reopened when users repeated the quickstart from the top and reproduced the same failed state, and that recovery steps in the internal checklist are not reflected in public docs (implying lack of clear/public recovery guidance).",
-			"failureTags": []
+			"missingEvidence": [
+				"Evidence that this happens 'often' rather than in 'several' reopened tickets.",
+				"Direct evidence that unclear/public recovery steps caused the reopenings, though S2 strongly implies this from the missing public checklist and repeated failed state."
+			],
+			"explanation": "S2 supports that several tickets reopened when users repeated the quickstart and reproduced the same failed state, and that public docs omit internal recovery steps. The claim slightly overstates frequency and causality by saying failures 'often' persist because recovery steps are not clear/public.",
+			"failureTags": ["overstates-frequency", "causal-overstatement"]
 		},
 		{
 			"claimText": "Pilot expansion is available (two teams next month) but is blocked by the most visible demo risk: setup recovery that looks brittle without documented guidance.",
@@ -138,50 +139,55 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S4"],
 			"missingEvidence": [],
-			"explanation": "S4 says two additional teams are available next month, but the launch owner flagged setup recovery as the visible failure making the demo feel brittle and recommends expanding only after failed-install guidance is observable; expansion should wait until the recovery path has a documented path.",
+			"explanation": "S4 says two teams are available next month, the launch owner flagged setup recovery as the visible failure that would make the demo feel brittle, and expansion should wait until the visible recovery failure has a documented path.",
 			"failureTags": []
 		}
 	],
 	"recommendationJudgment": {
-		"taskAnswerStatus": "partially-answers-task",
+		"taskAnswerStatus": "answers-task",
 		"overconfidenceStatus": "somewhat-overconfident",
 		"missingImportantEvidence": [
-			"Sources S3/S6/S5 also describe pilot gates and trust/citation transparency; recommendation adds specific product behaviors (e.g., 'stale CLI detection', 'workspace mismatch detection', 'safe re-run behavior') that are only partially evidenced as needed steps versus documentation/checklist publication.",
-			"Evidence that the 'next' improvement should be implemented as a 'first-class setup recovery path' beyond publishing the recovery checklist/guidance; packet emphasizes public recovery steps/guidance, not necessarily new product detection/flows."
+			"S3 and S6 provide important evidence that citation transparency/source-traceability is also a pilot-readiness/adoption risk. The briefing mentions citation transparency in the summary but does not develop it in the claims or recommendation.",
+			"S5 reinforces that docs/support/devrel agreed the partial-setup failure feels like a dead end and that a public recovery checklist is wanted; this would strengthen the recommendation."
 		],
-		"explanation": "The recommendation is directionally consistent with packet themes: setup recovery/public recovery steps are explicit gates (S4; also S6) and support issues center on stale CLI/env vars/credential mismatch (S2). However it becomes more prescriptive than the evidence by specifying implementation details like automated detection and 'first-class' flows; the sources mainly call for public recovery steps/guidance and demonstrability without support pasting internal checklists (S2/S4/S6). It also omits explicit mention of the other stated pilot gates around source citations and evidence separation (S6/S3) while claiming gating release for adding teams.",
-		"failureTags": ["speculation-beyond-evidence", "omitted-evidence"]
+		"explanation": "The briefing answers the task by identifying the main adoption risk as brittle setup/credential recovery and recommending a public setup recovery path before expanding the pilot. This is well supported by S1, S2, S4, and also by S5/S6 in the packet. However, the recommendation includes implementation specifics such as stale CLI detection, environment-variable validation, credential mismatch detection, and safe re-run behavior; the sources support the underlying problem areas and recovery checklist need, but not all of those exact product mechanisms. It also underplays the separate adoption risk around trace-backed/cited recommendations, which S3 and S6 identify as important for trust and readiness.",
+		"failureTags": [
+			"minor-unsupported-implementation-detail",
+			"missing-important-evidence",
+			"understates-citation-transparency-risk"
+		]
 	},
 	"scores": {
-		"overall": 0.66,
+		"overall": 0.82,
 		"grounding": 0.74,
-		"coverage": 0.44,
+		"coverage": 0.84,
 		"citationSupport": 0.91
 	},
 	"failureTags": [
-		"causality-overreach",
-		"coverage-gap",
-		"omitted-evidence",
+		"causal-overstatement",
+		"minor-unsupported-implementation-detail",
+		"missing-important-evidence",
 		"overconfidence",
+		"overstates-frequency",
 		"partial-claim-support",
-		"speculation-beyond-evidence"
+		"understates-citation-transparency-risk"
 	],
 	"rubricEvidence": [
 		"Hybrid claim support score: 0.91.",
-		"Recommendation task fit: partially-answers-task.",
+		"Recommendation task fit: answers-task.",
 		"Overconfidence: somewhat-overconfident.",
 		"Hard-check cap: 1.00."
 	],
 	"citationSupport": [
 		{
 			"citation": "S1",
-			"supported": false,
-			"note": "S1 appears in a partially supported or unsupported claim judgment."
+			"supported": true,
+			"note": "S1 appears in fully supported claim-level judgments."
 		},
 		{
 			"citation": "S2",
-			"supported": true,
-			"note": "S2 appears in fully supported claim-level judgments."
+			"supported": false,
+			"note": "S2 appears in a partially supported or unsupported claim judgment."
 		},
 		{
 			"citation": "S4",

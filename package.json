@@ -13,6 +13,7 @@
 		"dev": "env WATCHPACK_POLLING=true next dev --webpack --port 3000",
 		"eval:baseline": "bun run scripts/run-eval.ts baseline",
 		"eval:report": "bun run scripts/run-eval.ts report",
+		"eval:rejudge": "bun run scripts/run-eval.ts rejudge",
 		"eval:variant": "bun run scripts/run-eval.ts variant",
 		"preview": "next build && next start",
 		"start": "next start",

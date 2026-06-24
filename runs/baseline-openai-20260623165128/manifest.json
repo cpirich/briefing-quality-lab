@@ -1,10 +1,10 @@
 {
 	"runId": "baseline-openai-20260623165128",
-	"createdAt": "2026-06-23T16:54:05.852Z",
+	"createdAt": "2026-06-24T15:19:15.218Z",
 	"variantLabel": "openai generated baseline",
 	"status": "complete",
 	"gitRef": "local-worktree",
-	"command": "bun run eval:baseline --provider=openai --evaluator=hybrid --run-id=baseline-openai-20260623165128",
+	"command": "bun run eval:rejudge --provider=openai --evaluator=hybrid --run-id=baseline-openai-20260623165128 --candidate=candidate-citation-gates",
 	"caseIds": [
 		"case-adoption-friction",
 		"case-code-review-queues",
@@ -15,15 +15,15 @@
 		"case-release-note-drift"
 	],
 	"aggregateMetrics": {
-		"overall": 0.87,
+		"overall": 0.89,
 		"grounding": 0.82,
-		"coverage": 0.85,
-		"citationSupport": 0.97,
-		"unsupportedClaims": 9,
-		"groundingRiskUnits": 9,
+		"coverage": 0.92,
+		"citationSupport": 0.96,
+		"unsupportedClaims": 10,
+		"groundingRiskUnits": 10,
 		"medianLatencyMs": 12559,
 		"estimatedCostUsd": 0.07009975,
-		"evaluatorEstimatedCostUsd": 0.1214465,
+		"evaluatorEstimatedCostUsd": 0.27743,
 		"costRatio": 1,
 		"latencyRatio": 1
 	},
@@ -32,7 +32,7 @@
 			"id": "citation-support",
 			"label": "Citation support",
 			"status": "pass",
-			"value": "0.97",
+			"value": "0.96",
 			"threshold": ">= 0.72"
 		},
 		{

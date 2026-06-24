@@ -1552,10 +1552,10 @@ function runManifestFor(
 		caseIds: visibleFixtures.map((fixture) => fixture.caseId),
 		aggregateMetrics: isCandidate
 			? {
-					overall: 0.88,
+					overall: 0.9,
 					grounding: 0.86,
-					coverage: 0.88,
-					citationSupport: 0.95,
+					coverage: 0.93,
+					citationSupport: 0.96,
 					unsupportedClaims: 6,
 					groundingRiskUnits: 6,
 					medianLatencyMs: 8000,
@@ -1581,8 +1581,8 @@ function runManifestFor(
 				id: "citation-support",
 				label: "Citation support",
 				status: isCandidate ? "pass" : "fail",
-				value: isCandidate ? "0.95" : "0.51",
-				threshold: isCandidate ? ">= 0.95" : ">= 0.72",
+				value: isCandidate ? "0.96" : "0.51",
+				threshold: isCandidate ? ">= 0.96" : ">= 0.72",
 			},
 			{
 				id: isCandidate ? "cost-budget" : "cost-ratio",

@@ -5,26 +5,26 @@
 	"evaluator": {
 		"mode": "hybrid",
 		"provider": "openai",
-		"model": "gpt-5.2",
+		"model": "gpt-5.5",
 		"promptVersion": "hybrid-judge-v1",
 		"settings": {
 			"structuredOutputName": "hybrid_evaluator_output"
 		},
-		"latencyMs": 12326,
+		"latencyMs": 17615,
 		"cost": {
-			"inputTokens": 2286,
+			"inputTokens": 2285,
 			"cachedInputTokens": 0,
-			"outputTokens": 1182,
-			"estimatedUsd": 0.0205485,
+			"outputTokens": 1069,
+			"estimatedUsd": 0.043495,
 			"pricing": {
-				"model": "gpt-5.2",
-				"inputUsdPer1MTokens": 1.75,
-				"cachedInputUsdPer1MTokens": 0.175,
-				"outputUsdPer1MTokens": 14,
+				"model": "gpt-5.5",
+				"inputUsdPer1MTokens": 5,
+				"cachedInputUsdPer1MTokens": 0.5,
+				"outputUsdPer1MTokens": 30,
 				"currency": "USD",
 				"serviceTier": "standard",
 				"context": "short",
-				"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-24"
 			}
 		}
 	},
@@ -100,7 +100,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S1"],
 			"missingEvidence": [],
-			"explanation": "S1 explicitly states generated notes covered 83% of merged changes; 14% described behavior that changed after final QA; and the highest-risk errors came from stale PR descriptions never updated after scope cuts.",
+			"explanation": "S1 directly states 83% coverage, 14% drift after final QA, and that stale PR descriptions after scope cuts created the highest-risk errors.",
 			"failureTags": []
 		},
 		{
@@ -109,7 +109,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S5"],
 			"missingEvidence": [],
-			"explanation": "S5 states stale PR text is no longer reliable after scope cuts; the QA delta log includes two feature name changes, one admin toggle removed, and one migration warning added late; and QA asked generated notes to compare against the log before publication.",
+			"explanation": "S5 directly lists two renamed features, one removed admin toggle, one late migration warning, and says QA asked generated notes to compare against the log because stale PR text is unreliable after scope cuts.",
 			"failureTags": []
 		},
 		{
@@ -118,7 +118,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S2"],
 			"missingEvidence": [],
-			"explanation": "S2 says customers value concise notes, but concise works only when remaining claims are accurate; and gives an escalated example where a generated note promised an admin toggle removed before release.",
+			"explanation": "S2 says customers value concise notes, concise notes work only when remaining claims are accurate, and an escalation occurred over a promised admin toggle removed before release.",
 			"failureTags": []
 		},
 		{
@@ -127,10 +127,10 @@
 			"supportStatus": "partially-supported",
 			"supportingEvidenceIds": ["S2", "S6"],
 			"missingEvidence": [
-				"Direct evidence that customers specifically plan rollouts around migration warnings/compatibility caveats (as opposed to around removed features such as an admin toggle)."
+				"Direct evidence that customers specifically plan rollouts around migration warnings and compatibility caveats, rather than around release-note claims/features generally."
 			],
-			"explanation": "S2 supports treating migration warnings and compatibility caveats as higher risk than routine polish, and it supports that customers planned rollout steps around a promised (but removed) admin toggle. S6 supports focusing on compatibility warnings and claims customers treat as commitments or migration instructions. However, the specific causal statement that customers plan rollouts around migration/compatibility caveats is an inference; the packet ties rollout planning explicitly to the removed admin toggle example, not directly to migration/compatibility caveats.",
-			"failureTags": ["overgeneralization", "causal-inference"]
+			"explanation": "S2 directly supports treating migration warnings and compatibility caveats as higher risk than routine polish. S6 supports focusing on migration instructions and customer commitments. However, the specific causal rationale that customers plan rollouts around these caveats is inferred from the admin-toggle example and not directly stated for migration/compatibility items.",
+			"failureTags": ["minor-inference"]
 		},
 		{
 			"claimText": "Engineering will tag final-release deltas during QA, but will not maintain a second changelog; they prefer a lightweight review queue that highlights changed/removed/sensitive claims rather than requiring full rewrites.",
@@ -138,7 +138,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S3"],
 			"missingEvidence": [],
-			"explanation": "S3 states engineers can/will tag final-release deltas during QA if the queue is lightweight; they will not maintain a second/parallel changelog; and it recommends a review queue highlighting changed/removed/sensitive claims rather than rewriting every note.",
+			"explanation": "S3 directly states engineers can tag final-release deltas during QA, will not maintain a second changelog, and recommends a lightweight queue highlighting changed, removed, or sensitive claims rather than rewriting every note.",
 			"failureTags": []
 		}
 	],
@@ -146,11 +146,11 @@
 		"taskAnswerStatus": "answers-task",
 		"overconfidenceStatus": "somewhat-overconfident",
 		"missingImportantEvidence": [
-			"For recommendation step 1, the packet recommends checking/compare against QA deltas, but does not establish that the QA delta log should be the singular 'source of truth' or that publication should be 'blocked' until discrepancies are resolved.",
-			"For recommendation step 3, S4 requires explicit human approval for sensitive categories; the added requirements of 'automatic' detection and an 'audit trail' are only partially grounded (approval record is requested; automatic detection is not)."
+			"No source explicitly says to make the QA delta log the sole pre-publish source of truth or to block publication until discrepancies are resolved; sources recommend checking/comparing against QA deltas.",
+			"No source explicitly specifies automatic detection or an audit trail implementation, though S4 supports explicit human approval records for sensitive categories."
 		],
-		"explanation": "The recommendations largely track the packet themes: cross-check against QA deltas (S1,S5), lightweight claim-focused review queue (S3,S6), and explicit human approval for sensitive categories (S4). However, a few elements add stronger operational mandates than the sources: making the QA delta log the pre-publish 'source of truth' and 'blocking publication' goes beyond the stated recommendations; and 'automatically detect' sensitive claims is not in S4 (though an approval record/auditability is).",
-		"failureTags": ["policy-overreach", "implementation-detail-not-in-sources"]
+		"explanation": "The recommendation is well aligned with the packet: it emphasizes QA-delta checks, claim-focused lightweight review, sensitive-claim approval, less reliance on stale PR descriptions, and concise but accurate notes. Most elements are supported by S1-S6. It is somewhat overconfident where it upgrades recommendations into stronger operational gates, such as treating the QA delta log as the source of truth and blocking publication, and where it adds automation/audit-trail details beyond the exact source language.",
+		"failureTags": ["unsupported-strengthening", "implementation-detail-added"]
 	},
 	"scores": {
 		"overall": 0.82,
@@ -159,12 +159,11 @@
 		"citationSupport": 0.91
 	},
 	"failureTags": [
-		"causal-inference",
-		"implementation-detail-not-in-sources",
+		"implementation-detail-added",
+		"minor-inference",
 		"overconfidence",
-		"overgeneralization",
 		"partial-claim-support",
-		"policy-overreach"
+		"unsupported-strengthening"
 	],
 	"rubricEvidence": [
 		"Hybrid claim support score: 0.91.",

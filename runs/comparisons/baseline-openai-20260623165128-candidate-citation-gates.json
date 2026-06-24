@@ -7,24 +7,24 @@
 	"metrics": [
 		{
 			"label": "Overall quality",
-			"value": "0.88",
+			"value": "0.90",
 			"delta": "+0.01",
 			"status": "Reference target score",
 			"tone": "green"
 		},
 		{
 			"label": "Citation grounding",
-			"value": "0.95",
-			"delta": "-0.02",
+			"value": "0.96",
+			"delta": "+0.00",
 			"status": "Reference target citation score",
 			"tone": "green"
 		},
 		{
 			"label": "Coverage",
-			"value": "0.88",
-			"delta": "+0.03",
+			"value": "0.93",
+			"delta": "+0.01",
 			"status": "Reference target coverage score",
-			"tone": "amber"
+			"tone": "green"
 		},
 		{
 			"label": "Estimated cost",
@@ -44,37 +44,37 @@
 	"trend": [
 		{
 			"label": "OpenAI baseline",
-			"score": 87
+			"score": 89
 		},
 		{
 			"label": "Reference target",
-			"score": 88
+			"score": 90
 		}
 	],
 	"comparisonRows": [
 		{
 			"metric": "Overall score",
-			"baseline": "0.87",
-			"candidate": "0.88",
+			"baseline": "0.89",
+			"candidate": "0.90",
 			"delta": "+0.01"
 		},
 		{
 			"metric": "Citation support",
-			"baseline": "0.97",
-			"candidate": "0.95",
-			"delta": "-0.02"
+			"baseline": "0.96",
+			"candidate": "0.96",
+			"delta": "+0.00"
 		},
 		{
 			"metric": "Coverage",
-			"baseline": "0.85",
-			"candidate": "0.88",
-			"delta": "+0.03"
+			"baseline": "0.92",
+			"candidate": "0.93",
+			"delta": "+0.01"
 		},
 		{
 			"metric": "Grounding risk units",
-			"baseline": "9",
+			"baseline": "10",
 			"candidate": "6",
-			"delta": "-3"
+			"delta": "-4"
 		},
 		{
 			"metric": "Eval cases",
@@ -98,30 +98,39 @@
 	"failureClusters": [
 		{
 			"title": "Overconfidence",
-			"count": 2,
-			"severity": "Low",
+			"count": 4,
+			"severity": "Medium",
 			"evidence": "Repeated overconfidence findings across evaluator outputs.",
-			"cases": ["case-adoption-friction", "case-release-note-drift"]
+			"cases": [
+				"case-adoption-friction",
+				"case-cost-latency-budget",
+				"case-human-approval-boundary",
+				"case-release-note-drift"
+			]
 		},
 		{
 			"title": "Partial Claim Support",
-			"count": 2,
-			"severity": "Low",
+			"count": 3,
+			"severity": "Medium",
 			"evidence": "Repeated partial-claim-support findings across evaluator outputs.",
-			"cases": ["case-adoption-friction", "case-release-note-drift"]
+			"cases": [
+				"case-adoption-friction",
+				"case-eval-loop",
+				"case-release-note-drift"
+			]
 		},
 		{
-			"title": "Causality Overreach",
+			"title": "Causal Overstatement",
 			"count": 1,
 			"severity": "Low",
-			"evidence": "Repeated causality-overreach findings across evaluator outputs.",
+			"evidence": "Repeated causal-overstatement findings across evaluator outputs.",
 			"cases": ["case-adoption-friction"]
 		},
 		{
-			"title": "Coverage Gap",
+			"title": "Minor Unsupported Implementation Detail",
 			"count": 1,
 			"severity": "Low",
-			"evidence": "Repeated coverage-gap findings across evaluator outputs.",
+			"evidence": "Repeated minor-unsupported-implementation-detail findings across evaluator outputs.",
 			"cases": ["case-adoption-friction"]
 		}
 	],

@@ -5,26 +5,26 @@
 	"evaluator": {
 		"mode": "hybrid",
 		"provider": "openai",
-		"model": "gpt-5.2",
+		"model": "gpt-5.5",
 		"promptVersion": "hybrid-judge-v1",
 		"settings": {
 			"structuredOutputName": "hybrid_evaluator_output"
 		},
-		"latencyMs": 8267,
+		"latencyMs": 18080,
 		"cost": {
 			"inputTokens": 2099,
 			"cachedInputTokens": 0,
-			"outputTokens": 927,
-			"estimatedUsd": 0.01665125,
+			"outputTokens": 922,
+			"estimatedUsd": 0.038155,
 			"pricing": {
-				"model": "gpt-5.2",
-				"inputUsdPer1MTokens": 1.75,
-				"cachedInputUsdPer1MTokens": 0.175,
-				"outputUsdPer1MTokens": 14,
+				"model": "gpt-5.5",
+				"inputUsdPer1MTokens": 5,
+				"cachedInputUsdPer1MTokens": 0.5,
+				"outputUsdPer1MTokens": 30,
 				"currency": "USD",
 				"serviceTier": "standard",
 				"context": "short",
-				"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-24"
 			}
 		}
 	},
@@ -100,7 +100,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S1"],
 			"missingEvidence": [],
-			"explanation": "S1 states partial installs were the biggest source of confusion and agents wanted a recovery message that starts with symptoms and gives one safe next action; it also mentions confusion about rerunning setup, credentials, and local state.",
+			"explanation": "S1 explicitly says partial installs were the biggest source of confusion, users were unsure about rerunning setup, credentials, and local state, and agents wanted a recovery message that starts with symptoms and gives one safe next action.",
 			"failureTags": []
 		},
 		{
@@ -109,7 +109,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S2"],
 			"missingEvidence": [],
-			"explanation": "S2 says the word “resolved” was flagged as too broad unless the environment caveat stayed visible; engineering verified recovery on macOS and Linux; Windows recovery steps still being validated and there was an unresolved credential-cache issue.",
+			"explanation": "S2 states that the draft's 'resolved' wording was too broad unless the environment caveat stayed visible, macOS and Linux recovery were verified, and Windows still had an unresolved credential-cache issue under validation.",
 			"failureTags": []
 		},
 		{
@@ -118,16 +118,16 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S3"],
 			"missingEvidence": [],
-			"explanation": "S3 explicitly requests separating who is affected, recommended action, and pending validation, and asks for the Windows caveat in the first paragraph rather than a footnote.",
+			"explanation": "S3 directly supports the requested structure and says the Windows caveat should be in the first paragraph rather than a footnote.",
 			"failureTags": []
 		},
 		{
 			"claimText": "Reference the patched CLI’s new recovery command as the primary remediation, since it checks stale credentials and cleans partial install state; note it is currently available in the release candidate.",
 			"citedSourceIds": ["S4"],
 			"supportStatus": "supported",
-			"supportingEvidenceIds": ["S4"],
+			"supportingEvidenceIds": ["S4", "S6"],
 			"missingEvidence": [],
-			"explanation": "S4 states the patched CLI adds a recovery command that checks stale credentials and cleans partial install state, and that it is available in the release candidate.",
+			"explanation": "S4 supports that the patched CLI has a recovery command that checks stale credentials, cleans partial install state, and is available in the release candidate. S6 further supports using one safe command for partial-install users.",
 			"failureTags": []
 		},
 		{
@@ -136,23 +136,21 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S5"],
 			"missingEvidence": [],
-			"explanation": "S5 requires docs include the new recovery command, credential cleanup instructions, and screenshots for the patched installer path; notes Windows screenshots pending; and states customer communication should not point users to the old installer flow once the release candidate is promoted.",
+			"explanation": "S5 states that docs require the new recovery command, credential cleanup instructions, and screenshots for the patched installer path; Windows screenshots are pending; and communications should not point to the old installer flow after RC promotion.",
 			"failureTags": []
 		}
 	],
 	"recommendationJudgment": {
 		"taskAnswerStatus": "answers-task",
 		"overconfidenceStatus": "calibrated",
-		"missingImportantEvidence": [
-			"Support requested any generated incident briefing match the macro segmentation (verified macOS, verified Linux, pending Windows). (S6)"
-		],
-		"explanation": "The recommendation matches the packet: symptom-led + one safe action (S1), environment caveats and avoiding universal “resolved” (S2/S3), use of the new recovery command (S4), and doc alignment (S5). It also mentions matching Support’s macro segmentation, but does not cite S6 and the evaluation notes it as missing evidence rather than incorrect.",
+		"missingImportantEvidence": [],
+		"explanation": "The recommendation is well supported by the packet: it leads with symptoms and safe action (S1), keeps the Windows validation caveat prominent (S2, S3), segments by macOS/Linux verified vs. Windows pending (S2, S3, S6), uses the new recovery command with credential and partial-state cleanup (S4, S6), and ties broad promotion to docs readiness and avoiding the old installer flow (S4, S5). It appropriately avoids claiming universal resolution.",
 		"failureTags": []
 	},
 	"scores": {
-		"overall": 0.92,
-		"grounding": 0.85,
-		"coverage": 0.92,
+		"overall": 0.95,
+		"grounding": 0.88,
+		"coverage": 1,
 		"citationSupport": 1
 	},
 	"failureTags": [],

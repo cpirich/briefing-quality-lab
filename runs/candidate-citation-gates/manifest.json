@@ -15,10 +15,10 @@
 		"case-incident-recovery-comms"
 	],
 	"aggregateMetrics": {
-		"overall": 0.88,
+		"overall": 0.9,
 		"grounding": 0.86,
-		"coverage": 0.88,
-		"citationSupport": 0.95,
+		"coverage": 0.93,
+		"citationSupport": 0.96,
 		"unsupportedClaims": 6,
 		"medianLatencyMs": 8000,
 		"costRatio": 1.1,
@@ -32,8 +32,8 @@
 			"id": "citation-support",
 			"label": "Citation support",
 			"status": "pass",
-			"value": "0.95",
-			"threshold": ">= 0.95"
+			"value": "0.96",
+			"threshold": ">= 0.96"
 		},
 		{
 			"id": "cost-budget",

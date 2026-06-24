@@ -5,26 +5,26 @@
 	"evaluator": {
 		"mode": "hybrid",
 		"provider": "openai",
-		"model": "gpt-5.2",
+		"model": "gpt-5.5",
 		"promptVersion": "hybrid-judge-v1",
 		"settings": {
 			"structuredOutputName": "hybrid_evaluator_output"
 		},
-		"latencyMs": 9683,
+		"latencyMs": 19684,
 		"cost": {
-			"inputTokens": 2163,
+			"inputTokens": 2162,
 			"cachedInputTokens": 0,
-			"outputTokens": 876,
-			"estimatedUsd": 0.01604925,
+			"outputTokens": 891,
+			"estimatedUsd": 0.03754,
 			"pricing": {
-				"model": "gpt-5.2",
-				"inputUsdPer1MTokens": 1.75,
-				"cachedInputUsdPer1MTokens": 0.175,
-				"outputUsdPer1MTokens": 14,
+				"model": "gpt-5.5",
+				"inputUsdPer1MTokens": 5,
+				"cachedInputUsdPer1MTokens": 0.5,
+				"outputUsdPer1MTokens": 30,
 				"currency": "USD",
 				"serviceTier": "standard",
 				"context": "short",
-				"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-24"
 			}
 		}
 	},
@@ -100,7 +100,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S1", "S5"],
 			"missingEvidence": [],
-			"explanation": "S1 explicitly approves automatic drafting, summarization, and artifact linking when clearly marked as generated, noting they are prep work for human inspection. S5 lists drafting and artifact linking as safe defaults in the taxonomy.",
+			"explanation": "S1 explicitly approves automatic drafting, summarization, and artifact linking when outputs are clearly marked as generated and framed for human inspection before action. S5 also lists drafting and artifact linking as safe defaults.",
 			"failureTags": []
 		},
 		{
@@ -109,7 +109,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S1", "S5"],
 			"missingEvidence": [],
-			"explanation": "S1 says participants rejected automatic policy changes, customer commitments, and release blocking without a human approver, explaining these change obligations or stop work. S5 repeats these categories require an approver recorded in the trail.",
+			"explanation": "S1 says participants rejected automatic policy changes, customer commitments, and release blocking because they change obligations or stop work without accountable approval. S5 also requires an approver for those categories.",
 			"failureTags": []
 		},
 		{
@@ -118,7 +118,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S4"],
 			"missingEvidence": [],
-			"explanation": "S4 states automated messages interpretable as customer commitments need an accountable human reviewer, and that internal draft summaries are approved only if they can’t be confused with final commitments.",
+			"explanation": "S4 directly states that automated messages interpretable as customer commitments need an accountable human reviewer and that internal draft summaries are approved only if not confused with final commitments.",
 			"failureTags": []
 		},
 		{
@@ -127,7 +127,7 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S2"],
 			"missingEvidence": [],
-			"explanation": "S2 documents an incident where a recommendation was posted as if approved, leading teams to pause rollout. It calls for explicit status labels including draft, recommendation, approved action, and blocked.",
+			"explanation": "S2 describes a recommendation posted as if approved, causing two teams to pause rollout work, and asks for explicit labels: draft, recommendation, approved action, and blocked.",
 			"failureTags": []
 		},
 		{
@@ -136,28 +136,28 @@
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S3", "S6"],
 			"missingEvidence": [],
-			"explanation": "S3 reports higher acceptance with separation of evidence/recommendation/action controls and more cancellations/clarification clicks when combined. S6 corroborates the UI concern and recommends separation and visible status labels.",
+			"explanation": "S3 provides the analytics claim: higher acceptance with separated evidence/recommendation/action controls and more cancellations/clarification clicks when recommendation and action are clustered. S6 independently recommends separation and warns against placing execution beside recommendations.",
 			"failureTags": []
 		}
 	],
 	"recommendationJudgment": {
 		"taskAnswerStatus": "answers-task",
-		"overconfidenceStatus": "calibrated",
+		"overconfidenceStatus": "somewhat-overconfident",
 		"missingImportantEvidence": [],
-		"explanation": "The recommendation aligns with the packet’s boundary: automate preparation (drafting/summarization/linking) with clear generated-status labeling, and require human approval for policy changes, customer commitments/external messages, and release blocking. It also reflects the packet’s guardrails on status labels and UI separation. Minor extensions (e.g., mentioning unblocking explicitly and broader ‘external messages’ category) are directionally consistent with S5/S4 and do not contradict sources.",
-		"failureTags": []
+		"explanation": "The recommendation directly answers which actions can be automated versus require approval and includes supported guardrails: labels, UI separation, and approver trail. Most categories are well supported. Minor overreach: it treats proposing recommendations as automatable by default and includes release unblocking, while the packet is clearest about automating drafts/summaries/linking and requiring approval for release blocking, not explicitly unblocking.",
+		"failureTags": ["minor-extrapolation"]
 	},
 	"scores": {
-		"overall": 0.95,
+		"overall": 0.93,
 		"grounding": 0.88,
 		"coverage": 1,
 		"citationSupport": 1
 	},
-	"failureTags": [],
+	"failureTags": ["minor-extrapolation", "overconfidence"],
 	"rubricEvidence": [
 		"Hybrid claim support score: 1.00.",
 		"Recommendation task fit: answers-task.",
-		"Overconfidence: calibrated.",
+		"Overconfidence: somewhat-overconfident.",
 		"Hard-check cap: 1.00."
 	],
 	"citationSupport": [
