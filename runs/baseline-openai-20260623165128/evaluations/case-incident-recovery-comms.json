@@ -61,7 +61,7 @@
 			"id": "cost-metadata",
 			"label": "Cost metadata",
 			"status": "pass",
-			"value": "$0.009415",
+			"value": "0.009415",
 			"expectation": "estimatedUsd is present when pricing is configured"
 		},
 		{
@@ -83,7 +83,14 @@
 			"label": "Judge input boundary",
 			"status": "pass",
 			"value": "eval-only fields omitted",
-			"expectation": "Judge prompt omits eval-only labels and holdout tuning fields"
+			"expectation": "Judge prompt omits eval-only object keys and holdout tuning fields"
+		},
+		{
+			"id": "judge-claim-coverage",
+			"label": "Judge claim coverage",
+			"status": "pass",
+			"value": "5/5 claims judged, 0 extra",
+			"expectation": "LLM judge returns exactly one judgment for every briefing claim"
 		}
 	],
 	"claimJudgments": [

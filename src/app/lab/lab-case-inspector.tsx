@@ -296,7 +296,18 @@ function supportTone(status: string) {
 }
 
 function formatUsd(value: number | null) {
-	return value === null ? "unknown" : `$${value.toFixed(6)}`;
+	return value === null ? "unknown" : `$${value.toFixed(2)}`;
+}
+
+function hardCheckValueForDisplay(
+	check: CaseArtifactDetail["hardChecks"][number],
+) {
+	if (check.id !== "cost-metadata" || check.value === "unknown") {
+		return check.value;
+	}
+
+	const amount = Number.parseFloat(check.value.replace(/^\$/, ""));
+	return Number.isFinite(amount) ? formatUsd(amount) : check.value;
 }
 
 function EvaluatorMetadataSummary({
@@ -360,7 +371,7 @@ function HardCheckList({ detail }: { detail: CaseArtifactDetail | null }) {
 						<p className="font-medium text-sm">{check.label}</p>
 						<Badge tone={hardCheckTone(check.status)}>{check.status}</Badge>
 					</div>
-					<p className="mt-1 text-sm">{check.value}</p>
+					<p className="mt-1 text-sm">{hardCheckValueForDisplay(check)}</p>
 					{check.expectation || check.threshold || check.note ? (
 						<p className="mt-1 text-[var(--muted-foreground)] text-xs">
 							{[check.expectation, check.threshold, check.note]

@@ -28,9 +28,9 @@
 		},
 		{
 			"label": "Estimated cost",
-			"value": "$0.0733",
-			"delta": "$0.0267 under budget",
-			"status": "OpenAI baseline vs Reference target budget <= $0.1000",
+			"value": "0.07334775",
+			"delta": "-0.02665225",
+			"status": "OpenAI baseline vs Reference target budget <= 0.1",
 			"tone": "green"
 		},
 		{
@@ -84,9 +84,9 @@
 		},
 		{
 			"metric": "Estimated cost",
-			"baseline": "$0.0733",
-			"candidate": "<= $0.1000",
-			"delta": "$0.0267 under budget"
+			"baseline": "0.07334775",
+			"candidate": "<= 0.1",
+			"delta": "-0.02665225"
 		}
 	],
 	"failureClusters": [],

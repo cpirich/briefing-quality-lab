@@ -8,43 +8,43 @@
 		{
 			"label": "Overall quality",
 			"value": "0.83",
-			"delta": "+0.03",
+			"delta": "-0.04",
 			"status": "Reference target score",
-			"tone": "green"
+			"tone": "blue"
 		},
 		{
 			"label": "Citation grounding",
 			"value": "0.80",
-			"delta": "-0.09",
+			"delta": "-0.17",
 			"status": "Reference target citation score",
 			"tone": "blue"
 		},
 		{
 			"label": "Coverage",
 			"value": "0.86",
-			"delta": "+0.07",
+			"delta": "+0.01",
 			"status": "Reference target coverage score",
-			"tone": "amber"
-		},
-		{
-			"label": "Estimated cost",
-			"value": "$0.0701",
-			"delta": "$0.0299 under budget",
-			"status": "OpenAI baseline vs Reference target budget <= $0.1000",
 			"tone": "green"
 		},
 		{
-			"label": "Latency ratio",
-			"value": "0.63x",
-			"delta": "-0.37x",
-			"status": "Reference target latency ratio",
+			"label": "Estimated cost",
+			"value": "0.07009975",
+			"delta": "-0.02990025",
+			"status": "OpenAI baseline vs Reference target budget <= 0.1",
+			"tone": "green"
+		},
+		{
+			"label": "Median latency",
+			"value": "7.9s",
+			"delta": "-4.7s",
+			"status": "Reference target median latency",
 			"tone": "green"
 		}
 	],
 	"trend": [
 		{
 			"label": "OpenAI baseline",
-			"score": 80
+			"score": 87
 		},
 		{
 			"label": "Reference target",
@@ -54,21 +54,27 @@
 	"comparisonRows": [
 		{
 			"metric": "Overall score",
-			"baseline": "0.80",
+			"baseline": "0.87",
 			"candidate": "0.83",
-			"delta": "+0.03"
+			"delta": "-0.04"
 		},
 		{
 			"metric": "Citation support",
-			"baseline": "0.89",
+			"baseline": "0.97",
 			"candidate": "0.80",
-			"delta": "-0.09"
+			"delta": "-0.17"
+		},
+		{
+			"metric": "Coverage",
+			"baseline": "0.85",
+			"candidate": "0.86",
+			"delta": "+0.01"
 		},
 		{
 			"metric": "Grounding risk units",
-			"baseline": "11",
+			"baseline": "9",
 			"candidate": "7",
-			"delta": "-4"
+			"delta": "-2"
 		},
 		{
 			"metric": "Eval cases",
@@ -84,19 +90,12 @@
 		},
 		{
 			"metric": "Estimated cost",
-			"baseline": "$0.0701",
-			"candidate": "<= $0.1000",
-			"delta": "$0.0299 under budget"
+			"baseline": "0.07009975",
+			"candidate": "<= 0.1",
+			"delta": "-0.02990025"
 		}
 	],
 	"failureClusters": [
-		{
-			"title": "Coverage Gap",
-			"count": 2,
-			"severity": "Low",
-			"evidence": "Repeated coverage-gap findings across evaluator outputs.",
-			"cases": ["case-adoption-friction", "case-eval-loop"]
-		},
 		{
 			"title": "Overconfidence",
 			"count": 2,
@@ -116,6 +115,13 @@
 			"count": 1,
 			"severity": "Low",
 			"evidence": "Repeated causality-overreach findings across evaluator outputs.",
+			"cases": ["case-adoption-friction"]
+		},
+		{
+			"title": "Coverage Gap",
+			"count": 1,
+			"severity": "Low",
+			"evidence": "Repeated coverage-gap findings across evaluator outputs.",
 			"cases": ["case-adoption-friction"]
 		}
 	],

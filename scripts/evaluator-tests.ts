@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import {
 	buildHybridJudgePrompt,
+	deterministicHardChecks,
 	evaluateBriefing,
 	type HybridJudgeResult,
 } from "~/lab/evaluator";
@@ -21,7 +22,7 @@ const sourcePacket: SourcePacket = {
 		{
 			id: "A1",
 			title: "Rollout memo",
-			body: "The rollout memo says support queues are the primary blocker and recommends a staged release with staff review before broad enablement.",
+			body: "The rollout memo says support queues are the primary blocker and recommends a staged release with staff review before broad enablement. The holdout policy should remain unchanged during the pilot.",
 		},
 		{
 			id: "A2",
@@ -178,6 +179,7 @@ async function evaluateWith(judgment: HybridJudgeResult) {
 const supported = await evaluateWith(judgeResult("supported"));
 assert.equal(supported.evaluator?.mode, "hybrid");
 assert.equal(supported.scores.citationSupport, 1);
+assert(supported.scores.overall > 0.4);
 assert.equal(supported.claimJudgments?.[0]?.supportStatus, "supported");
 
 const partial = await evaluateWith(judgeResult("partially-supported"));
@@ -187,6 +189,46 @@ assert(partial.failureTags.includes("partial-claim-support"));
 const unsupported = await evaluateWith(judgeResult("unsupported"));
 assert(unsupported.scores.citationSupport < partial.scores.citationSupport);
 assert(unsupported.failureTags.includes("unsupported-claim"));
+
+const omittedClaimJudgment = judgeResult("supported");
+omittedClaimJudgment.claimJudgments = omittedClaimJudgment.claimJudgments.slice(
+	0,
+	1,
+);
+const missingClaim = await evaluateWith(omittedClaimJudgment);
+assert.equal(missingClaim.claimJudgments?.length, briefing.claims.length);
+assert.equal(missingClaim.claimJudgments?.[1]?.supportStatus, "unsupported");
+assert(missingClaim.failureTags.includes("judge-missing-claim-judgment"));
+assert(missingClaim.failureTags.includes("hard-check-fail"));
+assert.equal(
+	missingClaim.hardChecks?.find((check) => check.id === "judge-claim-coverage")
+		?.status,
+	"fail",
+);
+assert(missingClaim.scores.citationSupport < supported.scores.citationSupport);
+
+const extraClaimJudgment = judgeResult("supported");
+extraClaimJudgment.claimJudgments = [
+	...extraClaimJudgment.claimJudgments,
+	{
+		claimText: "Extra claim that does not appear in the briefing.",
+		citedSourceIds: ["A1"],
+		supportStatus: "supported",
+		supportingEvidenceIds: ["A1"],
+		missingEvidence: [],
+		explanation: "This extra judgment should not affect scoring.",
+		failureTags: [],
+	},
+];
+const extraClaim = await evaluateWith(extraClaimJudgment);
+assert.equal(extraClaim.claimJudgments?.length, briefing.claims.length);
+assert(extraClaim.failureTags.includes("hard-check-fail"));
+assert.equal(
+	extraClaim.hardChecks?.find((check) => check.id === "judge-claim-coverage")
+		?.status,
+	"fail",
+);
+assert.equal(extraClaim.scores.citationSupport, 0.4);
 
 const missingEvidence = await evaluateWith(
 	judgeResult("supported", "calibrated", [
@@ -208,11 +250,18 @@ const prompt = buildHybridJudgePrompt({
 	citedSourceIds: ["A1", "A2"],
 	hardChecks: [],
 });
+assert(prompt.includes("holdout"));
+const promptBoundaryCheck = deterministicHardChecks({
+	briefing,
+	sourcePacket,
+	trace,
+	judgePromptText: prompt,
+}).find((check) => check.id === "judge-input-boundary");
+assert.equal(promptBoundaryCheck?.status, "pass");
 for (const forbidden of [
 	"expectedCoverage",
 	"traps",
 	"acceptedCitations",
-	"holdout",
 	"demoHighlight",
 	"failureTags",
 ]) {

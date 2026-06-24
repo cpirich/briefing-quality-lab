@@ -319,6 +319,7 @@ export const RunManifestSchema = z.object({
 		groundingRiskUnits: z.number().int().nonnegative().optional(),
 		medianLatencyMs: z.number().int().nonnegative(),
 		estimatedCostUsd: z.number().nonnegative().nullable().optional(),
+		evaluatorEstimatedCostUsd: z.number().nonnegative().nullable().optional(),
 		costBudgetUsd: z.number().positive().optional(),
 		costRatio: z.number().positive(),
 		latencyRatio: z.number().positive(),

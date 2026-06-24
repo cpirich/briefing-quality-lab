@@ -87,8 +87,9 @@ const HybridJudgeResultSchema = z.object({
 });
 
 export type HybridJudgeResult = z.infer<typeof HybridJudgeResultSchema>;
+type ClaimJudgment = HybridJudgeResult["claimJudgments"][number];
 
-const localEvaluatorCalibration = {
+const evaluatorCalibration = {
 	coverageFloor: 0.25,
 	failureRiskCap: 0.18,
 	failureRiskPerTag: 0.025,
@@ -108,6 +109,24 @@ const localEvaluatorCalibration = {
 	overallCoverageWeight: 0.34,
 	overallCitationWeight: 0.32,
 	overallGroundingWeight: 0.34,
+	coverageGapThreshold: 0.65,
+	citationGroundingThreshold: 0.72,
+	groundingRiskThreshold: 0.65,
+	hybridHardCheckFailCap: 0.4,
+	hybridHardCheckWarnCap: 0.85,
+	hybridPartialSupportScore: 0.55,
+	hybridPartialTaskAnswerScore: 0.6,
+	hybridMissedTaskAnswerScore: 0.2,
+	hybridOverconfidentPenalty: 0.35,
+	hybridSomewhatOverconfidentPenalty: 0.15,
+	hybridMissingEvidencePenaltyCap: 0.25,
+	hybridMissingEvidencePenaltyPerItem: 0.08,
+	hybridGroundingClaimSupportWeight: 0.88,
+	hybridGroundingMissingEvidencePenaltyWeight: 0.35,
+	hybridOverallGroundingWeight: 0.42,
+	hybridOverallCoverageWeight: 0.28,
+	hybridOverallCitationWeight: 0.2,
+	hybridOverallRecommendationWeight: 0.1,
 } as const;
 const coverageTermMinimumLength = 5;
 const coverageTermsPerPoint = 5;
@@ -147,7 +166,7 @@ function coverageScore(evalCase: EvalCase, briefing: BriefingOutput) {
 	}).length;
 
 	return Math.max(
-		localEvaluatorCalibration.coverageFloor,
+		evaluatorCalibration.coverageFloor,
 		hits / evalCase.expectedCoverage.length,
 	);
 }
@@ -175,49 +194,49 @@ function deterministicScores(evalCase: EvalCase, briefing: BriefingOutput) {
 	let coverage = coverageScore(evalCase, briefing);
 	let citationSupport = citationSupportScore(evalCase, briefing);
 	const failureRisk = Math.min(
-		localEvaluatorCalibration.failureRiskCap,
-		evalCase.failureTags.length * localEvaluatorCalibration.failureRiskPerTag,
+		evaluatorCalibration.failureRiskCap,
+		evalCase.failureTags.length * evaluatorCalibration.failureRiskPerTag,
 	);
 	const isLocalExtractive =
 		briefing.metadata.model === "deterministic-extractive";
 
 	if (isLocalExtractive) {
 		coverage = Math.min(
-			localEvaluatorCalibration.localExtractiveCoverageCap,
+			evaluatorCalibration.localExtractiveCoverageCap,
 			Math.max(
-				localEvaluatorCalibration.localExtractiveCoverageFloor,
-				coverage - localEvaluatorCalibration.localExtractiveCoveragePenalty,
+				evaluatorCalibration.localExtractiveCoverageFloor,
+				coverage - evaluatorCalibration.localExtractiveCoveragePenalty,
 			),
 		);
 		citationSupport = Math.min(
-			localEvaluatorCalibration.localExtractiveCitationSupportCap,
+			evaluatorCalibration.localExtractiveCitationSupportCap,
 			Math.max(
-				localEvaluatorCalibration.localExtractiveCitationSupportFloor,
+				evaluatorCalibration.localExtractiveCitationSupportFloor,
 				citationSupport -
-					localEvaluatorCalibration.localExtractiveCitationSupportPenalty +
+					evaluatorCalibration.localExtractiveCitationSupportPenalty +
 					coverage *
-						localEvaluatorCalibration.localExtractiveCitationCoverageWeight -
+						evaluatorCalibration.localExtractiveCitationCoverageWeight -
 					failureRisk,
 			),
 		);
 	}
 
 	const grounding = Math.max(
-		localEvaluatorCalibration.groundingFloor,
+		evaluatorCalibration.groundingFloor,
 		Math.min(
-			localEvaluatorCalibration.groundingCap,
-			citationSupport * localEvaluatorCalibration.groundingCitationWeight +
-				coverage * localEvaluatorCalibration.groundingCoverageWeight -
+			evaluatorCalibration.groundingCap,
+			citationSupport * evaluatorCalibration.groundingCitationWeight +
+				coverage * evaluatorCalibration.groundingCoverageWeight -
 				failureRisk,
 		),
 	);
 	const overall = Math.max(
-		localEvaluatorCalibration.overallFloor,
+		evaluatorCalibration.overallFloor,
 		Math.min(
-			localEvaluatorCalibration.overallCap,
-			coverage * localEvaluatorCalibration.overallCoverageWeight +
-				citationSupport * localEvaluatorCalibration.overallCitationWeight +
-				grounding * localEvaluatorCalibration.overallGroundingWeight,
+			evaluatorCalibration.overallCap,
+			coverage * evaluatorCalibration.overallCoverageWeight +
+				citationSupport * evaluatorCalibration.overallCitationWeight +
+				grounding * evaluatorCalibration.overallGroundingWeight,
 		),
 	);
 
@@ -232,13 +251,15 @@ function deterministicScores(evalCase: EvalCase, briefing: BriefingOutput) {
 function deterministicFailureTags(scores: EvaluatorOutput["scores"]) {
 	const tags = new Set<string>();
 
-	if (scores.coverage < 0.65) {
+	if (scores.coverage < evaluatorCalibration.coverageGapThreshold) {
 		tags.add("coverage-gap");
 	}
-	if (scores.citationSupport < 0.72) {
+	if (
+		scores.citationSupport < evaluatorCalibration.citationGroundingThreshold
+	) {
 		tags.add("citation-grounding");
 	}
-	if (scores.grounding < 0.65) {
+	if (scores.grounding < evaluatorCalibration.groundingRiskThreshold) {
 		tags.add("grounding-risk");
 	}
 
@@ -271,6 +292,51 @@ function hardCheck({
 	};
 }
 
+const forbiddenJudgePromptKeys = new Set([
+	"expectedCoverage",
+	"traps",
+	"acceptedCitations",
+	"holdout",
+	"demoHighlight",
+	"failureTags",
+]);
+
+function leakedJudgePromptKeyPaths(
+	value: unknown,
+	path: string[] = [],
+): string[] {
+	if (Array.isArray(value)) {
+		return value.flatMap((item, index) =>
+			leakedJudgePromptKeyPaths(item, [...path, String(index)]),
+		);
+	}
+
+	if (!value || typeof value !== "object") {
+		return [];
+	}
+
+	return Object.entries(value).flatMap(([key, child]) => {
+		const nextPath = [...path, key];
+		const keyLeak = forbiddenJudgePromptKeys.has(key)
+			? [nextPath.join(".")]
+			: [];
+
+		return [...keyLeak, ...leakedJudgePromptKeyPaths(child, nextPath)];
+	});
+}
+
+function leakedEvalFieldKeysFromJudgePrompt(judgePromptText?: string) {
+	if (!judgePromptText) {
+		return [];
+	}
+
+	try {
+		return leakedJudgePromptKeyPaths(JSON.parse(judgePromptText));
+	} catch {
+		return ["<invalid-json>"];
+	}
+}
+
 export function deterministicHardChecks({
 	briefing,
 	sourcePacket,
@@ -296,19 +362,8 @@ export function deterministicHardChecks({
 			trace.cost.outputTokens >= 0 &&
 			(trace.cost.cachedInputTokens ?? 0) <= trace.cost.inputTokens
 		: false;
-	const forbiddenPromptPhrases = [
-		"expectedCoverage",
-		"traps",
-		"acceptedCitations",
-		"holdout",
-		"demoHighlight",
-		"failureTags",
-	];
-	const leakedPromptPhrases = judgePromptText
-		? forbiddenPromptPhrases.filter((phrase) =>
-				judgePromptText.includes(phrase),
-			)
-		: [];
+	const leakedPromptKeyPaths =
+		leakedEvalFieldKeysFromJudgePrompt(judgePromptText);
 
 	return [
 		hardCheck({
@@ -365,7 +420,7 @@ export function deterministicHardChecks({
 			value:
 				trace?.cost.estimatedUsd === null || trace === undefined
 					? "unknown"
-					: `$${trace.cost.estimatedUsd}`,
+					: String(trace.cost.estimatedUsd),
 			expectation: "estimatedUsd is present when pricing is configured",
 		}),
 		hardCheck({
@@ -395,23 +450,23 @@ export function deterministicHardChecks({
 			id: "judge-input-boundary",
 			label: "Judge input boundary",
 			status:
-				!judgePromptText || leakedPromptPhrases.length === 0 ? "pass" : "fail",
+				!judgePromptText || leakedPromptKeyPaths.length === 0 ? "pass" : "fail",
 			value:
-				!judgePromptText || leakedPromptPhrases.length === 0
+				!judgePromptText || leakedPromptKeyPaths.length === 0
 					? "eval-only fields omitted"
-					: `leaked ${leakedPromptPhrases.join(", ")}`,
+					: `leaked keys ${leakedPromptKeyPaths.join(", ")}`,
 			expectation:
-				"Judge prompt omits eval-only labels and holdout tuning fields",
+				"Judge prompt omits eval-only object keys and holdout tuning fields",
 		}),
 	];
 }
 
 function hardCheckScoreCap(hardChecks: HardCheck[]) {
 	if (hardChecks.some((check) => check.status === "fail")) {
-		return 0.4;
+		return evaluatorCalibration.hybridHardCheckFailCap;
 	}
 	if (hardChecks.some((check) => check.status === "warn")) {
-		return 0.85;
+		return evaluatorCalibration.hybridHardCheckWarnCap;
 	}
 
 	return 1;
@@ -424,7 +479,7 @@ function supportScore(
 		return 1;
 	}
 	if (status === "partially-supported") {
-		return 0.55;
+		return evaluatorCalibration.hybridPartialSupportScore;
 	}
 	return 0;
 }
@@ -436,19 +491,19 @@ function taskAnswerScore(
 		return 1;
 	}
 	if (status === "partially-answers-task") {
-		return 0.6;
+		return evaluatorCalibration.hybridPartialTaskAnswerScore;
 	}
-	return 0.2;
+	return evaluatorCalibration.hybridMissedTaskAnswerScore;
 }
 
 function overconfidencePenalty(
 	status: HybridJudgeResult["recommendationJudgment"]["overconfidenceStatus"],
 ) {
 	if (status === "overconfident") {
-		return 0.35;
+		return evaluatorCalibration.hybridOverconfidentPenalty;
 	}
 	if (status === "somewhat-overconfident") {
-		return 0.15;
+		return evaluatorCalibration.hybridSomewhatOverconfidentPenalty;
 	}
 	return 0;
 }
@@ -461,13 +516,84 @@ function average(values: number[]) {
 	return values.reduce((total, value) => total + value, 0) / values.length;
 }
 
+function normalizeClaimJudgments({
+	briefing,
+	judgment,
+}: {
+	briefing: BriefingOutput;
+	judgment: HybridJudgeResult;
+}) {
+	const unmatchedJudgments = [...judgment.claimJudgments];
+	const claimJudgments: ClaimJudgment[] = briefing.claims.map((claim) => {
+		const matchingIndex = unmatchedJudgments.findIndex(
+			(judgmentClaim) => judgmentClaim.claimText === claim.text,
+		);
+		if (matchingIndex >= 0) {
+			const matchingJudgment = unmatchedJudgments[matchingIndex];
+			unmatchedJudgments.splice(matchingIndex, 1);
+			if (!matchingJudgment) {
+				throw new Error("Matched claim judgment index was not available.");
+			}
+			return matchingJudgment;
+		}
+
+		return {
+			claimText: claim.text,
+			citedSourceIds: claim.citations,
+			supportStatus: "unsupported" as const,
+			supportingEvidenceIds: [],
+			missingEvidence: ["Judge omitted this claim judgment."],
+			explanation:
+				"The evaluator did not return a judgment for this briefing claim, so it is treated as unsupported.",
+			failureTags: ["judge-missing-claim-judgment"],
+		};
+	});
+
+	return {
+		...judgment,
+		claimJudgments,
+		claimCoverage: {
+			expected: briefing.claims.length,
+			missing: claimJudgments.filter((claim) =>
+				claim.failureTags.includes("judge-missing-claim-judgment"),
+			).length,
+			extra: unmatchedJudgments.length,
+		},
+	};
+}
+
+function claimCoverageHardCheck({
+	extra,
+	expected,
+	missing,
+}: {
+	extra: number;
+	expected: number;
+	missing: number;
+}): HardCheck {
+	const status = missing === 0 && extra === 0 ? "pass" : "fail";
+	return hardCheck({
+		id: "judge-claim-coverage",
+		label: "Judge claim coverage",
+		status,
+		value: `${expected - missing}/${expected} claims judged, ${extra} extra`,
+		expectation:
+			"LLM judge returns exactly one judgment for every briefing claim",
+		note:
+			status === "pass"
+				? undefined
+				: "Missing claim judgments are treated as unsupported; extra judgments are ignored for scoring.",
+	});
+}
+
 function hybridScores(judgment: HybridJudgeResult, hardChecks: HardCheck[]) {
 	const claimSupport = average(
 		judgment.claimJudgments.map((claim) => supportScore(claim.supportStatus)),
 	);
 	const missingEvidencePenalty = Math.min(
-		0.25,
-		judgment.recommendationJudgment.missingImportantEvidence.length * 0.08,
+		evaluatorCalibration.hybridMissingEvidencePenaltyCap,
+		judgment.recommendationJudgment.missingImportantEvidence.length *
+			evaluatorCalibration.hybridMissingEvidencePenaltyPerItem,
 	);
 	const recommendationTaskScore = taskAnswerScore(
 		judgment.recommendationJudgment.taskAnswerStatus,
@@ -479,7 +605,9 @@ function hybridScores(judgment: HybridJudgeResult, hardChecks: HardCheck[]) {
 			),
 	);
 	const grounding = clampScore(
-		claimSupport * 0.88 - missingEvidencePenalty * 0.35,
+		claimSupport * evaluatorCalibration.hybridGroundingClaimSupportWeight -
+			missingEvidencePenalty *
+				evaluatorCalibration.hybridGroundingMissingEvidencePenaltyWeight,
 	);
 	const coverage = clampScore(recommendationTaskScore - missingEvidencePenalty);
 	const citationSupport = claimSupport;
@@ -487,10 +615,11 @@ function hybridScores(judgment: HybridJudgeResult, hardChecks: HardCheck[]) {
 	const overall = Math.min(
 		cap,
 		clampScore(
-			grounding * 0.42 +
-				coverage * 0.28 +
-				citationSupport * 0.2 +
-				recommendationQuality * 0.1,
+			grounding * evaluatorCalibration.hybridOverallGroundingWeight +
+				coverage * evaluatorCalibration.hybridOverallCoverageWeight +
+				citationSupport * evaluatorCalibration.hybridOverallCitationWeight +
+				recommendationQuality *
+					evaluatorCalibration.hybridOverallRecommendationWeight,
 		),
 	);
 
@@ -531,10 +660,12 @@ function hybridFailureTags(
 	if (judgment.recommendationJudgment.overconfidenceStatus !== "calibrated") {
 		tags.add("overconfidence");
 	}
-	if (scores.coverage < 0.65) {
+	if (scores.coverage < evaluatorCalibration.coverageGapThreshold) {
 		tags.add("coverage-gap");
 	}
-	if (scores.citationSupport < 0.72) {
+	if (
+		scores.citationSupport < evaluatorCalibration.citationGroundingThreshold
+	) {
 		tags.add("citation-grounding");
 	}
 
@@ -771,8 +902,16 @@ export async function evaluateBriefing({
 			judgeModel,
 		}),
 	);
+	const normalizedJudgment = normalizeClaimJudgments({
+		briefing,
+		judgment,
+	});
+	const completedHardChecks = [
+		...hardChecks,
+		claimCoverageHardCheck(normalizedJudgment.claimCoverage),
+	];
 	const latencyMs = Math.max(1, Date.now() - startedAt);
-	const scores = hybridScores(judgment, hardChecks);
+	const scores = hybridScores(normalizedJudgment, completedHardChecks);
 
 	return EvaluatorOutputSchema.parse({
 		id: `evaluation-${runId}-${evalCase.id}`,
@@ -791,21 +930,25 @@ export async function evaluateBriefing({
 				mode,
 				model: judgeModel,
 				prompt,
-				output: judgment,
+				output: normalizedJudgment,
 			}),
 		},
-		hardChecks,
-		claimJudgments: judgment.claimJudgments,
-		recommendationJudgment: judgment.recommendationJudgment,
+		hardChecks: completedHardChecks,
+		claimJudgments: normalizedJudgment.claimJudgments,
+		recommendationJudgment: normalizedJudgment.recommendationJudgment,
 		scores,
-		failureTags: hybridFailureTags(judgment, hardChecks, scores),
+		failureTags: hybridFailureTags(
+			normalizedJudgment,
+			completedHardChecks,
+			scores,
+		),
 		rubricEvidence: [
 			`Hybrid claim support score: ${scores.citationSupport.toFixed(2)}.`,
-			`Recommendation task fit: ${judgment.recommendationJudgment.taskAnswerStatus}.`,
-			`Overconfidence: ${judgment.recommendationJudgment.overconfidenceStatus}.`,
-			`Hard-check cap: ${hardCheckScoreCap(hardChecks).toFixed(2)}.`,
+			`Recommendation task fit: ${normalizedJudgment.recommendationJudgment.taskAnswerStatus}.`,
+			`Overconfidence: ${normalizedJudgment.recommendationJudgment.overconfidenceStatus}.`,
+			`Hard-check cap: ${hardCheckScoreCap(completedHardChecks).toFixed(2)}.`,
 		],
-		citationSupport: citationSupportForHybrid(judgment),
+		citationSupport: citationSupportForHybrid(normalizedJudgment),
 		notes:
 			"Hybrid evaluator output: deterministic hard checks plus structured LLM judge evidence. Manual spot checks are still required before claiming product improvement.",
 		artifactPaths: [

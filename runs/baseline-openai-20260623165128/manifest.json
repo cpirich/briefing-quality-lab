@@ -15,14 +15,15 @@
 		"case-release-note-drift"
 	],
 	"aggregateMetrics": {
-		"overall": 0.8,
-		"grounding": 0.76,
-		"coverage": 0.79,
-		"citationSupport": 0.89,
-		"unsupportedClaims": 11,
-		"groundingRiskUnits": 11,
+		"overall": 0.87,
+		"grounding": 0.82,
+		"coverage": 0.85,
+		"citationSupport": 0.97,
+		"unsupportedClaims": 9,
+		"groundingRiskUnits": 9,
 		"medianLatencyMs": 12559,
 		"estimatedCostUsd": 0.07009975,
+		"evaluatorEstimatedCostUsd": 0.1214465,
 		"costRatio": 1,
 		"latencyRatio": 1
 	},
@@ -31,7 +32,7 @@
 			"id": "citation-support",
 			"label": "Citation support",
 			"status": "pass",
-			"value": "0.89",
+			"value": "0.97",
 			"threshold": ">= 0.72"
 		},
 		{

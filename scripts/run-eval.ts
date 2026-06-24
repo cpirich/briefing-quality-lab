@@ -501,6 +501,20 @@ function knownEstimatedCost(traces: GenerationTrace[]) {
 	);
 }
 
+function evaluationsHaveUnknownCost(evaluations: EvaluatorOutput[]) {
+	return evaluations.some(
+		(evaluation) => evaluation.evaluator?.cost.estimatedUsd === null,
+	);
+}
+
+function knownEstimatedEvaluatorCost(evaluations: EvaluatorOutput[]) {
+	return evaluations.reduce(
+		(total, evaluation) =>
+			total + (evaluation.evaluator?.cost.estimatedUsd ?? 0),
+		0,
+	);
+}
+
 function roundCostUsd(value: number) {
 	return Math.round(value * 100_000_000) / 100_000_000;
 }
@@ -559,11 +573,16 @@ function manifestFor({
 	error?: string;
 }) {
 	const hasUnknownCost = tracesHaveUnknownCost(traces);
+	const hasUnknownEvaluatorCost = evaluationsHaveUnknownCost(evaluations);
 	const groundingRiskUnitCount = groundingRiskUnits(evaluations);
 	const estimatedCostUsd =
 		hasUnknownCost || traces.length === 0
 			? null
 			: roundCostUsd(knownEstimatedCost(traces));
+	const evaluatorEstimatedCostUsd =
+		hasUnknownEvaluatorCost || evaluations.length === 0
+			? null
+			: roundCostUsd(knownEstimatedEvaluatorCost(evaluations));
 	const costRatio =
 		mode === "baseline"
 			? 1
@@ -597,6 +616,7 @@ function manifestFor({
 			groundingRiskUnits: groundingRiskUnitCount,
 			medianLatencyMs: median(traces.map((trace) => trace.latencyMs)),
 			estimatedCostUsd,
+			evaluatorEstimatedCostUsd,
 			costRatio,
 			latencyRatio: latencyRatioFor({ mode, traces, referenceManifest }),
 		},
@@ -973,8 +993,13 @@ function estimatedCostUsdFor(artifacts: RunArtifacts) {
 	return roundCostUsd(knownEstimatedCost(artifacts.traces));
 }
 
-function formatUsd(value: number) {
-	return `$${value.toFixed(4)}`;
+function formatCostNumber(value: number) {
+	return String(roundCostUsd(value));
+}
+
+function formatSignedCostNumber(value: number) {
+	const roundedValue = roundCostUsd(value);
+	return roundedValue > 0 ? `+${roundedValue}` : String(roundedValue);
 }
 
 function referenceCostBudgetMetric({
@@ -995,26 +1020,26 @@ function referenceCostBudgetMetric({
 		return {
 			label: "Estimated cost",
 			value:
-				estimatedCostUsd === null ? "unknown" : formatUsd(estimatedCostUsd),
+				estimatedCostUsd === null
+					? "unknown"
+					: formatCostNumber(estimatedCostUsd),
 			delta: "unknown",
 			status:
 				costBudgetUsd === undefined
 					? `${candidateLabel} budget not set`
-					: `${baselineLabel} vs ${candidateLabel} budget <= ${formatUsd(costBudgetUsd)}`,
+					: `${baselineLabel} vs ${candidateLabel} budget <= ${formatCostNumber(costBudgetUsd)}`,
 			tone: "amber" as const,
 		};
 	}
 
-	const remainingBudgetUsd = roundCostUsd(costBudgetUsd - estimatedCostUsd);
-	const isUnderBudget = remainingBudgetUsd >= 0;
+	const budgetDeltaUsd = roundCostUsd(estimatedCostUsd - costBudgetUsd);
+	const isUnderBudget = budgetDeltaUsd <= 0;
 
 	return {
 		label: "Estimated cost",
-		value: formatUsd(estimatedCostUsd),
-		delta: `${formatUsd(Math.abs(remainingBudgetUsd))} ${
-			isUnderBudget ? "under budget" : "over budget"
-		}`,
-		status: `${baselineLabel} vs ${candidateLabel} budget <= ${formatUsd(costBudgetUsd)}`,
+		value: formatCostNumber(estimatedCostUsd),
+		delta: formatSignedCostNumber(budgetDeltaUsd),
+		status: `${baselineLabel} vs ${candidateLabel} budget <= ${formatCostNumber(costBudgetUsd)}`,
 		tone: isUnderBudget ? ("green" as const) : ("red" as const),
 	};
 }
@@ -1033,25 +1058,24 @@ function referenceCostBudgetRow({
 		return {
 			metric: "Estimated cost",
 			baseline:
-				estimatedCostUsd === null ? "unknown" : formatUsd(estimatedCostUsd),
+				estimatedCostUsd === null
+					? "unknown"
+					: formatCostNumber(estimatedCostUsd),
 			candidate:
 				costBudgetUsd === undefined
 					? "budget not set"
-					: `<= ${formatUsd(costBudgetUsd)}`,
+					: `<= ${formatCostNumber(costBudgetUsd)}`,
 			delta: "unknown",
 		};
 	}
 
-	const remainingBudgetUsd = roundCostUsd(costBudgetUsd - estimatedCostUsd);
-	const isUnderBudget = remainingBudgetUsd >= 0;
+	const budgetDeltaUsd = roundCostUsd(estimatedCostUsd - costBudgetUsd);
 
 	return {
 		metric: "Estimated cost",
-		baseline: formatUsd(estimatedCostUsd),
-		candidate: `<= ${formatUsd(costBudgetUsd)}`,
-		delta: `${formatUsd(Math.abs(remainingBudgetUsd))} ${
-			isUnderBudget ? "under budget" : "over budget"
-		}`,
+		baseline: formatCostNumber(estimatedCostUsd),
+		candidate: `<= ${formatCostNumber(costBudgetUsd)}`,
+		delta: formatSignedCostNumber(budgetDeltaUsd),
 	};
 }
 
@@ -1178,23 +1202,13 @@ function selectedPairLatencyMetric(
 ) {
 	const baselineLatencyMs = baseline.aggregateMetrics.medianLatencyMs;
 	const candidateLatencyMs = candidate.aggregateMetrics.medianLatencyMs;
-	if (baselineLatencyMs < 100) {
-		return {
-			value: "not comparable",
-			delta: `${(candidateLatencyMs / 1000).toFixed(1)}s vs ${(
-				baselineLatencyMs / 1000
-			).toFixed(1)}s`,
-			tone: "amber" as const,
-		};
-	}
+	const latencyDeltaSeconds = (candidateLatencyMs - baselineLatencyMs) / 1000;
+	const latencyDeltaSign = latencyDeltaSeconds >= 0 ? "+" : "";
 
-	const latencyRatio = roundMetric(
-		Math.max(0.01, candidateLatencyMs / baselineLatencyMs),
-	);
 	return {
-		value: `${latencyRatio.toFixed(2)}x`,
-		delta: formatDelta(latencyRatio, 1, "x"),
-		tone: latencyRatio <= 1 ? ("green" as const) : ("amber" as const),
+		value: `${(candidateLatencyMs / 1000).toFixed(1)}s`,
+		delta: `${latencyDeltaSign}${latencyDeltaSeconds.toFixed(1)}s`,
+		tone: latencyDeltaSeconds <= 0 ? ("green" as const) : ("amber" as const),
 	};
 }
 
@@ -1482,13 +1496,13 @@ async function writeComparisonAndReport(input: {
 			},
 			costMetric,
 			{
-				label: "Latency ratio",
+				label: "Median latency",
 				value: latencyMetric.value,
 				delta: latencyMetric.delta,
 				status:
 					changeLabel === "Gap"
-						? `${candidateLabel} latency ratio`
-						: "Median latency proxy",
+						? `${candidateLabel} median latency`
+						: "Median latency delta",
 				tone: latencyMetric.tone,
 			},
 		],
@@ -1517,6 +1531,12 @@ async function writeComparisonAndReport(input: {
 					candidateMetrics.citationSupport,
 					baselineMetrics.citationSupport,
 				),
+			},
+			{
+				metric: "Coverage",
+				baseline: baselineMetrics.coverage.toFixed(2),
+				candidate: candidateMetrics.coverage.toFixed(2),
+				delta: formatDelta(candidateMetrics.coverage, baselineMetrics.coverage),
 			},
 			{
 				metric: "Grounding risk units",

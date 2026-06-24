@@ -53,10 +53,6 @@ function comparisonChangeLabel(candidateLabel: string, candidateRunId: string) {
 		: "Delta";
 }
 
-function metricBadgeLabel(value: string, changeLabel: string) {
-	return changeLabel === "Gap" ? `gap ${value}` : value;
-}
-
 function comparisonBarClass(label: string, baselineLabel: string) {
 	return label === baselineLabel
 		? "bg-[var(--muted-foreground)]"
@@ -68,19 +64,75 @@ function numericDelta(value: string) {
 	return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function changeTextClass(metric: string, value: string, changeLabel: string) {
-	const normalizedValue = value.toLowerCase();
-	if (normalizedValue.includes("under budget")) {
-		return "text-[var(--success-foreground)]";
-	}
-	if (normalizedValue.includes("over budget")) {
-		return "text-[var(--danger-foreground)]";
+function formatUsdCents(value: number) {
+	return `$${value.toFixed(2)}`;
+}
+
+function formatCostDeltaForDisplay(value: string) {
+	const trimmedValue = value.trim();
+	const amountMatch = trimmedValue.match(/\$?([0-9]+(?:\.[0-9]+)?)/);
+	const amount = amountMatch ? Number.parseFloat(amountMatch[1] ?? "") : NaN;
+	if (!Number.isFinite(amount)) {
+		return value;
 	}
 
+	const normalizedValue = value.toLowerCase();
+	const sign =
+		normalizedValue.includes("under budget") || trimmedValue.startsWith("-")
+			? "-"
+			: "+";
+
+	return `${sign}${formatUsdCents(Math.abs(amount))}`;
+}
+
+function formatDollarsForDisplay(value: string) {
+	return value.replace(/\$?([0-9]+(?:\.[0-9]+)?)/g, (_match, amount: string) =>
+		formatUsdCents(Number.parseFloat(amount)),
+	);
+}
+
+function formatCostValueForDisplay(value: string) {
+	const trimmedValue = value.trim();
+	const normalizedValue = value.toLowerCase();
+	if (
+		normalizedValue.includes("under budget") ||
+		normalizedValue.includes("over budget") ||
+		trimmedValue.match(/^[+-](?:\$?\d|\.)/)
+	) {
+		return formatCostDeltaForDisplay(value);
+	}
+
+	return formatDollarsForDisplay(value);
+}
+
+function displayMetricValue(metric: string, value: string) {
+	return metric === "Estimated cost" ? formatCostValueForDisplay(value) : value;
+}
+
+function metricBadgeLabel(metric: string, value: string, changeLabel: string) {
+	const displayValue = displayMetricValue(metric, value);
+	return changeLabel === "Gap" ? `gap ${displayValue}` : displayValue;
+}
+
+type MetricDeltaTone = "amber" | "blue" | "green" | "red" | "slate";
+
+function metricDeltaTone(
+	metric: string,
+	value: string,
+	changeLabel: string,
+): MetricDeltaTone {
 	const delta = numericDelta(value);
 
 	if (delta === 0 || value === "unknown") {
-		return "text-[var(--muted-foreground)]";
+		return "slate";
+	}
+
+	if (changeLabel === "Gap" && metric === "Estimated cost") {
+		const normalizedValue = value.toLowerCase();
+		const isUnderBudget =
+			normalizedValue.includes("under budget") || value.trim().startsWith("-");
+
+		return isUnderBudget ? "green" : "red";
 	}
 
 	const lowerIsBetter = lowerIsBetterMetrics.has(metric);
@@ -88,22 +140,36 @@ function changeTextClass(metric: string, value: string, changeLabel: string) {
 	if (changeLabel !== "Gap") {
 		const isImprovement = lowerIsBetter ? delta < 0 : delta > 0;
 
-		return isImprovement
-			? "text-[var(--success-foreground)]"
-			: "text-[var(--danger-foreground)]";
+		return isImprovement ? "green" : "red";
 	}
 
 	if (lowerIsBetter) {
-		return delta > 0
-			? "text-[var(--success-foreground)]"
-			: "text-[var(--danger-foreground)]";
+		return delta > 0 ? "green" : "red";
 	}
 
 	const hasRemainingGap = delta > 0;
 	if (hasRemainingGap) {
+		return "amber";
+	}
+	return "green";
+}
+
+function changeTextClass(metric: string, value: string, changeLabel: string) {
+	const tone = metricDeltaTone(metric, value, changeLabel);
+
+	if (tone === "green") {
+		return "text-[var(--success-foreground)]";
+	}
+	if (tone === "red") {
+		return "text-[var(--danger-foreground)]";
+	}
+	if (tone === "amber") {
 		return "text-[var(--warning-foreground)]";
 	}
-	return "text-[var(--success-foreground)]";
+	if (tone === "blue") {
+		return "text-[var(--info-foreground)]";
+	}
+	return "text-[var(--muted-foreground)]";
 }
 
 function metadataValue(value: number | string | null | undefined) {
@@ -254,13 +320,26 @@ export default async function LabPage() {
 											<p className="min-w-0 font-medium text-[var(--muted-foreground)] text-xs uppercase leading-4">
 												{metric.label}
 											</p>
-											<Badge className="justify-self-end" tone={metric.tone}>
-												{metricBadgeLabel(metric.delta, changeLabel)}
+											<Badge
+												className="justify-self-end"
+												tone={metricDeltaTone(
+													metric.label,
+													metric.delta,
+													changeLabel,
+												)}
+											>
+												{metricBadgeLabel(
+													metric.label,
+													metric.delta,
+													changeLabel,
+												)}
 											</Badge>
 										</div>
-										<p className="font-semibold text-3xl">{metric.value}</p>
+										<p className="font-semibold text-3xl">
+											{displayMetricValue(metric.label, metric.value)}
+										</p>
 										<p className="text-[var(--muted-foreground)] text-xs">
-											{metric.status}
+											{displayMetricValue(metric.label, metric.status)}
 										</p>
 									</CardBody>
 								</Card>
@@ -283,7 +362,7 @@ export default async function LabPage() {
 							</div>
 						</CardHeader>
 						<CardBody>
-							<div className="grid h-52 grid-cols-4 gap-3 border-[var(--border)] border-b px-2">
+							<div className="grid h-52 grid-cols-4 gap-3 px-2">
 								{runComparison.trend.map((point) => (
 									<div
 										className="grid min-w-0 grid-rows-[1fr_auto] gap-2"
@@ -326,10 +405,10 @@ export default async function LabPage() {
 											>
 												<td className="px-3 py-2 font-medium">{row.metric}</td>
 												<td className="px-3 py-2 text-[var(--muted-foreground)]">
-													{row.baseline}
+													{displayMetricValue(row.metric, row.baseline)}
 												</td>
 												<td className="px-3 py-2 text-[var(--foreground)]">
-													{row.candidate}
+													{displayMetricValue(row.metric, row.candidate)}
 												</td>
 												<td
 													className={cn(
@@ -337,7 +416,7 @@ export default async function LabPage() {
 														changeTextClass(row.metric, row.delta, changeLabel),
 													)}
 												>
-													{row.delta}
+													{displayMetricValue(row.metric, row.delta)}
 												</td>
 											</tr>
 										))}
