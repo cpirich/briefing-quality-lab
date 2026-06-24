@@ -15,25 +15,25 @@
 		"case-incident-recovery-comms"
 	],
 	"aggregateMetrics": {
-		"overall": 0.83,
-		"grounding": 0.79,
-		"coverage": 0.86,
-		"citationSupport": 0.8,
-		"unsupportedClaims": 7,
-		"medianLatencyMs": 7900,
+		"overall": 0.88,
+		"grounding": 0.86,
+		"coverage": 0.88,
+		"citationSupport": 0.95,
+		"unsupportedClaims": 6,
+		"medianLatencyMs": 8000,
 		"costRatio": 1.1,
 		"latencyRatio": 0.94,
 		"estimatedCostUsd": null,
 		"costBudgetUsd": 0.1,
-		"groundingRiskUnits": 7
+		"groundingRiskUnits": 6
 	},
 	"guardrails": [
 		{
 			"id": "citation-support",
 			"label": "Citation support",
 			"status": "pass",
-			"value": "0.80",
-			"threshold": ">= 0.72"
+			"value": "0.95",
+			"threshold": ">= 0.95"
 		},
 		{
 			"id": "cost-budget",

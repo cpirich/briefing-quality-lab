@@ -12,7 +12,10 @@ import path from "node:path";
 
 import { generateBriefing } from "~/genie/generate-briefing";
 import { pricingForOpenAIModel } from "~/genie/openai-pricing";
-import { defaultOpenAIModel } from "~/genie/variants";
+import {
+	defaultOpenAIEvaluatorModel,
+	defaultOpenAIModel,
+} from "~/genie/variants";
 import { type EvaluatorMode, evaluateBriefing } from "~/lab/evaluator";
 import {
 	listBriefingOutputs,
@@ -350,7 +353,8 @@ function assertOpenAIPricingIsConfigured(options: EvalOptions) {
 	}
 
 	if (options.evaluator === "hybrid") {
-		const judgeModel = process.env.OPENAI_EVAL_MODEL ?? defaultOpenAIModel;
+		const judgeModel =
+			process.env.OPENAI_EVAL_MODEL ?? defaultOpenAIEvaluatorModel;
 		const pricing = pricingForOpenAIModel(judgeModel);
 		if (!pricing) {
 			throw new Error(

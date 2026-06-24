@@ -4,12 +4,12 @@ Generated comparison: OpenAI baseline `baseline-openai-20260623165128` vs Refere
 
 | Metric | OpenAI baseline | Reference target | Gap |
 | --- | --- | --- | --- |
-| Overall score | 0.87 | 0.83 | -0.04 |
-| Citation support | 0.97 | 0.80 | -0.17 |
-| Coverage | 0.85 | 0.86 | +0.01 |
-| Grounding risk units | 9 | 7 | -2 |
+| Overall score | 0.87 | 0.88 | +0.01 |
+| Citation support | 0.97 | 0.95 | -0.02 |
+| Coverage | 0.85 | 0.88 | +0.03 |
+| Grounding risk units | 9 | 6 | -3 |
 | Eval cases | 7 | 7 | 0 |
-| Median latency | 12.6s | 7.9s | -4.7s |
+| Median latency | 12.6s | 8.0s | -4.6s |
 | Estimated cost | 0.07009975 | <= 0.1 | -0.02990025 |
 
 Featured case: `case-adoption-friction` - Developer adoption friction briefing.

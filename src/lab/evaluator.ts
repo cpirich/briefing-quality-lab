@@ -5,7 +5,7 @@ import {
 	estimateOpenAIUsd,
 	pricingForOpenAIModel,
 } from "~/genie/openai-pricing";
-import { defaultOpenAIModel } from "~/genie/variants";
+import { defaultOpenAIEvaluatorModel } from "~/genie/variants";
 import {
 	type BriefingOutput,
 	BriefingOutputSchema,
@@ -818,7 +818,7 @@ export async function evaluateBriefing({
 	briefing,
 	trace,
 	mode,
-	judgeModel = process.env.OPENAI_EVAL_MODEL ?? defaultOpenAIModel,
+	judgeModel = process.env.OPENAI_EVAL_MODEL ?? defaultOpenAIEvaluatorModel,
 	judge = openAIHybridJudge,
 }: EvaluateBriefingInput): Promise<EvaluatorOutput> {
 	if (mode === "deterministic") {

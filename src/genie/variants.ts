@@ -1,6 +1,7 @@
 import { type GenerationVariant, GenerationVariantSchema } from "~/schemas";
 
 export const defaultOpenAIModel = "gpt-5.2";
+export const defaultOpenAIEvaluatorModel = "gpt-5.5";
 
 export const localExtractiveVariant: GenerationVariant =
 	GenerationVariantSchema.parse({

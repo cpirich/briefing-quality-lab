@@ -7,24 +7,24 @@
 	"metrics": [
 		{
 			"label": "Overall quality",
-			"value": "0.83",
-			"delta": "-0.04",
+			"value": "0.88",
+			"delta": "+0.01",
 			"status": "Reference target score",
-			"tone": "blue"
+			"tone": "green"
 		},
 		{
 			"label": "Citation grounding",
-			"value": "0.80",
-			"delta": "-0.17",
+			"value": "0.95",
+			"delta": "-0.02",
 			"status": "Reference target citation score",
-			"tone": "blue"
+			"tone": "green"
 		},
 		{
 			"label": "Coverage",
-			"value": "0.86",
-			"delta": "+0.01",
+			"value": "0.88",
+			"delta": "+0.03",
 			"status": "Reference target coverage score",
-			"tone": "green"
+			"tone": "amber"
 		},
 		{
 			"label": "Estimated cost",
@@ -35,8 +35,8 @@
 		},
 		{
 			"label": "Median latency",
-			"value": "7.9s",
-			"delta": "-4.7s",
+			"value": "8.0s",
+			"delta": "-4.6s",
 			"status": "Reference target median latency",
 			"tone": "green"
 		}
@@ -48,33 +48,33 @@
 		},
 		{
 			"label": "Reference target",
-			"score": 83
+			"score": 88
 		}
 	],
 	"comparisonRows": [
 		{
 			"metric": "Overall score",
 			"baseline": "0.87",
-			"candidate": "0.83",
-			"delta": "-0.04"
+			"candidate": "0.88",
+			"delta": "+0.01"
 		},
 		{
 			"metric": "Citation support",
 			"baseline": "0.97",
-			"candidate": "0.80",
-			"delta": "-0.17"
+			"candidate": "0.95",
+			"delta": "-0.02"
 		},
 		{
 			"metric": "Coverage",
 			"baseline": "0.85",
-			"candidate": "0.86",
-			"delta": "+0.01"
+			"candidate": "0.88",
+			"delta": "+0.03"
 		},
 		{
 			"metric": "Grounding risk units",
 			"baseline": "9",
-			"candidate": "7",
-			"delta": "-2"
+			"candidate": "6",
+			"delta": "-3"
 		},
 		{
 			"metric": "Eval cases",
@@ -85,8 +85,8 @@
 		{
 			"metric": "Median latency",
 			"baseline": "12.6s",
-			"candidate": "7.9s",
-			"delta": "-4.7s"
+			"candidate": "8.0s",
+			"delta": "-4.6s"
 		},
 		{
 			"metric": "Estimated cost",
