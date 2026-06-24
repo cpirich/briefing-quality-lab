@@ -1,6 +1,6 @@
 {
 	"id": "case-adoption-friction-openai-responses-v1-trace",
-	"runId": "baseline-openai-20260623165128",
+	"runId": "baseline-openai-20260624203921",
 	"caseId": "case-adoption-friction",
 	"sourcePacketId": "packet-dev-adoption",
 	"input": {
@@ -39,38 +39,78 @@
 		"sourcePacketId": "packet-dev-adoption",
 		"caseId": "case-adoption-friction",
 		"title": "Adoption risks & next product-quality improvement for pilot expansion",
-		"summary": "Adoption is improving at the top of funnel (quickstart completion up to 58%), but expansion is gated by a brittle setup/credentials experience and lack of visible recovery paths. The highest-leverage next improvement is to ship a public, end-to-end setup recovery path (focused on environment/CLI/credentials) that can be demonstrated without support intervention; this is also explicitly listed as a pilot gate alongside citation transparency.",
+		"summary": "Docs changes improved quickstart completion, but adoption remains bottlenecked by setup/credential failures that lack a public recovery path and currently require support intervention. For pilot expansion, readiness gates emphasize making failed-install recovery self-serve and making recommendation evidence/citations auditable and clearly sourced.",
 		"claims": [
 			{
 				"text": "Quickstart completion improved from 44% to 58% after the docs copy refresh, with fewer exits at the first API call step.",
 				"citations": ["S1"]
 			},
 			{
-				"text": "The largest remaining onboarding drop is during local setup and credential configuration, driven by environment-specific errors and limited recovery paths.",
+				"text": "The largest remaining drop-off occurs during local setup and credential configuration due to environment-specific errors; improvements benefited users who already had valid tokens more than brand-new users.",
 				"citations": ["S1"]
 			},
 			{
-				"text": "Support volume is dominated by environment drift, stale CLI versions, missing environment variables, and credentials copied from the wrong workspace; users often need an internal checklist to recover.",
+				"text": "Support tickets are dominated by environment drift, stale CLI versions, missing environment variables, and credentials copied from the wrong workspace; users lack clear recovery steps after failed installs.",
 				"citations": ["S2"]
 			},
 			{
-				"text": "Failures often persist because users restart the quickstart and reproduce the same broken state; tickets reopen when recovery steps aren’t clear/public.",
+				"text": "An internal support checklist resolves most setup issues, but its steps are not reflected in public docs; tickets often reopen when users restart the quickstart and reproduce the same failed state.",
 				"citations": ["S2"]
 			},
 			{
-				"text": "Pilot expansion is available (two teams next month) but is blocked by the most visible demo risk: setup recovery that looks brittle without documented guidance.",
+				"text": "Pilot stakeholders flagged setup recovery as the most visible/brittle failure mode for demos; expansion should wait until failed-install guidance is documented and observable in the lab.",
 				"citations": ["S4"]
 			}
 		],
 		"openQuestions": [
-			"Which specific setup/credential errors account for the largest share of bounces (top 3) so the recovery checklist can be prioritized accordingly?",
-			"What minimum “recovery successful” telemetry should be added to confirm users can self-heal without restarting the quickstart?",
-			"What is the smallest lab-visible UI/UX change that proves ‘recovery guidance is hardened’ to observers (e.g., a single “Repair setup” flow vs. docs-only checklist)?"
+			"Which specific recovery steps from the internal support checklist should be promoted to a public, versioned “Setup Recovery” flow (and what safety/permissions caveats are needed)?",
+			"What product instrumentation will confirm recovery success (e.g., detecting stale CLI, missing env vars, workspace mismatch) without requiring support intervention?",
+			"What is the minimum viable “citation check” experience in the lab to satisfy the traceability prerequisite for recommendations (and how will it be tested during the pilot)?"
 		],
-		"recommendation": "Next product-quality improvement for pilot expansion: implement and publish a first-class setup recovery path that covers (1) stale CLI detection + upgrade steps, (2) environment variable validation, (3) credential/workspace mismatch detection + reset guidance, and (4) safe re-run behavior after partial setup—so recovery can be demonstrated without support pasting an internal checklist. Treat this as the gating release for adding the two next pilot teams.",
+		"recommendation": "Prioritize a self-serve “Setup Recovery” improvement before adding more pilot teams: publish and productize a recovery checklist/flow that explicitly handles stale CLI installs, missing environment variables, credential/workspace mismatches, and repeated setup attempts—so a failed install has a documented path to a clean state without support pasting internal steps. This directly targets the main drop-off in setup/credentials and is an explicit pilot readiness gate blocking scheduling.",
 		"metadata": {
 			"variant": "OpenAI Responses baseline",
-			"runId": "baseline-openai-20260623165128",
+			"runId": "baseline-openai-20260624203921",
+			"model": "gpt-5.2"
+		}
+	},
+	"rawOutput": {
+		"id": "case-adoption-friction-openai-responses-v1",
+		"sourcePacketId": "packet-dev-adoption",
+		"caseId": "case-adoption-friction",
+		"title": "Adoption risks & next product-quality improvement for pilot expansion",
+		"summary": "Docs changes improved quickstart completion, but adoption remains bottlenecked by setup/credential failures that lack a public recovery path and currently require support intervention. For pilot expansion, readiness gates emphasize making failed-install recovery self-serve and making recommendation evidence/citations auditable and clearly sourced.",
+		"claims": [
+			{
+				"text": "Quickstart completion improved from 44% to 58% after the docs copy refresh, with fewer exits at the first API call step.",
+				"citations": ["S1"]
+			},
+			{
+				"text": "The largest remaining drop-off occurs during local setup and credential configuration due to environment-specific errors; improvements benefited users who already had valid tokens more than brand-new users.",
+				"citations": ["S1"]
+			},
+			{
+				"text": "Support tickets are dominated by environment drift, stale CLI versions, missing environment variables, and credentials copied from the wrong workspace; users lack clear recovery steps after failed installs.",
+				"citations": ["S2"]
+			},
+			{
+				"text": "An internal support checklist resolves most setup issues, but its steps are not reflected in public docs; tickets often reopen when users restart the quickstart and reproduce the same failed state.",
+				"citations": ["S2"]
+			},
+			{
+				"text": "Pilot stakeholders flagged setup recovery as the most visible/brittle failure mode for demos; expansion should wait until failed-install guidance is documented and observable in the lab.",
+				"citations": ["S4"]
+			}
+		],
+		"openQuestions": [
+			"Which specific recovery steps from the internal support checklist should be promoted to a public, versioned “Setup Recovery” flow (and what safety/permissions caveats are needed)?",
+			"What product instrumentation will confirm recovery success (e.g., detecting stale CLI, missing env vars, workspace mismatch) without requiring support intervention?",
+			"What is the minimum viable “citation check” experience in the lab to satisfy the traceability prerequisite for recommendations (and how will it be tested during the pilot)?"
+		],
+		"recommendation": "Prioritize a self-serve “Setup Recovery” improvement before adding more pilot teams: publish and productize a recovery checklist/flow that explicitly handles stale CLI installs, missing environment variables, credential/workspace mismatches, and repeated setup attempts—so a failed install has a documented path to a clean state without support pasting internal steps. This directly targets the main drop-off in setup/credentials and is an explicit pilot readiness gate blocking scheduling.",
+		"metadata": {
+			"variant": "OpenAI Responses baseline",
+			"runId": "baseline-openai-20260624203921",
 			"model": "gpt-5.2"
 		}
 	},
@@ -78,8 +118,8 @@
 	"cost": {
 		"inputTokens": 864,
 		"cachedInputTokens": 0,
-		"outputTokens": 488,
-		"estimatedUsd": 0.008344,
+		"outputTokens": 485,
+		"estimatedUsd": 0.008302,
 		"pricing": {
 			"model": "gpt-5.2",
 			"inputUsdPer1MTokens": 1.75,
@@ -91,11 +131,11 @@
 			"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
 		}
 	},
-	"latencyMs": 11418,
+	"latencyMs": 9294,
 	"artifactPaths": [
 		"data/source-packets/packet-dev-adoption.json",
-		"runs/baseline-openai-20260623165128/briefings/case-adoption-friction.json",
-		"runs/baseline-openai-20260623165128/traces/case-adoption-friction.json",
-		"runs/baseline-openai-20260623165128/evaluations/case-adoption-friction.json"
+		"runs/baseline-openai-20260624203921/briefings/case-adoption-friction.json",
+		"runs/baseline-openai-20260624203921/traces/case-adoption-friction.json",
+		"runs/baseline-openai-20260624203921/evaluations/case-adoption-friction.json"
 	]
 }

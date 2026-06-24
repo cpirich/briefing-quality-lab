@@ -1,0 +1,41 @@
+{
+	"id": "case-incident-recovery-comms-openai-responses-v1",
+	"sourcePacketId": "packet-incident-recovery",
+	"caseId": "case-incident-recovery-comms",
+	"title": "How to summarize recovery work after the setup incident",
+	"summary": "Summarize recovery around the highest-friction case (partial installs) and give one safe next action, while clearly segmenting by OS and avoiding any claim of universal resolution until Windows validation completes. Align the briefing with the patched CLI recovery command and ensure communications don’t route users to the old installer flow.",
+	"claims": [
+		{
+			"text": "Lead with user symptoms and the partial-install scenario, since partial installs drove the most confusion and ticket volume; users were unsure whether to rerun setup, clear credentials, or wait for a fix.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Provide a single safe next action for partial-install users (rather than multiple branching suggestions) because support requested a recovery message structured as symptoms → one safe action.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Do not describe the incident as fully “resolved” without strong environment caveats; engineering has verified recovery on macOS and Linux, while Windows recovery steps are still being validated and include an unresolved credential-cache issue.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "In the first paragraph, explicitly separate: who is affected, what they should do, and which environments remain pending validation; customer success specifically wants the Windows caveat up front to avoid the update being forwarded as proof of universal recovery.",
+			"citations": ["S3"]
+		},
+		{
+			"text": "Anchor recovery guidance on the patched CLI’s new recovery command, which checks stale credentials and cleans partial install state; note it is available in a release candidate.",
+			"citations": ["S4"]
+		}
+	],
+	"openQuestions": [
+		"What exact wording will be used for status (e.g., “mitigated for macOS/Linux; Windows validation in progress”) to avoid over-claiming resolution while still signaling progress?",
+		"When will Windows recovery validation complete, given the credential-cache issue noted by engineering?",
+		"Is the release candidate now being promoted broadly, and if so, have docs (including screenshots) been updated to avoid pointing users at the old installer flow?",
+		"What is the exact single “safe command” (syntax) that support wants included for partial-install recovery, and does it differ by OS?"
+	],
+	"recommendation": "Use a three-part recovery summary structure: (1) Affected users & symptoms (explicitly call out partial installs as the common failure mode) (2) One safe next action (the patched CLI recovery command) (3) Environment status segmentation (Verified: macOS, Linux; Pending validation: Windows) with the Windows caveat in the first paragraph. Avoid claiming universal resolution until Windows is verified, and ensure any links/screenshots point to the patched recovery flow rather than the old installer path.",
+	"metadata": {
+		"variant": "OpenAI Responses baseline",
+		"runId": "baseline-openai-20260624203921",
+		"model": "gpt-5.2"
+	}
+}

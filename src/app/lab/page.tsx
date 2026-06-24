@@ -19,6 +19,11 @@ const lowerIsBetterMetrics = new Set([
 	"Cost ratio",
 ]);
 
+const targetMinusCurrentGapMetrics = new Set([
+	"Grounding risk units",
+	"Median latency",
+]);
+
 function comparisonSideLabel(runId: string) {
 	if (runId.startsWith("baseline-local-")) {
 		return "Generated baseline";
@@ -121,8 +126,17 @@ function displayMetricValue(metric: string, value: string) {
 	return metric === "Estimated cost" ? formatCostValueForDisplay(value) : value;
 }
 
-function metricBadgeLabel(metric: string, value: string, changeLabel: string) {
+function metricBadgeLabel(
+	metric: string,
+	value: string,
+	changeLabel: string,
+	tone?: MetricDeltaTone,
+) {
 	const displayValue = displayMetricValue(metric, value);
+	if (changeLabel === "Gap" && tone === "green") {
+		return `✓ ${displayValue}`;
+	}
+
 	return changeLabel === "Gap" ? `gap ${displayValue}` : displayValue;
 }
 
@@ -155,8 +169,8 @@ function metricDeltaTone(
 		return isImprovement ? "green" : "red";
 	}
 
-	if (lowerIsBetter) {
-		return delta < 0 ? "green" : "red";
+	if (targetMinusCurrentGapMetrics.has(metric)) {
+		return delta > 0 ? "green" : "red";
 	}
 
 	const hasRemainingGap = delta > 0;
@@ -338,7 +352,7 @@ export default async function LabPage() {
 	const summaryDescription = hasReferenceTargetColumns
 		? `Large values are ${candidateLabel} metrics; badges show the gap to the Reference target.`
 		: changeLabel === "Gap"
-			? `Large values are ${candidateLabel} metrics; badges show the gap from ${baselineLabel}.`
+			? `Cards show ${candidateLabel} metrics and budget checks; badges show where ${baselineLabel} sits relative to each target.`
 			: `Large values are ${candidateLabel} metrics; badges show deltas from ${baselineLabel}.`;
 	const comparedCaseCount = caseBreakdown.length;
 	const trendScores = runComparison.trend.map((point) => point.score);
@@ -436,6 +450,7 @@ export default async function LabPage() {
 														metric.label,
 														badgeValue,
 														badgeChangeLabel,
+														badgeTone,
 													)}
 												</Badge>
 											</div>

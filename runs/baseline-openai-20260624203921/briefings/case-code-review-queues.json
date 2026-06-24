@@ -1,0 +1,41 @@
+{
+	"id": "case-code-review-queues-openai-responses-v1",
+	"sourcePacketId": "packet-code-review-queues",
+	"caseId": "case-code-review-queues",
+	"title": "Reducing code review queue time without increasing low-quality merges",
+	"summary": "Cut median wait time by scaling what already works (rotation + automation for routine changes) while explicitly targeting tail latency as an ownership-routing problem. Use automation to organize and route work, not to bypass approvals, and apply fast-track only where policy and defect data indicate low risk (docs/config with healthy tests).",
+	"claims": [
+		{
+			"text": "Median review wait time dropped from 19h to 13h after adding reviewer rotation, but 90th percentile wait remains 46h because complex changes bottleneck on the same two senior reviewers.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Tail latency is driven mainly by cross-service/shared-service changes waiting on scarce, specific owners; docs and config changes moved quickly after rotation.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Reviewers are positive about auto-assignment for routine changes but distrust bot approvals when tests are flaky or ownership is unclear; they want explainable risk labels (ownership metadata, test health, file categories) and the ability to challenge a fast-track label before merge.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Post-merge data shows no measurable defect increase for low-risk docs/config changes, but incidents occurred when cross-service changes were fast-tracked without the owning team; leadership wants different treatment for low-risk vs cross-boundary changes and a distinction between queue organization and approval authority.",
+			"citations": ["S3"]
+		},
+		{
+			"text": "Proposed tooling can suggest reviewers, group low-risk changes, and surface missing ownership metadata, but cannot verify semantic ownership and cannot override branch protection.",
+			"citations": ["S4"]
+		}
+	],
+	"openQuestions": [
+		"Which shared services or paths account for most of the 46h p90 tail, and which two senior reviewers are the recurring bottleneck (by repo/path)?",
+		"What objective criteria define 'healthy tests' in practice (e.g., recent flake rate threshold) to avoid reviewer distrust of fast-track?",
+		"Where are ownership entries most stale/conflicting in shared services, and who owns fixing them (team/process)?",
+		"How will 'challenge before merge' work operationally (time window, who can challenge, what happens when challenged)?"
+	],
+	"recommendation": "1) Target tail latency via ownership routing, not more blanket staffing: introduce an explicit cross-service lane that requires owning-team review and routes directly to the correct owning team, rather than repeatedly queueing behind two senior reviewers. This aligns with the finding that p90 is dominated by complex cross-service work and should be treated as an ownership problem. [S1][S3]\n\n2) Expand fast-track only for low-risk docs/config changes with healthy tests, and keep it strictly as queue prioritization—not approval bypass. This is supported by defect data and policy allowance, while avoiding the documented cross-service fast-track failure mode. [S3][S6]\n\n3) Implement explainable risk labeling to increase trust: for every suggested fast-track, show why it’s low risk (file categories, ownership confidence, test health) and show uncertainty (missing/conflicting ownership) as a risk signal rather than hiding it behind auto-assignment. Pair with a “challenge before merge” mechanism so reviewers can block questionable fast-tracks. [S2][S5][S6]\n\n4) Use the queue helper for organization and routing: cluster similar low-risk changes, suggest reviewers for routine work, and prominently flag missing/conflicting ownership metadata. Do not attempt bot approvals, since reviewers distrust that and tooling can’t verify semantic ownership anyway. [S2][S4]\n\n5) Fix ownership metadata in shared services as a throughput lever: prioritize correcting stale/inherited ownership entries in shared services since that’s where waits concentrate; make missing/conflicting ownership visible and actionable to prevent mis-routing and avoid cross-service incidents. [S1][S5][S3]",
+	"metadata": {
+		"variant": "OpenAI Responses baseline",
+		"runId": "baseline-openai-20260624203921",
+		"model": "gpt-5.2"
+	}
+}

@@ -1,13 +1,13 @@
 {
-	"id": "baseline-openai-20260623165128-candidate-citation-gates",
-	"baselineRunId": "baseline-openai-20260623165128",
+	"id": "baseline-openai-20260624203921-candidate-citation-gates",
+	"baselineRunId": "baseline-openai-20260624203921",
 	"candidateRunId": "candidate-citation-gates",
 	"baselineLabel": "OpenAI baseline",
 	"candidateLabel": "Reference target",
 	"metrics": [
 		{
 			"label": "Overall quality",
-			"value": "0.90",
+			"value": "0.91",
 			"delta": "+0.01",
 			"status": "Reference target score",
 			"tone": "green"
@@ -15,28 +15,28 @@
 		{
 			"label": "Citation grounding",
 			"value": "0.96",
-			"delta": "+0.00",
+			"delta": "+0.01",
 			"status": "Reference target citation score",
 			"tone": "green"
 		},
 		{
 			"label": "Coverage",
 			"value": "0.93",
-			"delta": "+0.01",
+			"delta": "-0.02",
 			"status": "Reference target coverage score",
 			"tone": "green"
 		},
 		{
 			"label": "Estimated cost",
-			"value": "0.07009975",
-			"delta": "-0.02990025",
+			"value": "0.06721575",
+			"delta": "-0.03278425",
 			"status": "OpenAI baseline vs Reference target budget <= 0.1",
 			"tone": "green"
 		},
 		{
 			"label": "Median latency",
 			"value": "8.0s",
-			"delta": "-4.6s",
+			"delta": "-2.7s",
 			"status": "Reference target median latency",
 			"tone": "green"
 		}
@@ -44,37 +44,37 @@
 	"trend": [
 		{
 			"label": "OpenAI baseline",
-			"score": 89
+			"score": 90
 		},
 		{
 			"label": "Reference target",
-			"score": 90
+			"score": 91
 		}
 	],
 	"comparisonRows": [
 		{
 			"metric": "Overall score",
-			"baseline": "0.89",
-			"candidate": "0.90",
+			"baseline": "0.90",
+			"candidate": "0.91",
 			"delta": "+0.01"
 		},
 		{
 			"metric": "Citation support",
-			"baseline": "0.96",
+			"baseline": "0.95",
 			"candidate": "0.96",
-			"delta": "+0.00"
-		},
-		{
-			"metric": "Coverage",
-			"baseline": "0.92",
-			"candidate": "0.93",
 			"delta": "+0.01"
 		},
 		{
+			"metric": "Coverage",
+			"baseline": "0.95",
+			"candidate": "0.93",
+			"delta": "-0.02"
+		},
+		{
 			"metric": "Grounding risk units",
-			"baseline": "10",
+			"baseline": "9",
 			"candidate": "6",
-			"delta": "-4"
+			"delta": "-3"
 		},
 		{
 			"metric": "Eval cases",
@@ -84,30 +84,18 @@
 		},
 		{
 			"metric": "Median latency",
-			"baseline": "12.6s",
+			"baseline": "10.7s",
 			"candidate": "8.0s",
-			"delta": "-4.6s"
+			"delta": "-2.7s"
 		},
 		{
 			"metric": "Estimated cost",
-			"baseline": "0.07009975",
+			"baseline": "0.06721575",
 			"candidate": "<= 0.1",
-			"delta": "-0.02990025"
+			"delta": "-0.03278425"
 		}
 	],
 	"failureClusters": [
-		{
-			"title": "Overconfidence",
-			"count": 4,
-			"severity": "Medium",
-			"evidence": "Repeated overconfidence findings across evaluator outputs.",
-			"cases": [
-				"case-adoption-friction",
-				"case-cost-latency-budget",
-				"case-human-approval-boundary",
-				"case-release-note-drift"
-			]
-		},
 		{
 			"title": "Partial Claim Support",
 			"count": 3,
@@ -115,30 +103,37 @@
 			"evidence": "Repeated partial-claim-support findings across evaluator outputs.",
 			"cases": [
 				"case-adoption-friction",
-				"case-eval-loop",
-				"case-release-note-drift"
+				"case-cost-latency-budget",
+				"case-incident-recovery-comms"
 			]
 		},
 		{
-			"title": "Causal Overstatement",
+			"title": "Missing Strongest Citation",
 			"count": 1,
 			"severity": "Low",
-			"evidence": "Repeated causal-overstatement findings across evaluator outputs.",
+			"evidence": "Repeated missing-strongest-citation findings across evaluator outputs.",
 			"cases": ["case-adoption-friction"]
 		},
 		{
-			"title": "Minor Unsupported Implementation Detail",
+			"title": "Quantifier Too Strong",
 			"count": 1,
 			"severity": "Low",
-			"evidence": "Repeated minor-unsupported-implementation-detail findings across evaluator outputs.",
+			"evidence": "Repeated quantifier-too-strong findings across evaluator outputs.",
 			"cases": ["case-adoption-friction"]
+		},
+		{
+			"title": "Citation Mismatch",
+			"count": 1,
+			"severity": "Low",
+			"evidence": "Repeated citation-mismatch findings across evaluator outputs.",
+			"cases": ["case-cost-latency-budget"]
 		}
 	],
 	"featuredCase": {
 		"id": "case-adoption-friction",
 		"title": "Developer adoption friction briefing",
 		"sourceEvidence": "Quickstart completion is improving but setup remains a drop-off point.",
-		"baseline": "Next product-quality improvement for pilot expansion: implement and publish a first-class setup recovery path that covers (1) stale CLI detection + upgrade steps, (2) environment variable validation, (3) credential/workspace mismatch detection + reset guidance, and (4) safe re-run behavior after partial setup—so recovery can be demonstrated without support pasting an internal checklist. Treat this as the gating release for adding the two next pilot teams.",
+		"baseline": "Prioritize a self-serve “Setup Recovery” improvement before adding more pilot teams: publish and productize a recovery checklist/flow that explicitly handles stale CLI installs, missing environment variables, credential/workspace mismatches, and repeated setup attempts—so a failed install has a documented path to a clean state without support pasting internal steps. This directly targets the main drop-off in setup/credentials and is an explicit pilot readiness gate blocking scheduling.",
 		"candidate": "Ship the recovery-path copy and trace-backed citation checks before widening the pilot.",
 		"evaluatorNote": "Comparison uses file-backed artifacts for the same eval case so the before/after story is inspectable."
 	},
@@ -149,10 +144,10 @@
 		"warning": "Run a generated candidate before using this as improvement evidence."
 	},
 	"artifactPaths": [
-		"runs/baseline-openai-20260623165128/manifest.json",
+		"runs/baseline-openai-20260624203921/manifest.json",
 		"runs/candidate-citation-gates/manifest.json",
-		"runs/baseline-openai-20260623165128/evaluations/case-adoption-friction.json",
-		"runs/baseline-openai-20260623165128/evaluations/case-code-review-queues.json",
+		"runs/baseline-openai-20260624203921/evaluations/case-adoption-friction.json",
+		"runs/baseline-openai-20260624203921/evaluations/case-code-review-queues.json",
 		"runs/candidate-citation-gates/evaluations/case-adoption-friction.json",
 		"runs/candidate-citation-gates/evaluations/case-eval-loop.json",
 		"reports/latest-eval-summary.md"

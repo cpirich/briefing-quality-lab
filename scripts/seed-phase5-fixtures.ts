@@ -1552,7 +1552,7 @@ function runManifestFor(
 		caseIds: visibleFixtures.map((fixture) => fixture.caseId),
 		aggregateMetrics: isCandidate
 			? {
-					overall: 0.9,
+					overall: 0.91,
 					grounding: 0.86,
 					coverage: 0.93,
 					citationSupport: 0.96,

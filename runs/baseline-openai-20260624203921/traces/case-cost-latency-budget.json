@@ -1,0 +1,141 @@
+{
+	"id": "case-cost-latency-budget-openai-responses-v1-trace",
+	"runId": "baseline-openai-20260624203921",
+	"caseId": "case-cost-latency-budget",
+	"sourcePacketId": "packet-cost-latency",
+	"input": {
+		"userRequest": "Recommend how much tracing and retry behavior to keep for the next demo run.",
+		"sourcePacketPath": "data/source-packets/packet-cost-latency.json"
+	},
+	"messages": [
+		{
+			"role": "system",
+			"content": "You are Briefing Genie. Return a short briefing with source citations."
+		},
+		{
+			"role": "user",
+			"content": "User request: Recommend how much tracing and retry behavior to keep for the next demo run.\n\nSource packet: Cost And Latency Budget Packet\n\nPacket summary: Run data, finance guidance, and user feedback about trace depth, retries, and demo responsiveness.\n\nSources:\n\n[S1] Run telemetry\nType: telemetry report\nThe candidate prompt reduced unsupported claims but increased median token usage by 11%. Latency improved by 6% because fewer generations needed manual reruns, even though each retained trace is longer.\n\nTelemetry compares the candidate prompt with the baseline over the visible eval set. Token usage rose because the candidate retained more claim-level evidence, but fewer outputs needed manual reruns. The latency improvement came from fewer repeated attempts, not from shorter single generations.\n\n[S2] Finance guidance\nType: finance note\nFinance approved up to a 1.15x cost ratio for demo-quality eval runs if the report shows why extra tokens reduce review time. Anything above that threshold needs a smaller case batch or stricter retry cap.\n\nFinance accepted a 1.15x ceiling for demo-quality runs because better traces can reduce reviewer time. The approval is conditional: if the run exceeds the threshold, the team should reduce batch size, cap retries, or summarize traces more aggressively. The note does not approve unlimited trace retention.\n\n[S3] Reviewer feedback\nType: reviewer feedback\nReviewers said long traces are useful only when they are summarized next to the claim that failed. Raw provider payloads alone slowed review because people had to search for the relevant evidence.\n\nReviewers liked traces when they were attached to the failed claim and cited source. Raw payload dumps slowed them down because they had to search for the relevant turn. The requested improvement is a short trace summary near each evaluator finding.\n\n[S4] Demo rehearsal\nType: rehearsal note\nThe live demo felt responsive when single briefings finished under 10 seconds and eval progress showed the current case. Stakeholders were tolerant of longer full runs if progress and artifact paths updated continuously.\n\nThe rehearsal note separates product responsiveness from lab-run duration. A single briefing felt live-demo safe under 10 seconds. Full eval runs could take longer if the UI showed the current case, elapsed time, and artifact path so observers understood progress.\n\n[S5] Retry policy draft\nType: policy draft\nThe retry policy draft proposes a small retry cap for demo eval runs. It allows one automatic retry for transient provider errors and requires a manifest entry when retries change cost or latency. The policy rejects silent repeated generations because they make cost harder to explain during review.\n\n[S6] Trace summary mock\nType: trace mock\nThe trace summary mock shows a short explanation beside each failed claim: selected source ids, missing evidence, retry count, and final output path. Reviewers preferred that mock to raw provider payloads. The mock keeps detailed traces on disk while making the dashboard readable during a live demo."
+		}
+	],
+	"model": {
+		"provider": "openai",
+		"name": "gpt-5.2",
+		"settings": {
+			"promptVersion": "briefing-genie-v1",
+			"maxOutputTokens": 1200,
+			"structuredOutputName": "briefing_genie_output",
+			"textVerbosity": null,
+			"reasoningEffort": null,
+			"reasoningSummary": null,
+			"temperature": null,
+			"topP": null,
+			"truncation": null,
+			"toolChoice": null,
+			"parallelToolCalls": null
+		}
+	},
+	"output": {
+		"id": "case-cost-latency-budget-openai-responses-v1",
+		"sourcePacketId": "packet-cost-latency",
+		"caseId": "case-cost-latency-budget",
+		"title": "Recommendation: tracing + retries for next demo run",
+		"summary": "Keep claim-level trace summaries in the UI and preserve full raw traces on disk, while enforcing a tight retry cap (1 auto retry for transient errors). This stays within the demo responsiveness target and keeps costs explainable under Finance’s 1.15x ceiling, while still reducing manual reruns.",
+		"claims": [
+			{
+				"text": "Use claim-level trace summaries (source ids + what evidence is missing) next to each evaluator finding; avoid raw payload dumps in the dashboard.",
+				"citations": ["S3", "S6"]
+			},
+			{
+				"text": "Retain full detailed traces on disk (artifact path visible) but show only summaries in the live demo UI to keep it readable and fast to review.",
+				"citations": ["S6", "S4"]
+			},
+			{
+				"text": "Set retries to: 0 for quality re-generations; 1 automatic retry only for transient provider errors, with explicit logging/manifest entries when retries affect cost or latency.",
+				"citations": ["S5"]
+			},
+			{
+				"text": "Target live-demo responsiveness by ensuring single briefings complete under ~10 seconds; longer full runs are acceptable if progress shows the current case and artifact paths update continuously.",
+				"citations": ["S4"]
+			},
+			{
+				"text": "Cost: the candidate prompt increased token usage by ~11% but improved latency (~6%) by reducing repeated attempts/manual reruns; this supports keeping some additional tracing if it reduces review and rerun overhead.",
+				"citations": ["S1"]
+			}
+		],
+		"openQuestions": [
+			"Does the planned demo batch size, combined with the ~11% token increase, stay within Finance’s 1.15x cost ratio ceiling?",
+			"Which provider errors qualify as “transient” for the one allowed auto-retry, and how will they be detected/classified in the manifest?",
+			"Do we need any additional trace summarization (e.g., truncation rules) if the run approaches the cost ceiling?"
+		],
+		"recommendation": "For the next demo eval run, keep: (1) claim-level trace summaries in the dashboard (selected source ids, missing evidence, retry count, output path) and store full raw traces on disk; do not render raw provider payloads by default. (2) Retry behavior: allow exactly one automatic retry for transient provider errors and disallow silent repeated generations for quality; log all retries and their cost/latency impact in the run manifest. If projected cost exceeds 1.15x, first reduce case batch size or tighten trace verbosity rather than increasing retry depth.",
+		"metadata": {
+			"variant": "OpenAI Responses baseline",
+			"runId": "baseline-openai-20260624203921",
+			"model": "gpt-5.2"
+		}
+	},
+	"rawOutput": {
+		"id": "case-cost-latency-budget-openai-responses-v1",
+		"sourcePacketId": "packet-cost-latency",
+		"caseId": "case-cost-latency-budget",
+		"title": "Recommendation: tracing + retries for next demo run",
+		"summary": "Keep claim-level trace summaries in the UI and preserve full raw traces on disk, while enforcing a tight retry cap (1 auto retry for transient errors). This stays within the demo responsiveness target and keeps costs explainable under Finance’s 1.15x ceiling, while still reducing manual reruns.",
+		"claims": [
+			{
+				"text": "Use claim-level trace summaries (source ids + what evidence is missing) next to each evaluator finding; avoid raw payload dumps in the dashboard.",
+				"citations": ["S3", "S6"]
+			},
+			{
+				"text": "Retain full detailed traces on disk (artifact path visible) but show only summaries in the live demo UI to keep it readable and fast to review.",
+				"citations": ["S6", "S4"]
+			},
+			{
+				"text": "Set retries to: 0 for quality re-generations; 1 automatic retry only for transient provider errors, with explicit logging/manifest entries when retries affect cost or latency.",
+				"citations": ["S5"]
+			},
+			{
+				"text": "Target live-demo responsiveness by ensuring single briefings complete under ~10 seconds; longer full runs are acceptable if progress shows the current case and artifact paths update continuously.",
+				"citations": ["S4"]
+			},
+			{
+				"text": "Cost: the candidate prompt increased token usage by ~11% but improved latency (~6%) by reducing repeated attempts/manual reruns; this supports keeping some additional tracing if it reduces review and rerun overhead.",
+				"citations": ["S1"]
+			}
+		],
+		"openQuestions": [
+			"Does the planned demo batch size, combined with the ~11% token increase, stay within Finance’s 1.15x cost ratio ceiling?",
+			"Which provider errors qualify as “transient” for the one allowed auto-retry, and how will they be detected/classified in the manifest?",
+			"Do we need any additional trace summarization (e.g., truncation rules) if the run approaches the cost ceiling?"
+		],
+		"recommendation": "For the next demo eval run, keep: (1) claim-level trace summaries in the dashboard (selected source ids, missing evidence, retry count, output path) and store full raw traces on disk; do not render raw provider payloads by default. (2) Retry behavior: allow exactly one automatic retry for transient provider errors and disallow silent repeated generations for quality; log all retries and their cost/latency impact in the run manifest. If projected cost exceeds 1.15x, first reduce case batch size or tighten trace verbosity rather than increasing retry depth.",
+		"metadata": {
+			"variant": "OpenAI Responses baseline",
+			"runId": "baseline-openai-20260624203921",
+			"model": "gpt-5.2"
+		}
+	},
+	"toolCalls": [],
+	"cost": {
+		"inputTokens": 740,
+		"cachedInputTokens": 0,
+		"outputTokens": 513,
+		"estimatedUsd": 0.008477,
+		"pricing": {
+			"model": "gpt-5.2",
+			"inputUsdPer1MTokens": 1.75,
+			"cachedInputUsdPer1MTokens": 0.175,
+			"outputUsdPer1MTokens": 14,
+			"currency": "USD",
+			"serviceTier": "standard",
+			"context": "short",
+			"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+		}
+	},
+	"latencyMs": 10663,
+	"artifactPaths": [
+		"data/source-packets/packet-cost-latency.json",
+		"runs/baseline-openai-20260624203921/briefings/case-cost-latency-budget.json",
+		"runs/baseline-openai-20260624203921/traces/case-cost-latency-budget.json",
+		"runs/baseline-openai-20260624203921/evaluations/case-cost-latency-budget.json"
+	]
+}

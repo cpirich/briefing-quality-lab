@@ -1,0 +1,207 @@
+{
+	"id": "evaluation-baseline-openai-20260624203921-case-cost-latency-budget",
+	"runId": "baseline-openai-20260624203921",
+	"caseId": "case-cost-latency-budget",
+	"evaluator": {
+		"mode": "hybrid",
+		"provider": "openai",
+		"model": "gpt-5.5",
+		"promptVersion": "hybrid-judge-v1",
+		"settings": {
+			"structuredOutputName": "hybrid_evaluator_output"
+		},
+		"latencyMs": 29090,
+		"cost": {
+			"inputTokens": 1926,
+			"cachedInputTokens": 0,
+			"outputTokens": 1000,
+			"estimatedUsd": 0.03963,
+			"pricing": {
+				"model": "gpt-5.5",
+				"inputUsdPer1MTokens": 5,
+				"cachedInputUsdPer1MTokens": 0.5,
+				"outputUsdPer1MTokens": 30,
+				"currency": "USD",
+				"serviceTier": "standard",
+				"context": "short",
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-24"
+			}
+		}
+	},
+	"hardChecks": [
+		{
+			"id": "briefing-schema",
+			"label": "Briefing schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "BriefingOutput schema parses"
+		},
+		{
+			"id": "citation-source-ids",
+			"label": "Citation source ids",
+			"status": "pass",
+			"value": "5 cited ids exist",
+			"expectation": "Every cited source id exists in the source packet"
+		},
+		{
+			"id": "trace-schema",
+			"label": "Trace schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "GenerationTrace schema parses"
+		},
+		{
+			"id": "latency-metadata",
+			"label": "Latency metadata",
+			"status": "pass",
+			"value": "10663ms",
+			"threshold": "> 0ms"
+		},
+		{
+			"id": "cost-metadata",
+			"label": "Cost metadata",
+			"status": "pass",
+			"value": "0.008477",
+			"expectation": "estimatedUsd is present when pricing is configured"
+		},
+		{
+			"id": "token-metadata",
+			"label": "Token metadata",
+			"status": "pass",
+			"value": "740 in / 0 cached / 513 out",
+			"expectation": "Input, cached-input, and output token counts are coherent"
+		},
+		{
+			"id": "model-metadata",
+			"label": "Provider and model metadata",
+			"status": "pass",
+			"value": "openai gpt-5.2 briefing-genie-v1",
+			"expectation": "Provider, model, and prompt version are present"
+		},
+		{
+			"id": "judge-input-boundary",
+			"label": "Judge input boundary",
+			"status": "pass",
+			"value": "eval-only fields omitted",
+			"expectation": "Judge prompt omits eval-only object keys and holdout tuning fields"
+		},
+		{
+			"id": "judge-claim-coverage",
+			"label": "Judge claim coverage",
+			"status": "pass",
+			"value": "5/5 claims judged, 0 extra",
+			"expectation": "LLM judge returns exactly one judgment for every briefing claim"
+		}
+	],
+	"claimJudgments": [
+		{
+			"claimText": "Use claim-level trace summaries (source ids + what evidence is missing) next to each evaluator finding; avoid raw payload dumps in the dashboard.",
+			"citedSourceIds": ["S3", "S6"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S3", "S6"],
+			"missingEvidence": [],
+			"explanation": "S3 says reviewers wanted short trace summaries near failed claims and that raw payload dumps slowed review. S6 shows summaries with selected source ids and missing evidence and says reviewers preferred them to raw payloads.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Retain full detailed traces on disk (artifact path visible) but show only summaries in the live demo UI to keep it readable and fast to review.",
+			"citedSourceIds": ["S6", "S4"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S6", "S4"],
+			"missingEvidence": [],
+			"explanation": "S6 supports keeping detailed traces on disk while showing readable dashboard summaries, including final output path. S4 supports continuous artifact-path updates during longer runs.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Set retries to: 0 for quality re-generations; 1 automatic retry only for transient provider errors, with explicit logging/manifest entries when retries affect cost or latency.",
+			"citedSourceIds": ["S5"],
+			"supportStatus": "partially-supported",
+			"supportingEvidenceIds": ["S5"],
+			"missingEvidence": [
+				"Direct evidence that all quality re-generations should be set to exactly 0, rather than only rejecting silent repeated generations."
+			],
+			"explanation": "S5 directly supports one automatic retry for transient provider errors and manifest entries when retries change cost or latency. It rejects silent repeated generations, but does not explicitly state a blanket zero-retry policy for all quality re-generations.",
+			"failureTags": ["over-specific"]
+		},
+		{
+			"claimText": "Target live-demo responsiveness by ensuring single briefings complete under ~10 seconds; longer full runs are acceptable if progress shows the current case and artifact paths update continuously.",
+			"citedSourceIds": ["S4"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S4"],
+			"missingEvidence": [],
+			"explanation": "S4 says single briefings felt demo-safe under 10 seconds and longer full eval runs were acceptable if current case, elapsed time, and artifact path updated continuously.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Cost: the candidate prompt increased token usage by ~11% but improved latency (~6%) by reducing repeated attempts/manual reruns; this supports keeping some additional tracing if it reduces review and rerun overhead.",
+			"citedSourceIds": ["S1"],
+			"supportStatus": "partially-supported",
+			"supportingEvidenceIds": ["S1"],
+			"missingEvidence": [
+				"Evidence for reduced review overhead comes from reviewer/finance sources, not S1 alone."
+			],
+			"explanation": "S1 supports the 11% token increase, 6% latency improvement, and fewer manual reruns/repeated attempts. The review-overhead rationale is not supported by S1 by itself, though it is consistent with S2/S3/S6 elsewhere in the packet.",
+			"failureTags": ["citation-mismatch"]
+		}
+	],
+	"recommendationJudgment": {
+		"taskAnswerStatus": "answers-task",
+		"overconfidenceStatus": "calibrated",
+		"missingImportantEvidence": [
+			"The recommendation relies on Finance’s 1.15x ceiling and exceed-threshold actions, which are supported by S2 but S2 is not included in the generated cited source ids or claim citations."
+		],
+		"explanation": "The briefing directly answers how much tracing and retry behavior to keep: claim-level summaries in UI, full traces on disk, one transient-error retry, no silent repeated generations, and cost controls if projected cost exceeds 1.15x. This is broadly supported by the packet. The main weakness is citation coverage: S2 is essential for the finance ceiling and mitigation actions but is not cited. The zero-quality-regeneration wording is somewhat more specific than the retry draft, which only rejects silent repeated generations.",
+		"failureTags": ["missing-citation", "minor-over-specificity"]
+	},
+	"scores": {
+		"overall": 0.81,
+		"grounding": 0.69,
+		"coverage": 0.92,
+		"citationSupport": 0.82
+	},
+	"failureTags": [
+		"citation-mismatch",
+		"minor-over-specificity",
+		"missing-citation",
+		"over-specific",
+		"partial-claim-support"
+	],
+	"rubricEvidence": [
+		"Hybrid claim support score: 0.82.",
+		"Recommendation task fit: answers-task.",
+		"Overconfidence: calibrated.",
+		"Hard-check cap: 1.00."
+	],
+	"citationSupport": [
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "S3 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S6",
+			"supported": true,
+			"note": "S6 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "S4 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S5",
+			"supported": false,
+			"note": "S5 appears in a partially supported or unsupported claim judgment."
+		},
+		{
+			"citation": "S1",
+			"supported": false,
+			"note": "S1 appears in a partially supported or unsupported claim judgment."
+		}
+	],
+	"notes": "Hybrid evaluator output: deterministic hard checks plus structured LLM judge evidence. Manual spot checks are still required before claiming product improvement.",
+	"artifactPaths": [
+		"runs/baseline-openai-20260624203921/evaluations/case-cost-latency-budget.json",
+		"runs/baseline-openai-20260624203921/briefings/case-cost-latency-budget.json"
+	]
+}
