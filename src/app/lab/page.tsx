@@ -53,10 +53,22 @@ function comparisonChangeLabel(candidateLabel: string, candidateRunId: string) {
 		: "Delta";
 }
 
-function comparisonBarClass(label: string, baselineLabel: string) {
-	return label === baselineLabel || label === "Baseline"
-		? "bg-[var(--muted-foreground)]"
-		: "bg-[var(--accent)]";
+function comparisonBarClass(
+	label: string,
+	baselineLabel: string,
+	candidateLabel: string,
+) {
+	if (label === baselineLabel || label === "Baseline") {
+		return "bg-[var(--muted-foreground)]";
+	}
+	if (label === "Reference target") {
+		return "bg-[var(--info-foreground)]";
+	}
+	if (label === candidateLabel || label === "Latest variant") {
+		return "bg-[var(--accent)]";
+	}
+
+	return "bg-[var(--warning-foreground)]";
 }
 
 function numericDelta(value: string) {
@@ -192,6 +204,10 @@ function targetGapTextClass(metric: string, value: string) {
 	return toneTextClass(targetGapDeltaTone(metric, value));
 }
 
+const baselineColumnClass = "bg-[var(--muted)]/50";
+const candidateColumnClass = "bg-[var(--accent-soft)]/45";
+const referenceColumnClass = "bg-[var(--info)]/80";
+
 function metadataValue(value: number | string | null | undefined) {
 	if (value === null || value === undefined || value === "") {
 		return "provider default";
@@ -325,6 +341,22 @@ export default async function LabPage() {
 			? `Large values are ${candidateLabel} metrics; badges show the gap from ${baselineLabel}.`
 			: `Large values are ${candidateLabel} metrics; badges show deltas from ${baselineLabel}.`;
 	const comparedCaseCount = caseBreakdown.length;
+	const trendScores = runComparison.trend.map((point) => point.score);
+	const lowestTrendScore = Math.min(...trendScores);
+	const highestTrendScore = Math.max(...trendScores);
+	const trendPadding = Math.max(
+		2,
+		Math.ceil((highestTrendScore - lowestTrendScore) / 2),
+	);
+	const trendMin = Math.max(0, lowestTrendScore - trendPadding);
+	const trendMax = Math.min(100, highestTrendScore + trendPadding);
+	const trendRange = Math.max(1, trendMax - trendMin);
+	const trendTicks = [
+		trendMax,
+		trendMin + trendRange * 0.67,
+		trendMin + trendRange * 0.33,
+		trendMin,
+	];
 
 	return (
 		<main className="lab-route min-h-screen bg-[var(--background)] text-[var(--foreground)]">
@@ -435,49 +467,97 @@ export default async function LabPage() {
 							</div>
 						</CardHeader>
 						<CardBody>
-							<div
-								className="grid h-52 gap-3 px-2"
-								style={{
-									gridTemplateColumns: `repeat(${Math.max(1, runComparison.trend.length)}, minmax(0, 1fr))`,
-								}}
-							>
-								{runComparison.trend.map((point) => (
+							<div className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-2 px-1">
+								<div className="grid h-52 grid-rows-4 pb-6 text-right text-[var(--muted-foreground)] text-xs">
+									{trendTicks.map((tick) => (
+										<span key={tick.toFixed(2)}>{(tick / 100).toFixed(2)}</span>
+									))}
+								</div>
+								<div className="relative">
 									<div
-										className="grid min-w-0 grid-rows-[1fr_auto] gap-2"
-										key={point.label}
+										aria-hidden="true"
+										className="pointer-events-none absolute inset-x-0 top-0 bottom-6 z-0"
 									>
-										<div className="flex h-full items-end">
-											<div
-												aria-label={`${point.label} score ${point.score}`}
-												className={cn(
-													"mx-auto w-full max-w-16 rounded-t-md",
-													comparisonBarClass(point.label, baselineLabel),
-												)}
-												role="img"
-												style={{ height: `${point.score}%` }}
-											/>
+										<div className="grid h-full grid-rows-4">
+											{trendTicks.map((tick) => (
+												<div
+													className="border-[var(--border)]/60 border-t"
+													key={tick.toFixed(2)}
+												/>
+											))}
 										</div>
-										<span className="text-center font-medium text-[var(--muted-foreground)] text-xs">
-											{point.label}
-										</span>
+										<div className="absolute inset-x-0 bottom-0 border-[var(--muted-foreground)]/35 border-t" />
 									</div>
-								))}
+									<div
+										className="relative z-10 grid h-52 gap-3 px-2"
+										style={{
+											gridTemplateColumns: `repeat(${Math.max(1, runComparison.trend.length)}, minmax(0, 1fr))`,
+										}}
+									>
+										{runComparison.trend.map((point) => (
+											<div
+												className="grid min-w-0 grid-rows-[1fr_auto] gap-2"
+												key={point.label}
+											>
+												<div className="flex h-full items-end">
+													<div
+														aria-label={`${point.label} score ${point.score}`}
+														className={cn(
+															"mx-auto w-full max-w-16 rounded-t-md",
+															comparisonBarClass(
+																point.label,
+																baselineLabel,
+																candidateLabel,
+															),
+														)}
+														role="img"
+														style={{
+															height: `${Math.max(3, ((point.score - trendMin) / trendRange) * 100)}%`,
+														}}
+													/>
+												</div>
+												<span className="text-center font-medium text-[var(--muted-foreground)] text-xs">
+													{point.label}
+												</span>
+											</div>
+										))}
+									</div>
+								</div>
 							</div>
-							<div className="overflow-x-auto rounded-md border border-[var(--border)]">
+							<div className="mt-4 overflow-x-auto rounded-md border border-[var(--border)]">
 								<table className="w-full text-left text-sm">
 									<thead className="bg-[var(--muted)] text-[var(--muted-foreground)]">
 										<tr>
 											<th className="px-3 py-2 font-medium">Metric</th>
-											<th className="px-3 py-2 font-medium">{baselineLabel}</th>
-											<th className="px-3 py-2 font-medium">
+											<th
+												className={cn(
+													"px-3 py-2 font-medium",
+													baselineColumnClass,
+												)}
+											>
+												{baselineLabel}
+											</th>
+											<th
+												className={cn(
+													"px-3 py-2 font-medium",
+													candidateColumnClass,
+												)}
+											>
 												{candidateLabel}
 											</th>
 											{hasReferenceTargetColumns ? (
 												<>
 													<th className="px-3 py-2 font-medium">
+														Delta vs baseline
+													</th>
+													<th
+														className={cn(
+															"px-3 py-2 font-medium",
+															referenceColumnClass,
+														)}
+													>
 														Reference target
 													</th>
-													<th className="px-3 py-2 font-medium">Delta</th>
 													<th className="px-3 py-2 font-medium">
 														Gap to target
 													</th>
@@ -494,22 +574,22 @@ export default async function LabPage() {
 												key={row.metric}
 											>
 												<td className="px-3 py-2 font-medium">{row.metric}</td>
-												<td className="px-3 py-2 text-[var(--muted-foreground)]">
+												<td
+													className={cn(
+														"px-3 py-2 text-[var(--muted-foreground)]",
+														baselineColumnClass,
+													)}
+												>
 													{displayMetricValue(row.metric, row.baseline)}
 												</td>
-												<td className="px-3 py-2 text-[var(--foreground)]">
+												<td
+													className={cn(
+														"px-3 py-2 text-[var(--foreground)]",
+														candidateColumnClass,
+													)}
+												>
 													{displayMetricValue(row.metric, row.candidate)}
 												</td>
-												{hasReferenceTargetColumns ? (
-													<td className="px-3 py-2 text-[var(--muted-foreground)]">
-														{row.referenceTarget
-															? displayMetricValue(
-																	row.metric,
-																	row.referenceTarget,
-																)
-															: "n/a"}
-													</td>
-												) : null}
 												<td
 													className={cn(
 														"px-3 py-2 font-medium",
@@ -522,6 +602,21 @@ export default async function LabPage() {
 												>
 													{displayMetricValue(row.metric, row.delta)}
 												</td>
+												{hasReferenceTargetColumns ? (
+													<td
+														className={cn(
+															"px-3 py-2 text-[var(--muted-foreground)]",
+															referenceColumnClass,
+														)}
+													>
+														{row.referenceTarget
+															? displayMetricValue(
+																	row.metric,
+																	row.referenceTarget,
+																)
+															: "n/a"}
+													</td>
+												) : null}
 												{hasReferenceTargetColumns ? (
 													<td
 														className={cn(

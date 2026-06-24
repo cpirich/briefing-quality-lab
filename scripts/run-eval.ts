@@ -1610,7 +1610,7 @@ function reportFor(comparison: RunComparison) {
 	const rows = comparison.comparisonRows
 		.map((row) =>
 			hasReferenceTargetColumns
-				? `| ${row.metric} | ${row.baseline} | ${row.candidate} | ${row.referenceTarget ?? "n/a"} | ${row.delta} | ${row.gapToTarget ?? "n/a"} |`
+				? `| ${row.metric} | ${row.baseline} | ${row.candidate} | ${row.delta} | ${row.referenceTarget ?? "n/a"} | ${row.gapToTarget ?? "n/a"} |`
 				: `| ${row.metric} | ${row.baseline} | ${row.candidate} | ${row.delta} |`,
 		)
 		.join("\n");
@@ -1627,7 +1627,7 @@ Generated comparison: ${baselineLabel} \`${comparison.baselineRunId}\` vs ${cand
 
 ${
 	hasReferenceTargetColumns
-		? `| Metric | ${baselineLabel} | ${candidateLabel} | Reference target | Delta | Gap to target |
+		? `| Metric | ${baselineLabel} | ${candidateLabel} | Delta vs baseline | Reference target | Gap to target |
 | --- | --- | --- | --- | --- | --- |
 ${rows}`
 		: `| Metric | ${baselineLabel} | ${candidateLabel} | ${changeLabel} |

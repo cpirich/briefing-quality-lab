@@ -190,6 +190,28 @@ const unsupported = await evaluateWith(judgeResult("unsupported"));
 assert(unsupported.scores.citationSupport < partial.scores.citationSupport);
 assert(unsupported.failureTags.includes("unsupported-claim"));
 
+const miscitedClaimJudgment = judgeResult("supported");
+const copiedCitationClaimJudgment = miscitedClaimJudgment.claimJudgments[1];
+assert(copiedCitationClaimJudgment);
+miscitedClaimJudgment.claimJudgments[1] = {
+	...copiedCitationClaimJudgment,
+	citedSourceIds: [],
+	supportStatus: "unsupported",
+	supportingEvidenceIds: [],
+	missingEvidence: ["The judge failed to copy the cited source id."],
+	explanation: "The claim is unsupported despite the copied citation list.",
+	failureTags: ["miscopied-citation-ids"],
+};
+const miscitedClaim = await evaluateWith(miscitedClaimJudgment);
+assert.deepEqual(
+	miscitedClaim.citationSupport.find((entry) => entry.citation === "A2"),
+	{
+		citation: "A2",
+		supported: false,
+		note: "A2 appears in a partially supported or unsupported claim judgment.",
+	},
+);
+
 const omittedClaimJudgment = judgeResult("supported");
 omittedClaimJudgment.claimJudgments = omittedClaimJudgment.claimJudgments.slice(
 	0,

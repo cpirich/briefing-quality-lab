@@ -700,13 +700,19 @@ function curatedTrendForComparison(
 	);
 	const latestVariant = [...generatedCandidates].sort(newerRunFirst)[0];
 	const bestVariant = [...generatedCandidates].sort(bestCandidateFirst)[0];
-	const trend = [trendPoint("Baseline", baselineManifest)];
+	const trend = [
+		trendPoint(comparison.baselineLabel ?? "Baseline", baselineManifest),
+	];
 
 	if (latestVariant) {
 		if (bestVariant && bestVariant.runId !== latestVariant.runId) {
 			trend.push(trendPoint("Best previous", bestVariant));
 		}
-		trend.push(trendPoint("Latest variant", latestVariant));
+		const latestVariantLabel =
+			latestVariant.runId === comparison.candidateRunId
+				? (comparison.candidateLabel ?? "Candidate")
+				: "Latest variant";
+		trend.push(trendPoint(latestVariantLabel, latestVariant));
 	}
 
 	if (sameCaseSet(referenceTargetManifest, baselineManifest)) {

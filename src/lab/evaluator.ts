@@ -790,10 +790,14 @@ function citationSupportForDeterministic(
 	}));
 }
 
-function citationSupportForHybrid(judgment: HybridJudgeResult) {
+function citationSupportForHybrid(
+	briefing: BriefingOutput,
+	judgment: HybridJudgeResult,
+) {
 	const supportByCitation = new Map<string, boolean>();
-	for (const claim of judgment.claimJudgments) {
-		for (const citation of claim.citedSourceIds) {
+	for (const [index, claim] of judgment.claimJudgments.entries()) {
+		const briefingClaim = briefing.claims[index];
+		for (const citation of briefingClaim?.citations ?? []) {
 			const isSupported = claim.supportStatus === "supported";
 			supportByCitation.set(
 				citation,
@@ -948,7 +952,7 @@ export async function evaluateBriefing({
 			`Overconfidence: ${normalizedJudgment.recommendationJudgment.overconfidenceStatus}.`,
 			`Hard-check cap: ${hardCheckScoreCap(completedHardChecks).toFixed(2)}.`,
 		],
-		citationSupport: citationSupportForHybrid(normalizedJudgment),
+		citationSupport: citationSupportForHybrid(briefing, normalizedJudgment),
 		notes:
 			"Hybrid evaluator output: deterministic hard checks plus structured LLM judge evidence. Manual spot checks are still required before claiming product improvement.",
 		artifactPaths: [
