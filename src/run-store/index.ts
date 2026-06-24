@@ -57,6 +57,16 @@ type FixtureCounts = {
 	artifacts: number;
 };
 
+export interface InProgressRunSummary {
+	runId: string;
+	role: "baseline" | "candidate" | "run";
+	provider: "local" | "openai" | "unknown";
+	briefingCount: number;
+	evaluationCount: number;
+	traceCount: number;
+	expectedCaseCount: number;
+}
+
 interface CaseScoreSummary {
 	overall: number;
 	grounding: number;
@@ -145,6 +155,24 @@ export interface CaseBreakdownEntry {
 
 function absolutePath(relativePath: string) {
 	return path.join(repoRoot, relativePath);
+}
+
+async function fileExists(relativePath: string) {
+	try {
+		await access(absolutePath(relativePath));
+		return true;
+	} catch (error) {
+		if (
+			error &&
+			typeof error === "object" &&
+			"code" in error &&
+			error.code === "ENOENT"
+		) {
+			return false;
+		}
+
+		throw error;
+	}
 }
 
 function recordIdFromJson(value: unknown) {
@@ -316,9 +344,19 @@ export async function listRunManifests(): Promise<RunManifest[]> {
 	const runEntries = await readdir(absolutePath("runs"), {
 		withFileTypes: true,
 	});
-	const manifestPaths = runEntries
+	const manifestPathCandidates = runEntries
 		.filter((entry) => entry.isDirectory() && entry.name !== "comparisons")
-		.map((entry) => path.posix.join("runs", entry.name, "manifest.json"))
+		.map((entry) => path.posix.join("runs", entry.name, "manifest.json"));
+	const manifestPaths = (
+		await Promise.all(
+			manifestPathCandidates.map(async (manifestPath) => ({
+				manifestPath,
+				exists: await fileExists(manifestPath),
+			})),
+		)
+	)
+		.filter((candidate) => candidate.exists)
+		.map((candidate) => candidate.manifestPath)
 		.sort();
 
 	const manifests = await Promise.all(
@@ -329,6 +367,101 @@ export async function listRunManifests(): Promise<RunManifest[]> {
 
 	return [...manifests].sort((left, right) =>
 		left.createdAt.localeCompare(right.createdAt),
+	);
+}
+
+function inProgressRunRole(runId: string): InProgressRunSummary["role"] {
+	if (runId.startsWith("baseline-")) {
+		return "baseline";
+	}
+	if (runId.startsWith("candidate-")) {
+		return "candidate";
+	}
+
+	return "run";
+}
+
+function inProgressRunProvider(
+	runId: string,
+): InProgressRunSummary["provider"] {
+	if (runId.includes("-openai-")) {
+		return "openai";
+	}
+	if (runId.includes("-local-")) {
+		return "local";
+	}
+
+	return "unknown";
+}
+
+async function countOptionalJsonFixtures(relativeDir: string) {
+	return (await listOptionalJsonFixturePaths(relativeDir)).length;
+}
+
+export async function listInProgressRuns(): Promise<InProgressRunSummary[]> {
+	const [runEntries, evalCases, runManifests] = await Promise.all([
+		readdir(absolutePath("runs"), { withFileTypes: true }),
+		listEvalCases(),
+		listRunManifests(),
+	]);
+	const expectedCaseCount = evalCases.filter(
+		(evalCase) => !evalCase.holdout,
+	).length;
+	const runningManifestSummaries = await Promise.all(
+		runManifests
+			.filter((manifest) => manifest.status === "running")
+			.map(async (manifest) => ({
+				runId: manifest.runId,
+				role: inProgressRunRole(manifest.runId),
+				provider: inProgressRunProvider(manifest.runId),
+				briefingCount: await countOptionalJsonFixtures(
+					`runs/${manifest.runId}/briefings`,
+				),
+				evaluationCount: await countOptionalJsonFixtures(
+					`runs/${manifest.runId}/evaluations`,
+				),
+				traceCount: await countOptionalJsonFixtures(
+					`runs/${manifest.runId}/traces`,
+				),
+				expectedCaseCount: manifest.caseIds.length || expectedCaseCount,
+			})),
+	);
+	const runningManifestRunIds = new Set(
+		runningManifestSummaries.map((summary) => summary.runId),
+	);
+	const runIdsWithoutManifest = (
+		await Promise.all(
+			runEntries
+				.filter((entry) => entry.isDirectory() && entry.name !== "comparisons")
+				.map(async (entry) => ({
+					runId: entry.name,
+					hasManifest: await fileExists(
+						path.posix.join("runs", entry.name, "manifest.json"),
+					),
+				})),
+		)
+	)
+		.filter((entry) => !entry.hasManifest)
+		.map((entry) => entry.runId)
+		.filter((runId) => !runningManifestRunIds.has(runId))
+		.sort();
+
+	const manifestlessSummaries = await Promise.all(
+		runIdsWithoutManifest.map(async (runId) => ({
+			runId,
+			role: inProgressRunRole(runId),
+			provider: inProgressRunProvider(runId),
+			briefingCount: await countOptionalJsonFixtures(`runs/${runId}/briefings`),
+			evaluationCount: await countOptionalJsonFixtures(
+				`runs/${runId}/evaluations`,
+			),
+			traceCount: await countOptionalJsonFixtures(`runs/${runId}/traces`),
+			expectedCaseCount,
+		})),
+	);
+
+	return [...runningManifestSummaries, ...manifestlessSummaries].sort(
+		(left, right) => left.runId.localeCompare(right.runId),
 	);
 }
 
@@ -390,6 +523,19 @@ function isGeneratedRunManifest(manifest: RunManifest | undefined) {
 		manifest.command.includes("eval:baseline") ||
 		manifest.command.includes("eval:variant") ||
 		manifest.variantLabel.endsWith("generated baseline") ||
+		manifest.variantLabel.endsWith("generated variant")
+	);
+}
+
+function isGeneratedCandidateRunManifest(manifest: RunManifest | undefined) {
+	if (!manifest) {
+		return false;
+	}
+
+	return (
+		manifest.runId.startsWith("candidate-local-") ||
+		manifest.runId.startsWith("candidate-openai-") ||
+		manifest.command.includes("eval:variant") ||
 		manifest.variantLabel.endsWith("generated variant")
 	);
 }
@@ -456,18 +602,118 @@ function runModelMetadataFromTraces(
 async function comparisonWithRunMetadata(
 	comparison: RunComparison,
 ): Promise<RunComparison> {
-	const [baselineTraces, candidateTraces] = await Promise.all([
+	const [baselineTraces, candidateTraces, runManifests] = await Promise.all([
 		listOptionalGenerationTraces(comparison.baselineRunId),
 		listOptionalGenerationTraces(comparison.candidateRunId),
+		listRunManifests(),
 	]);
 
 	return RunComparisonSchema.parse({
 		...comparison,
+		trend: curatedTrendForComparison(comparison, runManifests),
 		runMetadata: {
 			baseline: runModelMetadataFromTraces(baselineTraces),
 			candidate: runModelMetadataFromTraces(candidateTraces),
 		},
 	});
+}
+
+function sameCaseSet(left: RunManifest, right: RunManifest) {
+	return (
+		[...left.caseIds].sort().join("\0") === [...right.caseIds].sort().join("\0")
+	);
+}
+
+function completedGeneratedCandidatesForCaseSet(
+	runManifests: RunManifest[],
+	referenceManifest: RunManifest,
+) {
+	return runManifests.filter(
+		(manifest) =>
+			manifest.status === "complete" &&
+			manifest.runId !== defaultCandidateRunId &&
+			isGeneratedCandidateRunManifest(manifest) &&
+			sameCaseSet(manifest, referenceManifest),
+	);
+}
+
+function newerRunFirst(left: RunManifest, right: RunManifest) {
+	const createdDelta = Date.parse(right.createdAt) - Date.parse(left.createdAt);
+	if (createdDelta !== 0) {
+		return createdDelta;
+	}
+
+	return right.runId.localeCompare(left.runId);
+}
+
+function bestCandidateFirst(left: RunManifest, right: RunManifest) {
+	const overallDelta =
+		right.aggregateMetrics.overall - left.aggregateMetrics.overall;
+	if (overallDelta !== 0) {
+		return overallDelta;
+	}
+
+	const leftRisk =
+		left.aggregateMetrics.groundingRiskUnits ??
+		left.aggregateMetrics.unsupportedClaims;
+	const rightRisk =
+		right.aggregateMetrics.groundingRiskUnits ??
+		right.aggregateMetrics.unsupportedClaims;
+	const riskDelta = leftRisk - rightRisk;
+	if (riskDelta !== 0) {
+		return riskDelta;
+	}
+
+	const latencyDelta =
+		left.aggregateMetrics.medianLatencyMs -
+		right.aggregateMetrics.medianLatencyMs;
+	if (latencyDelta !== 0) {
+		return latencyDelta;
+	}
+
+	return newerRunFirst(left, right);
+}
+
+function trendPoint(label: string, manifest: RunManifest) {
+	return {
+		label,
+		score: Math.round(manifest.aggregateMetrics.overall * 100),
+	};
+}
+
+function curatedTrendForComparison(
+	comparison: RunComparison,
+	runManifests: RunManifest[],
+) {
+	const manifestById = new Map(
+		runManifests.map((manifest) => [manifest.runId, manifest]),
+	);
+	const baselineManifest = manifestById.get(comparison.baselineRunId);
+	const referenceTargetManifest = manifestById.get(defaultCandidateRunId);
+	if (!baselineManifest || !referenceTargetManifest) {
+		return comparison.trend;
+	}
+
+	const generatedCandidates = completedGeneratedCandidatesForCaseSet(
+		runManifests,
+		baselineManifest,
+	);
+	const latestVariant = [...generatedCandidates].sort(newerRunFirst)[0];
+	const bestVariant = [...generatedCandidates].sort(bestCandidateFirst)[0];
+	const trend = [trendPoint("Baseline", baselineManifest)];
+
+	if (latestVariant) {
+		if (bestVariant && bestVariant.runId !== latestVariant.runId) {
+			trend.push(trendPoint("Best previous", bestVariant));
+		}
+		trend.push(trendPoint("Latest variant", latestVariant));
+	}
+
+	if (sameCaseSet(referenceTargetManifest, baselineManifest)) {
+		trend.push(trendPoint("Reference target", referenceTargetManifest));
+	}
+
+	return trend.length > 1 ? trend : comparison.trend;
 }
 
 function latestGeneratedComparison(

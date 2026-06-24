@@ -1,4 +1,5 @@
-import { mkdir, rename, writeFile } from "node:fs/promises";
+import { spawn } from "node:child_process";
+import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { generateBriefing } from "~/genie/generate-briefing";
@@ -39,7 +40,7 @@ function toSlugTimestamp(date: Date) {
 }
 
 function runIdFor(provider: EvalRunProvider, now: Date) {
-	return `generated-${provider}-${toSlugTimestamp(now)}-${crypto.randomUUID().slice(0, 8)}`;
+	return `candidate-${provider}-${toSlugTimestamp(now)}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
 function absolutePath(relativePath: string) {
@@ -116,6 +117,11 @@ async function executeEvalRun(
 	jobId: string,
 	input: Required<StartEvalRunInput>,
 ) {
+	if (input.provider === "openai") {
+		await executeOpenAIEvalRun(jobId);
+		return;
+	}
+
 	const job = jobs.get(jobId);
 	if (!job) {
 		return;
@@ -232,9 +238,129 @@ async function executeEvalRun(
 	}
 }
 
+async function countJsonFiles(relativeDir: string) {
+	try {
+		const entries = await readdir(absolutePath(relativeDir), {
+			withFileTypes: true,
+		});
+		return entries.filter(
+			(entry) => entry.isFile() && entry.name.endsWith(".json"),
+		).length;
+	} catch (error) {
+		if (
+			error &&
+			typeof error === "object" &&
+			"code" in error &&
+			error.code === "ENOENT"
+		) {
+			return 0;
+		}
+
+		throw error;
+	}
+}
+
+async function readRunManifest(runId: string) {
+	try {
+		return RunManifestSchema.parse(
+			JSON.parse(
+				await readFile(absolutePath(`runs/${runId}/manifest.json`), "utf8"),
+			),
+		);
+	} catch (error) {
+		if (
+			error &&
+			typeof error === "object" &&
+			"code" in error &&
+			error.code === "ENOENT"
+		) {
+			return null;
+		}
+
+		throw error;
+	}
+}
+
+async function refreshJobProgress(job: EvalRunJob) {
+	const [manifest, completedCases] = await Promise.all([
+		readRunManifest(job.runId),
+		countJsonFiles(`runs/${job.runId}/evaluations`),
+	]);
+
+	job.completedCases = completedCases;
+	if (manifest) {
+		if (manifest.status === "complete" || manifest.status === "failed") {
+			job.status = manifest.status;
+		}
+		job.totalCases = manifest.caseIds.length;
+		job.artifactPaths = manifest.artifactPaths;
+		job.error = manifest.error;
+	}
+
+	return job;
+}
+
+async function executeOpenAIEvalRun(jobId: string) {
+	const job = jobs.get(jobId);
+	if (!job) {
+		return;
+	}
+	if (!process.env.OPENAI_API_KEY) {
+		job.status = "failed";
+		job.error =
+			"OPENAI_API_KEY is required on the dev server before starting an OpenAI run.";
+		job.finishedAt = new Date().toISOString();
+		return;
+	}
+
+	job.status = "running";
+	const child = spawn(
+		"mise",
+		[
+			"exec",
+			"--",
+			"bun",
+			"run",
+			"eval:variant",
+			"--provider=openai",
+			"--evaluator=hybrid",
+			`--run-id=${job.runId}`,
+		],
+		{
+			cwd: repoRoot,
+			env: process.env,
+			stdio: ["ignore", "ignore", "pipe"],
+		},
+	);
+	const stderrChunks: Buffer[] = [];
+
+	child.stderr.on("data", (chunk: Buffer) => {
+		stderrChunks.push(chunk);
+	});
+	child.on("error", (error) => {
+		job.status = "failed";
+		job.error = error.message;
+		job.finishedAt = new Date().toISOString();
+	});
+	child.on("close", async (code) => {
+		await refreshJobProgress(job);
+		job.finishedAt = new Date().toISOString();
+		if (code === 0) {
+			job.status = "complete";
+			return;
+		}
+
+		job.status = "failed";
+		job.error =
+			job.error ??
+			Buffer.concat(stderrChunks).toString().trim() ??
+			`OpenAI eval run exited with code ${code}`;
+	});
+}
+
 export function startEvalRun(input: StartEvalRunInput = {}) {
 	const now = new Date();
-	const provider = input.provider ?? "local";
+	const provider = input.provider ?? "openai";
 	const runId = runIdFor(provider, now);
 	const job: EvalRunJob = {
 		id: runId,
@@ -257,12 +383,12 @@ export function startEvalRun(input: StartEvalRunInput = {}) {
 	return job;
 }
 
-export function getEvalRun(jobId: string) {
+export async function getEvalRun(jobId: string) {
 	const job = jobs.get(jobId);
 
 	if (!job) {
 		throw new Error(`Unknown eval run job ${jobId}`);
 	}
 
-	return job;
+	return refreshJobProgress(job);
 }

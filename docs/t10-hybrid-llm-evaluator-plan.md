@@ -93,6 +93,8 @@ Use `OPENAI_EVAL_MODEL` for the judge model when set. Otherwise, default to the 
 
 Use `eval:rejudge` when evaluator policy or judge model changes but the generated briefings and traces should stay fixed. Rejudge mode should reuse the existing run's briefing and trace artifacts, rewrite only evaluator outputs plus aggregate manifest metrics, and refresh the comparison/report for that run.
 
+The `/lab` action button may start a local background CLI process for demo convenience, but that is not production-grade job infrastructure. The API should return immediately and poll run status from manifests/artifacts, but a real hosted version would need a worker queue, durable job records, cancellation, retries, and process recovery instead of relying on an in-memory job map inside the web server.
+
 ## Scoring Guidance
 
 For hybrid runs:

@@ -54,7 +54,7 @@ function comparisonChangeLabel(candidateLabel: string, candidateRunId: string) {
 }
 
 function comparisonBarClass(label: string, baselineLabel: string) {
-	return label === baselineLabel
+	return label === baselineLabel || label === "Baseline"
 		? "bg-[var(--muted-foreground)]"
 		: "bg-[var(--accent)]";
 }
@@ -241,12 +241,31 @@ function clusterSeverityFor(count: number) {
 	return "Low" as const;
 }
 
+function inProgressRunLabel(run: {
+	provider: string;
+	role: string;
+	evaluationCount: number;
+	expectedCaseCount: number;
+}) {
+	if (run.expectedCaseCount <= 0) {
+		return `${run.provider} ${run.role}`;
+	}
+
+	const activeCaseNumber = Math.min(
+		run.expectedCaseCount,
+		run.evaluationCount + 1,
+	);
+	return `${run.provider} ${run.role} case ${activeCaseNumber}/${run.expectedCaseCount}`;
+}
+
 export default async function LabPage() {
-	const [runComparison, artifacts, caseBreakdown] = await Promise.all([
-		api.lab.compareRuns(),
-		api.lab.listArtifacts(),
-		api.lab.listCaseBreakdown(),
-	]);
+	const [runComparison, artifacts, caseBreakdown, inProgressRuns] =
+		await Promise.all([
+			api.lab.compareRuns(),
+			api.lab.listArtifacts(),
+			api.lab.listCaseBreakdown(),
+			api.lab.listInProgressRuns(),
+		]);
 	const publicCaseIds = new Set(
 		caseBreakdown.map((caseBreakdownEntry) => caseBreakdownEntry.caseId),
 	);
@@ -305,6 +324,30 @@ export default async function LabPage() {
 
 			<div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 xl:grid-cols-[minmax(0,1fr)_360px]">
 				<section className="grid min-w-0 gap-4">
+					{inProgressRuns.length > 0 ? (
+						<div className="rounded-lg border border-[var(--warning-border)] bg-[var(--warning)] p-3 text-[var(--warning-foreground)]">
+							<div className="flex flex-wrap items-center justify-between gap-3">
+								<div>
+									<p className="font-medium text-sm">Run in progress</p>
+									<p className="text-xs">
+										Showing the last complete comparison while new artifacts are
+										being written.
+									</p>
+								</div>
+								<div className="flex flex-wrap gap-2">
+									{inProgressRuns.map((run) => (
+										<Badge key={run.runId} tone="amber">
+											<span
+												aria-hidden="true"
+												className="mr-1.5 size-2 animate-spin rounded-full border border-current border-t-transparent motion-reduce:animate-none"
+											/>
+											{inProgressRunLabel(run)}
+										</Badge>
+									))}
+								</div>
+							</div>
+						</div>
+					) : null}
 					<div className="grid gap-2">
 						<div>
 							<h2 className="font-semibold text-base">{summaryTitle}</h2>
@@ -362,7 +405,12 @@ export default async function LabPage() {
 							</div>
 						</CardHeader>
 						<CardBody>
-							<div className="grid h-52 grid-cols-4 gap-3 px-2">
+							<div
+								className="grid h-52 gap-3 px-2"
+								style={{
+									gridTemplateColumns: `repeat(${Math.max(1, runComparison.trend.length)}, minmax(0, 1fr))`,
+								}}
+							>
 								{runComparison.trend.map((point) => (
 									<div
 										className="grid min-w-0 grid-rows-[1fr_auto] gap-2"

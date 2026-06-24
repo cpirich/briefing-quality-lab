@@ -680,6 +680,22 @@ async function generateRun(options: EvalOptions & { mode: RunRole }) {
 		`Starting ${options.provider} ${options.mode} run ${runId} with ${selectedEvalCases.length} cases.`,
 	);
 	await prepareRunOutputDirectories(runId, options.overwriteRun);
+	await writeJsonArtifact(
+		`runs/${runId}/manifest.json`,
+		manifestFor({
+			runId,
+			mode: options.mode,
+			provider: options.provider,
+			evaluator: options.evaluator,
+			caseIds: selectedEvalCases.map((evalCase) => evalCase.id),
+			evaluations,
+			traces,
+			artifactPaths,
+			referenceManifest,
+			includeHoldouts: options.includeHoldouts,
+			status: "running",
+		}),
+	);
 
 	try {
 		for (const [caseIndex, evalCase] of selectedEvalCases.entries()) {
@@ -741,6 +757,24 @@ async function generateRun(options: EvalOptions & { mode: RunRole }) {
 			traces.push(trace);
 			evaluations.push(evaluation);
 			artifactPaths.push(briefingPath, tracePath, evaluationPath);
+			await writeJsonArtifact(
+				`runs/${runId}/manifest.json`,
+				manifestFor({
+					runId,
+					mode: options.mode,
+					provider: options.provider,
+					evaluator: options.evaluator,
+					caseIds: selectedEvalCases.map(
+						(selectedEvalCase) => selectedEvalCase.id,
+					),
+					evaluations,
+					traces,
+					artifactPaths,
+					referenceManifest,
+					includeHoldouts: options.includeHoldouts,
+					status: "running",
+				}),
+			);
 			console.log(`${casePrefix} Wrote artifacts for ${evalCase.id}.`);
 		}
 

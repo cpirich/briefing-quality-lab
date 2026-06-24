@@ -7,6 +7,7 @@ import {
 	listArtifacts,
 	listCaseBreakdown,
 	listEvalCases,
+	listInProgressRuns,
 	listRunManifests,
 } from "~/run-store";
 import { type RunComparison, RunComparisonSchema } from "~/schemas";
@@ -336,6 +337,10 @@ export const labRouter = createTRPCRouter({
 			});
 		}),
 
+	listInProgressRuns: publicProcedure.query(() => {
+		return listInProgressRuns();
+	}),
+
 	listCaseBreakdown: publicProcedure
 		.input(
 			z
@@ -368,7 +373,7 @@ export const labRouter = createTRPCRouter({
 				.object({
 					caseIds: z.array(z.string().min(1)).optional(),
 					includeHoldouts: z.boolean().optional(),
-					provider: z.literal("local").optional(),
+					provider: z.enum(["local", "openai"]).optional(),
 				})
 				.optional(),
 		)
