@@ -10,6 +10,7 @@ import type { BriefingOutput, GenerationTrace, SourcePacket } from "~/schemas";
 import { api } from "~/trpc/react";
 
 type GeniePageClientProps = {
+	caseTitlesBySourcePacketId: Record<string, string>;
 	sourcePackets: SourcePacket[];
 };
 
@@ -26,10 +27,11 @@ function formatLatency(milliseconds: number) {
 }
 
 function formatUsd(value: number | null) {
-	return value === null ? "unknown" : `$${value.toFixed(4)}`;
+	return value === null ? "unknown" : `$${value.toFixed(2)}`;
 }
 
 function TraceMetadataPanel({ trace }: { trace: GenerationTrace }) {
+	const [isOpen, setIsOpen] = useState(false);
 	const settings = trace.model.settings;
 	const metadataRows = [
 		["Provider", trace.model.provider],
@@ -49,38 +51,68 @@ function TraceMetadataPanel({ trace }: { trace: GenerationTrace }) {
 	] as const;
 
 	return (
-		<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] p-3">
-			<div className="flex flex-wrap items-center justify-between gap-2">
-				<h4 className="font-semibold text-sm">Generation Metadata</h4>
+		<div className="rounded-md border border-[var(--border)] bg-[var(--muted)]">
+			<button
+				aria-controls="generation-metadata-panel"
+				aria-expanded={isOpen}
+				className="flex w-full cursor-pointer flex-wrap items-center justify-between gap-2 p-3 text-left"
+				onClick={() => setIsOpen((current) => !current)}
+				type="button"
+			>
+				<span className="flex items-center gap-2">
+					<span
+						aria-hidden="true"
+						className={
+							isOpen
+								? "rotate-90 text-[var(--muted-foreground)] transition-transform"
+								: "text-[var(--muted-foreground)] transition-transform"
+						}
+					>
+						{">"}
+					</span>
+					<span className="font-semibold text-sm">Generation Metadata</span>
+				</span>
 				<Badge tone={trace.cost.estimatedUsd === null ? "amber" : "green"}>
 					{trace.cost.estimatedUsd === null
 						? "cost unknown"
 						: formatUsd(trace.cost.estimatedUsd)}
 				</Badge>
-			</div>
-			<dl className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-				{metadataRows.map(([label, value]) => (
-					<div
-						className="rounded-md border border-[var(--border)] bg-[var(--card)] p-2"
-						key={label}
-					>
-						<dt className="text-[var(--muted-foreground)] text-xs">{label}</dt>
-						<dd className="mt-1 break-words font-medium text-sm">
-							{metadataValue(value)}
-						</dd>
-					</div>
-				))}
-			</dl>
-			{trace.cost.pricing ? (
-				<p className="mt-3 text-[var(--muted-foreground)] text-xs">
-					Pricing: {trace.cost.pricing.source}
-				</p>
+			</button>
+			{isOpen ? (
+				<div
+					className="border-[var(--border)] border-t p-3 pt-3"
+					id="generation-metadata-panel"
+				>
+					<dl className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+						{metadataRows.map(([label, value]) => (
+							<div
+								className="rounded-md border border-[var(--border)] bg-[var(--card)] p-2"
+								key={label}
+							>
+								<dt className="text-[var(--muted-foreground)] text-xs">
+									{label}
+								</dt>
+								<dd className="mt-1 break-words font-medium text-sm">
+									{metadataValue(value)}
+								</dd>
+							</div>
+						))}
+					</dl>
+					{trace.cost.pricing ? (
+						<p className="mt-3 text-[var(--muted-foreground)] text-xs">
+							Pricing: {trace.cost.pricing.source}
+						</p>
+					) : null}
+				</div>
 			) : null}
 		</div>
 	);
 }
 
-export function GeniePageClient({ sourcePackets }: GeniePageClientProps) {
+export function GeniePageClient({
+	caseTitlesBySourcePacketId,
+	sourcePackets,
+}: GeniePageClientProps) {
 	const fallbackPacket = sourcePackets[0];
 	const [selectedPacketId, setSelectedPacketId] = useState(fallbackPacket?.id);
 	const [generationStatus, setGenerationStatus] = useState("Ready.");
@@ -102,6 +134,12 @@ export function GeniePageClient({ sourcePackets }: GeniePageClientProps) {
 	const selectedPacket =
 		sourcePackets.find((packet) => packet.id === selectedPacketId) ??
 		fallbackPacket;
+	const selectedCaseTitle =
+		(selectedPacket
+			? caseTitlesBySourcePacketId[selectedPacket.id]
+			: undefined) ??
+		selectedPacket?.title ??
+		"Selected briefing case";
 	const briefingPreview =
 		generatedBriefing?.sourcePacketId === selectedPacket?.id
 			? generatedBriefing
@@ -117,10 +155,10 @@ export function GeniePageClient({ sourcePackets }: GeniePageClientProps) {
 			return;
 		}
 
-		setGenerationStatus(`Generating briefing for ${selectedPacket.title}...`);
+		setGenerationStatus(`Generating briefing for ${selectedCaseTitle}...`);
 		generateBriefing.mutate({
 			sourcePacketId: selectedPacket.id,
-			userRequest: `Generate a concise, citation-aware strategy briefing for ${selectedPacket.title}.`,
+			userRequest: `Generate a concise, citation-aware strategy briefing for ${selectedCaseTitle}.`,
 		});
 	}
 
@@ -150,9 +188,9 @@ export function GeniePageClient({ sourcePackets }: GeniePageClientProps) {
 			<div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:grid-cols-[360px_minmax(0,1fr)]">
 				<Card>
 					<CardHeader>
-						<h2 className="font-semibold text-base">Source Packet</h2>
+						<h2 className="font-semibold text-base">Briefing Case</h2>
 						<p className="text-[var(--muted-foreground)] text-sm">
-							Choose the packet Briefing Genie should summarize.
+							Choose the evaluation case Briefing Genie should summarize.
 						</p>
 					</CardHeader>
 					<CardBody className="space-y-4">
@@ -161,7 +199,7 @@ export function GeniePageClient({ sourcePackets }: GeniePageClientProps) {
 								className="font-medium text-[var(--foreground)] text-sm"
 								htmlFor="source-packet"
 							>
-								Packet
+								Case
 							</label>
 							<NativeSelect
 								id="source-packet"
@@ -176,10 +214,15 @@ export function GeniePageClient({ sourcePackets }: GeniePageClientProps) {
 							>
 								{sourcePackets.map((packet) => (
 									<option key={packet.id} value={packet.id}>
-										{packet.title}
+										{caseTitlesBySourcePacketId[packet.id] ?? packet.title}
 									</option>
 								))}
 							</NativeSelect>
+							{selectedPacket ? (
+								<p className="mt-2 text-[var(--muted-foreground)] text-xs">
+									Source packet: {selectedPacket.title}
+								</p>
+							) : null}
 						</div>
 						<div className="space-y-3">
 							{selectedPacket?.sources.map((source) => (
@@ -243,9 +286,6 @@ export function GeniePageClient({ sourcePackets }: GeniePageClientProps) {
 											{briefingPreview.summary}
 										</p>
 									</div>
-									{activeTrace ? (
-										<TraceMetadataPanel trace={activeTrace} />
-									) : null}
 									<div>
 										<h4 className="font-semibold text-sm">Claims</h4>
 										<div className="mt-2 grid gap-2">
@@ -284,6 +324,9 @@ export function GeniePageClient({ sourcePackets }: GeniePageClientProps) {
 											</p>
 										</div>
 									</div>
+									{activeTrace ? (
+										<TraceMetadataPanel trace={activeTrace} />
+									) : null}
 								</>
 							) : (
 								<div className="flex min-h-96 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--muted)] p-6 text-center">

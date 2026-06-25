@@ -8,7 +8,18 @@ export const metadata: Metadata = {
 };
 
 export default async function GeniePage() {
-	const sourcePackets = await api.genie.listSourcePackets();
+	const [sourcePackets, evalCases] = await Promise.all([
+		api.genie.listSourcePackets(),
+		api.lab.listEvalCases(),
+	]);
+	const caseTitlesBySourcePacketId = Object.fromEntries(
+		evalCases.map((evalCase) => [evalCase.sourcePacketId, evalCase.title]),
+	);
 
-	return <GeniePageClient sourcePackets={sourcePackets} />;
+	return (
+		<GeniePageClient
+			caseTitlesBySourcePacketId={caseTitlesBySourcePacketId}
+			sourcePackets={sourcePackets}
+		/>
+	);
 }
