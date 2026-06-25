@@ -1,0 +1,45 @@
+{
+	"id": "evaluation-release-note-drift-baseline",
+	"runId": "baseline-2026-06-10",
+	"caseId": "case-release-note-drift",
+	"scores": {
+		"overall": 0.68,
+		"grounding": 0.52,
+		"coverage": 0.75,
+		"citationSupport": 0.52
+	},
+	"failureTags": [
+		"stale-source",
+		"human-approval",
+		"customer-claim-risk",
+		"coverage-overreach",
+		"missing-sensitive-claim-gate",
+		"weak-drift-review"
+	],
+	"rubricEvidence": [
+		"Baseline covers generated-note usefulness but treats coverage as enough to publish with spot review.",
+		"It omits the explicit compliance gate for security, retention, and access-control claims."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "S1 supports a baseline claim, but the overall recommendation still misses important gates."
+		},
+		{
+			"citation": "S2",
+			"supported": false,
+			"note": "S2 is used for a claim that overstates or omits the relevant source caveat."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "S3 supports a baseline claim, but the overall recommendation still misses important gates."
+		}
+	],
+	"notes": "Baseline misses the drift-review and sensitive-claim approval gates.",
+	"artifactPaths": [
+		"runs/baseline-2026-06-10/evaluations/case-release-note-drift.json",
+		"runs/baseline-2026-06-10/briefings/packet-release-note-drift.json"
+	]
+}

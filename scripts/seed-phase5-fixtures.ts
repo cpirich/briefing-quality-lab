@@ -50,6 +50,10 @@ type EvaluationSeed = {
 	notes: string;
 };
 
+type BaselineEvaluationSeed = Omit<EvaluationSeed, "citationSupport"> & {
+	supportedCitations: string[];
+};
+
 const fixtures: CaseFixture[] = [
 	{
 		caseId: "case-adoption-friction",
@@ -1126,9 +1130,167 @@ function traceId(caseId: string) {
 	return `trace-${caseId.replace(/^case-/, "")}-candidate`;
 }
 
-function evaluationId(caseId: string) {
-	return `evaluation-${caseId.replace(/^case-/, "")}-candidate`;
+function evaluationId(caseId: string, variant: "baseline" | "candidate") {
+	return `evaluation-${caseId.replace(/^case-/, "")}-${variant}`;
 }
+
+const baselineEvaluationsByCaseId: Record<string, BaselineEvaluationSeed> = {
+	"case-adoption-friction": {
+		scores: {
+			overall: 0.62,
+			grounding: 0.48,
+			coverage: 0.7,
+			citationSupport: 0.46,
+		},
+		failureTags: [
+			"setup-recovery",
+			"citation-grounding",
+			"overconfident-rollout",
+			"missing-recovery-gate",
+			"weak-source-specificity",
+		],
+		rubricEvidence: [
+			"Baseline cites adoption improvement but turns it into a broader pilot recommendation than the sources support.",
+			"Setup recovery and source-traceability gates are mentioned only as follow-up questions.",
+		],
+		supportedCitations: ["S3"],
+		notes:
+			"Baseline overweights quickstart improvement and underplays setup-recovery risk.",
+	},
+	"case-eval-loop": {
+		scores: {
+			overall: 0.58,
+			grounding: 0.44,
+			coverage: 0.68,
+			citationSupport: 0.42,
+		},
+		failureTags: [
+			"citation-grounding",
+			"cost-guardrail",
+			"holdout-boundary",
+			"coverage-overreach",
+			"missing-release-gate",
+		],
+		rubricEvidence: [
+			"Baseline recommends expansion based mostly on coverage and reviewer spot checks.",
+			"It misses the explicit warning that citation support should block shipping when grounding regresses.",
+		],
+		supportedCitations: ["S3"],
+		notes:
+			"Baseline captures trace utility but misses citation-support, cost, and holdout boundaries.",
+	},
+	"case-code-review-queues": {
+		scores: {
+			overall: 0.65,
+			grounding: 0.5,
+			coverage: 0.72,
+			citationSupport: 0.48,
+		},
+		failureTags: [
+			"review-queue",
+			"risk-labeling",
+			"unsupported-automation",
+			"missing-ownership-boundary",
+			"overbroad-fast-track",
+			"branch-protection-risk",
+		],
+		rubricEvidence: [
+			"Baseline correctly notices median wait improvement but treats bot approvals as acceptable without the required risk labels.",
+			"It claims fast-tracking did not increase defects while omitting the cross-service incident caveat.",
+		],
+		supportedCitations: ["S1"],
+		notes:
+			"Baseline conflates queue organization with approval authority and misses ownership gates.",
+	},
+	"case-release-note-drift": {
+		scores: {
+			overall: 0.68,
+			grounding: 0.52,
+			coverage: 0.75,
+			citationSupport: 0.52,
+		},
+		failureTags: [
+			"stale-source",
+			"human-approval",
+			"customer-claim-risk",
+			"coverage-overreach",
+			"missing-sensitive-claim-gate",
+			"weak-drift-review",
+		],
+		rubricEvidence: [
+			"Baseline covers generated-note usefulness but treats coverage as enough to publish with spot review.",
+			"It omits the explicit compliance gate for security, retention, and access-control claims.",
+		],
+		supportedCitations: ["S1", "S3"],
+		notes:
+			"Baseline misses the drift-review and sensitive-claim approval gates.",
+	},
+	"case-human-approval-boundary": {
+		scores: {
+			overall: 0.7,
+			grounding: 0.55,
+			coverage: 0.77,
+			citationSupport: 0.53,
+		},
+		failureTags: [
+			"human-approval",
+			"action-boundary",
+			"status-label-risk",
+			"customer-commitment-risk",
+		],
+		rubricEvidence: [
+			"Baseline identifies that some actions need human review but leaves the automation boundary vague.",
+			"It does not clearly separate drafting from approved action or customer commitment.",
+		],
+		supportedCitations: ["S1", "S2"],
+		notes:
+			"Baseline is directionally right but too broad about automating routine lab actions.",
+	},
+	"case-cost-latency-budget": {
+		scores: {
+			overall: 0.71,
+			grounding: 0.58,
+			coverage: 0.78,
+			citationSupport: 0.58,
+		},
+		failureTags: [
+			"cost-guardrail",
+			"latency-progress",
+			"trace-readability",
+			"retry-visibility",
+		],
+		rubricEvidence: [
+			"Baseline notices the value of traces but does not tie the recommendation to retry caps or manifest summaries.",
+			"It treats cost and latency as generic monitoring concerns instead of demo guardrails.",
+		],
+		supportedCitations: ["S1", "S3"],
+		notes:
+			"Baseline partially covers trace value while missing the cost and progress UX constraints.",
+	},
+	"case-incident-recovery-comms": {
+		scores: {
+			overall: 0.68,
+			grounding: 0.57,
+			coverage: 0.78,
+			citationSupport: 0.58,
+		},
+		failureTags: [
+			"incident-comms",
+			"platform-caveat",
+			"customer-forwarding-risk",
+			"docs-readiness",
+			"overbroad-resolution",
+			"missing-user-segmentation",
+		],
+		rubricEvidence: [
+			"Baseline communicates recovery progress but blurs the unresolved Windows caveat.",
+			"It does not separate affected users, recommended action, and pending validation strongly enough.",
+		],
+		supportedCitations: ["S1", "S4"],
+		notes:
+			"Baseline is useful but too broad about recovery status and customer-facing readiness.",
+	},
+};
 
 const sourceBodyAdditions: Record<string, Record<string, string>> = {
 	"case-adoption-friction": {
@@ -1498,13 +1660,13 @@ function traceFor(fixture: CaseFixture): GenerationTrace {
 	};
 }
 
-function evaluationFor(fixture: CaseFixture): EvaluatorOutput {
+function candidateEvaluationFor(fixture: CaseFixture): EvaluatorOutput {
 	if (!fixture.evaluation) {
 		throw new Error(`Missing evaluator seed for ${fixture.caseId}`);
 	}
 
 	return {
-		id: evaluationId(fixture.caseId),
+		id: evaluationId(fixture.caseId, "candidate"),
 		runId: candidateRunId,
 		caseId: fixture.caseId,
 		scores: fixture.evaluation.scores,
@@ -1519,6 +1681,53 @@ function evaluationFor(fixture: CaseFixture): EvaluatorOutput {
 	};
 }
 
+function baselineCitationSupportFor({
+	fixture,
+	seed,
+}: {
+	fixture: CaseFixture;
+	seed: BaselineEvaluationSeed;
+}): EvaluatorOutput["citationSupport"] {
+	const baseline = fixture.baseline;
+	if (!baseline) {
+		throw new Error(`Missing baseline briefing seed for ${fixture.caseId}`);
+	}
+	const supportedCitationIds = new Set(seed.supportedCitations);
+	const citationIds = [
+		...new Set(baseline.claims.flatMap((claim) => claim.citations)),
+	];
+
+	return citationIds.map((citation) => ({
+		citation,
+		supported: supportedCitationIds.has(citation),
+		note: supportedCitationIds.has(citation)
+			? `${citation} supports a baseline claim, but the overall recommendation still misses important gates.`
+			: `${citation} is used for a claim that overstates or omits the relevant source caveat.`,
+	}));
+}
+
+function baselineEvaluationFor(fixture: CaseFixture): EvaluatorOutput {
+	const seed = baselineEvaluationsByCaseId[fixture.caseId];
+	if (!seed) {
+		throw new Error(`Missing baseline evaluator seed for ${fixture.caseId}`);
+	}
+
+	return {
+		id: evaluationId(fixture.caseId, "baseline"),
+		runId: baselineRunId,
+		caseId: fixture.caseId,
+		scores: seed.scores,
+		failureTags: seed.failureTags,
+		rubricEvidence: seed.rubricEvidence,
+		citationSupport: baselineCitationSupportFor({ fixture, seed }),
+		notes: seed.notes,
+		artifactPaths: [
+			`runs/${baselineRunId}/evaluations/${fixture.caseId}.json`,
+			`runs/${baselineRunId}/briefings/${fixture.packetId}.json`,
+		],
+	};
+}
+
 function runManifestFor(
 	variant: "baseline" | "candidate",
 	visibleFixtures: CaseFixture[],
@@ -1528,16 +1737,17 @@ function runManifestFor(
 	const briefingPaths = visibleFixtures.map(
 		(fixture) => `runs/${runId}/briefings/${fixture.packetId}.json`,
 	);
-	const candidateArtifactPaths = isCandidate
+	const runEvaluationPaths = visibleFixtures.map(
+		(fixture) => `runs/${runId}/evaluations/${fixture.caseId}.json`,
+	);
+	const runArtifactPaths = isCandidate
 		? [
 				...visibleFixtures.map(
 					(fixture) => `runs/${runId}/traces/${fixture.caseId}.json`,
 				),
-				...visibleFixtures.map(
-					(fixture) => `runs/${runId}/evaluations/${fixture.caseId}.json`,
-				),
+				...runEvaluationPaths,
 			]
-		: [];
+		: runEvaluationPaths;
 
 	return {
 		runId,
@@ -1594,7 +1804,7 @@ function runManifestFor(
 		artifactPaths: [
 			`runs/${runId}/manifest.json`,
 			...briefingPaths,
-			...candidateArtifactPaths,
+			...runArtifactPaths,
 		],
 	};
 }
@@ -1749,6 +1959,7 @@ function comparisonFor(): RunComparison {
 		},
 		artifactPaths: [
 			"runs/baseline-2026-06-10/manifest.json",
+			"runs/baseline-2026-06-10/evaluations/case-release-note-drift.json",
 			"runs/candidate-citation-gates/manifest.json",
 			"runs/candidate-citation-gates/traces/case-release-note-drift.json",
 			"runs/candidate-citation-gates/evaluations/case-release-note-drift.json",
@@ -1780,6 +1991,7 @@ async function main() {
 		cleanJsonFiles("data/source-packets"),
 		cleanJsonFiles("data/eval-cases"),
 		cleanJsonFiles(`runs/${baselineRunId}/briefings`),
+		cleanJsonFiles(`runs/${baselineRunId}/evaluations`),
 		cleanJsonFiles(`runs/${candidateRunId}/briefings`),
 		cleanJsonFiles(`runs/${candidateRunId}/traces`),
 		cleanJsonFiles(`runs/${candidateRunId}/evaluations`),
@@ -1802,6 +2014,10 @@ async function main() {
 				briefingFor(fixture, "baseline"),
 			),
 			writeJson(
+				`runs/${baselineRunId}/evaluations/${fixture.caseId}.json`,
+				baselineEvaluationFor(fixture),
+			),
+			writeJson(
 				`runs/${candidateRunId}/briefings/${fixture.packetId}.json`,
 				briefingFor(fixture, "candidate"),
 			),
@@ -1811,7 +2027,7 @@ async function main() {
 			),
 			writeJson(
 				`runs/${candidateRunId}/evaluations/${fixture.caseId}.json`,
-				evaluationFor(fixture),
+				candidateEvaluationFor(fixture),
 			),
 		]),
 	);

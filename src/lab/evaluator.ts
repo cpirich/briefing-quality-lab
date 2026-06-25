@@ -536,9 +536,16 @@ function normalizeClaimJudgments({
 			if (!matchingJudgment) {
 				throw new Error("Matched claim judgment index was not available.");
 			}
+			const claimCitationIds = new Set(claim.citations);
 			const invalidSupportingEvidenceIds =
 				matchingJudgment.supportingEvidenceIds.filter(
 					(citationId) => !citationIdPattern.test(citationId),
+				);
+			const uncitedSupportingEvidenceIds =
+				matchingJudgment.supportingEvidenceIds.filter(
+					(citationId) =>
+						citationIdPattern.test(citationId) &&
+						!claimCitationIds.has(citationId),
 				);
 			const invalidCitationIds = matchingJudgment.citedSourceIds.filter(
 				(citationId) => !citationIdPattern.test(citationId),
@@ -546,30 +553,68 @@ function normalizeClaimJudgments({
 			const hadInvalidCitationIds =
 				invalidCitationIds.length > 0 ||
 				invalidSupportingEvidenceIds.length > 0;
-
-			return {
-				...matchingJudgment,
-				citedSourceIds: claim.citations,
-				supportingEvidenceIds: matchingJudgment.supportingEvidenceIds.filter(
-					(citationId) => citationIdPattern.test(citationId),
-				),
-				failureTags: hadInvalidCitationIds
+			const supportingEvidenceIds =
+				matchingJudgment.supportingEvidenceIds.filter(
+					(citationId) =>
+						citationIdPattern.test(citationId) &&
+						claimCitationIds.has(citationId),
+				);
+			const missingSupportingEvidence =
+				matchingJudgment.supportStatus !== "unsupported" &&
+				supportingEvidenceIds.length === 0;
+			const hasRejectedSupportingEvidence =
+				invalidSupportingEvidenceIds.length > 0 ||
+				uncitedSupportingEvidenceIds.length > 0;
+			let supportStatus = matchingJudgment.supportStatus;
+			if (supportStatus !== "unsupported") {
+				if (supportingEvidenceIds.length === 0) {
+					supportStatus = "unsupported";
+				} else if (hasRejectedSupportingEvidence) {
+					supportStatus = "partially-supported";
+				}
+			}
+			const failureTags = [
+				...matchingJudgment.failureTags,
+				...(hadInvalidCitationIds ? ["judge-invalid-citation-id"] : []),
+				...(uncitedSupportingEvidenceIds.length > 0
+					? ["judge-uncited-supporting-evidence"]
+					: []),
+				...(missingSupportingEvidence
+					? ["judge-missing-supporting-evidence"]
+					: []),
+				...(supportStatus !== matchingJudgment.supportStatus
+					? ["judge-evidence-status-downgraded"]
+					: []),
+			];
+			const missingEvidence = [
+				...matchingJudgment.missingEvidence,
+				...(hadInvalidCitationIds
 					? [
-							...new Set([
-								...matchingJudgment.failureTags,
-								"judge-invalid-citation-id",
-							]),
-						]
-					: matchingJudgment.failureTags,
-				missingEvidence: hadInvalidCitationIds
-					? [
-							...matchingJudgment.missingEvidence,
 							`Judge returned invalid citation ids: ${[
 								...invalidCitationIds,
 								...invalidSupportingEvidenceIds,
 							].join(", ")}.`,
 						]
-					: matchingJudgment.missingEvidence,
+					: []),
+				...(uncitedSupportingEvidenceIds.length > 0
+					? [
+							`Judge used evidence ids not cited by this claim: ${uncitedSupportingEvidenceIds.join(", ")}.`,
+						]
+					: []),
+				...(missingSupportingEvidence
+					? [
+							"Judge marked the claim as supported without valid supporting evidence from the claim's citations.",
+						]
+					: []),
+			];
+
+			return {
+				...matchingJudgment,
+				citedSourceIds: claim.citations,
+				supportStatus,
+				supportingEvidenceIds,
+				failureTags: [...new Set(failureTags)],
+				missingEvidence,
 			};
 		}
 

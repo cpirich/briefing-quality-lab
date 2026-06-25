@@ -139,6 +139,7 @@
 	},
 	"artifactPaths": [
 		"runs/baseline-2026-06-10/manifest.json",
+		"runs/baseline-2026-06-10/evaluations/case-release-note-drift.json",
 		"runs/candidate-citation-gates/manifest.json",
 		"runs/candidate-citation-gates/traces/case-release-note-drift.json",
 		"runs/candidate-citation-gates/evaluations/case-release-note-drift.json"

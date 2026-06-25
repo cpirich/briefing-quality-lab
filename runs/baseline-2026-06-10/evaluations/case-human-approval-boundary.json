@@ -1,0 +1,43 @@
+{
+	"id": "evaluation-human-approval-boundary-baseline",
+	"runId": "baseline-2026-06-10",
+	"caseId": "case-human-approval-boundary",
+	"scores": {
+		"overall": 0.7,
+		"grounding": 0.55,
+		"coverage": 0.77,
+		"citationSupport": 0.53
+	},
+	"failureTags": [
+		"human-approval",
+		"action-boundary",
+		"status-label-risk",
+		"customer-commitment-risk"
+	],
+	"rubricEvidence": [
+		"Baseline identifies that some actions need human review but leaves the automation boundary vague.",
+		"It does not clearly separate drafting from approved action or customer commitment."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "S1 supports a baseline claim, but the overall recommendation still misses important gates."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "S2 supports a baseline claim, but the overall recommendation still misses important gates."
+		},
+		{
+			"citation": "S3",
+			"supported": false,
+			"note": "S3 is used for a claim that overstates or omits the relevant source caveat."
+		}
+	],
+	"notes": "Baseline is directionally right but too broad about automating routine lab actions.",
+	"artifactPaths": [
+		"runs/baseline-2026-06-10/evaluations/case-human-approval-boundary.json",
+		"runs/baseline-2026-06-10/briefings/packet-human-approval.json"
+	]
+}

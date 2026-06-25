@@ -212,6 +212,29 @@ assert.deepEqual(
 	},
 );
 
+const uncitedEvidenceJudgment = judgeResult("supported");
+const uncitedEvidenceClaimJudgment = uncitedEvidenceJudgment.claimJudgments[1];
+assert(uncitedEvidenceClaimJudgment);
+uncitedEvidenceJudgment.claimJudgments[1] = {
+	...uncitedEvidenceClaimJudgment,
+	supportingEvidenceIds: ["A1"],
+};
+const uncitedEvidence = await evaluateWith(uncitedEvidenceJudgment);
+assert.equal(uncitedEvidence.claimJudgments?.[1]?.supportStatus, "unsupported");
+assert.deepEqual(
+	uncitedEvidence.claimJudgments?.[1]?.supportingEvidenceIds,
+	[],
+);
+assert(
+	uncitedEvidence.failureTags.includes("judge-uncited-supporting-evidence"),
+);
+assert(
+	uncitedEvidence.failureTags.includes("judge-evidence-status-downgraded"),
+);
+assert(
+	uncitedEvidence.scores.citationSupport < supported.scores.citationSupport,
+);
+
 const omittedClaimJudgment = judgeResult("supported");
 omittedClaimJudgment.claimJudgments = omittedClaimJudgment.claimJudgments.slice(
 	0,

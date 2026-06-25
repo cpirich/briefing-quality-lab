@@ -1,0 +1,44 @@
+{
+	"id": "evaluation-adoption-friction-baseline",
+	"runId": "baseline-2026-06-10",
+	"caseId": "case-adoption-friction",
+	"scores": {
+		"overall": 0.62,
+		"grounding": 0.48,
+		"coverage": 0.7,
+		"citationSupport": 0.46
+	},
+	"failureTags": [
+		"setup-recovery",
+		"citation-grounding",
+		"overconfident-rollout",
+		"missing-recovery-gate",
+		"weak-source-specificity"
+	],
+	"rubricEvidence": [
+		"Baseline cites adoption improvement but turns it into a broader pilot recommendation than the sources support.",
+		"Setup recovery and source-traceability gates are mentioned only as follow-up questions."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": false,
+			"note": "S1 is used for a claim that overstates or omits the relevant source caveat."
+		},
+		{
+			"citation": "S2",
+			"supported": false,
+			"note": "S2 is used for a claim that overstates or omits the relevant source caveat."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "S3 supports a baseline claim, but the overall recommendation still misses important gates."
+		}
+	],
+	"notes": "Baseline overweights quickstart improvement and underplays setup-recovery risk.",
+	"artifactPaths": [
+		"runs/baseline-2026-06-10/evaluations/case-adoption-friction.json",
+		"runs/baseline-2026-06-10/briefings/packet-dev-adoption.json"
+	]
+}

@@ -50,6 +50,13 @@
 		"runs/baseline-2026-06-10/briefings/packet-release-note-drift.json",
 		"runs/baseline-2026-06-10/briefings/packet-human-approval.json",
 		"runs/baseline-2026-06-10/briefings/packet-cost-latency.json",
-		"runs/baseline-2026-06-10/briefings/packet-incident-recovery.json"
+		"runs/baseline-2026-06-10/briefings/packet-incident-recovery.json",
+		"runs/baseline-2026-06-10/evaluations/case-adoption-friction.json",
+		"runs/baseline-2026-06-10/evaluations/case-eval-loop.json",
+		"runs/baseline-2026-06-10/evaluations/case-code-review-queues.json",
+		"runs/baseline-2026-06-10/evaluations/case-release-note-drift.json",
+		"runs/baseline-2026-06-10/evaluations/case-human-approval-boundary.json",
+		"runs/baseline-2026-06-10/evaluations/case-cost-latency-budget.json",
+		"runs/baseline-2026-06-10/evaluations/case-incident-recovery-comms.json"
 	]
 }

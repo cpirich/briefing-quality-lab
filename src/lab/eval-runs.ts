@@ -46,6 +46,17 @@ function runIdFor(provider: EvalRunProvider, now: Date) {
 	return `${rolePrefix}-${toSlugTimestamp(now)}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
+function assertSupportedStartInput(input: Required<StartEvalRunInput>) {
+	if (
+		input.provider === "openai" &&
+		(input.includeHoldouts || input.caseIds.length > 0)
+	) {
+		throw new Error(
+			"Filtered OpenAI lab runs are not supported yet because they need a baseline with the same case filters. Use the CLI with an explicit --baseline for filtered experiments.",
+		);
+	}
+}
+
 function absolutePath(relativePath: string) {
 	return path.join(repoRoot, relativePath);
 }
@@ -372,6 +383,12 @@ async function executeOpenAIEvalRun(
 export function startEvalRun(input: StartEvalRunInput = {}) {
 	const now = new Date();
 	const provider = input.provider ?? "openai";
+	const normalizedInput = {
+		caseIds: input.caseIds ?? [],
+		includeHoldouts: input.includeHoldouts ?? false,
+		provider,
+	};
+	assertSupportedStartInput(normalizedInput);
 	const runId = runIdFor(provider, now);
 	const job: EvalRunJob = {
 		id: runId,
@@ -385,11 +402,7 @@ export function startEvalRun(input: StartEvalRunInput = {}) {
 	};
 	jobs.set(job.id, job);
 
-	void executeEvalRun(job.id, {
-		caseIds: input.caseIds ?? [],
-		includeHoldouts: input.includeHoldouts ?? false,
-		provider,
-	});
+	void executeEvalRun(job.id, normalizedInput);
 
 	return job;
 }
