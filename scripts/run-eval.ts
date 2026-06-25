@@ -1046,6 +1046,14 @@ async function baselineRunIdForExistingVariant(candidateRunId: string) {
 		?.baselineRunId;
 }
 
+async function candidateRunIdForExistingBaseline(baselineRunId: string) {
+	const comparisons = await listRunComparisons();
+	return [...comparisons]
+		.reverse()
+		.find((comparison) => comparison.baselineRunId === baselineRunId)
+		?.candidateRunId;
+}
+
 async function assertBaselineComparisonIsValid(options: EvalOptions) {
 	const referenceManifest =
 		await referenceManifestForBaselineComparison(options);
@@ -1109,6 +1117,11 @@ async function rejudgeRun(options: EvalOptions): Promise<RejudgedRunArtifacts> {
 			? (options.baselineRunId ??
 				(await baselineRunIdForExistingVariant(runId)))
 			: undefined;
+	const existingBaselineCandidateRunId =
+		role === "baseline"
+			? (options.candidateRunId ??
+				(await candidateRunIdForExistingBaseline(runId)))
+			: undefined;
 	const referenceManifest =
 		role === "variant"
 			? await referenceManifestForVariant({
@@ -1121,6 +1134,7 @@ async function rejudgeRun(options: EvalOptions): Promise<RejudgedRunArtifacts> {
 					...options,
 					mode: "baseline",
 					provider,
+					candidateRunId: existingBaselineCandidateRunId,
 				});
 
 	if (role === "variant") {
