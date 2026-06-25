@@ -21,6 +21,18 @@ function formatDelta(value: number | null) {
 	return `${sign}${value.toFixed(2)}`;
 }
 
+function formatTargetGap(value: number | null) {
+	if (value === null) {
+		return "n/a";
+	}
+
+	if (value <= 0) {
+		return `✓ ${Math.abs(value).toFixed(2)}`;
+	}
+
+	return `gap ${value.toFixed(2)}`;
+}
+
 function deltaTone(value: number | null) {
 	if (value === null) {
 		return "slate" as const;
@@ -46,6 +58,10 @@ function targetGapTone(value: number | null) {
 
 function changeTone(value: number | null, changeLabel: string) {
 	return changeLabel === "Gap" ? targetGapTone(value) : deltaTone(value);
+}
+
+function targetGapBadgeTone(value: number | null) {
+	return targetGapTone(value);
 }
 
 interface LabCaseInspectorProps {
@@ -524,6 +540,62 @@ function ScoreSummary({ scores }: { scores: CaseScoreSummary | null }) {
 	);
 }
 
+function ReferenceTargetYardstick({
+	referenceTargetDetail,
+	referenceTargetScores,
+	gapToTarget,
+}: {
+	referenceTargetDetail: CaseArtifactDetail | null;
+	referenceTargetScores: CaseScoreSummary | null;
+	gapToTarget: CaseBreakdownEntry["gapToTarget"];
+}) {
+	if (!referenceTargetScores && !referenceTargetDetail) {
+		return null;
+	}
+
+	return (
+		<div className="rounded-md border border-[var(--info-border)] bg-[var(--info)] p-3">
+			<div className="flex flex-wrap items-start justify-between gap-3">
+				<div>
+					<h3 className="font-semibold text-[var(--info-foreground)] text-sm">
+						Reference target yardstick
+					</h3>
+					<p className="text-[var(--muted-foreground)] text-sm">
+						Target scores and rationale for this selected case.
+					</p>
+				</div>
+				<div className="flex flex-wrap gap-1.5">
+					<Badge tone={targetGapBadgeTone(gapToTarget.overall)}>
+						Overall {formatTargetGap(gapToTarget.overall)}
+					</Badge>
+					<Badge tone={targetGapBadgeTone(gapToTarget.citationSupport)}>
+						Citations {formatTargetGap(gapToTarget.citationSupport)}
+					</Badge>
+				</div>
+			</div>
+			<div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+				<ScoreSummary scores={referenceTargetScores} />
+				<div className="space-y-2">
+					{referenceTargetDetail?.recommendation ? (
+						<div>
+							<p className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
+								Target recommendation
+							</p>
+							<p className="mt-1 text-sm">
+								{referenceTargetDetail.recommendation}
+							</p>
+						</div>
+					) : null}
+					<DetailList
+						empty="No target rationale available."
+						items={referenceTargetDetail?.rubricEvidence ?? []}
+					/>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 function ArtifactPathList({ detail }: { detail: CaseArtifactDetail | null }) {
 	if (!detail) {
 		return <p>No evaluator artifact available.</p>;
@@ -819,6 +891,9 @@ export function LabCaseInspector({
 	}
 
 	const changeLabelLower = changeLabel.toLowerCase();
+	const hasReferenceTarget = caseBreakdown.some(
+		(entry) => entry.referenceTarget,
+	);
 
 	return (
 		<div className="grid gap-4">
@@ -831,19 +906,30 @@ export function LabCaseInspector({
 				</CardHeader>
 				<CardBody className="space-y-5">
 					<div className="overflow-x-auto rounded-md border border-[var(--border)]">
-						<table className="w-full min-w-[920px] text-left text-sm">
+						<table
+							className={cn(
+								"w-full text-left text-sm",
+								hasReferenceTarget ? "min-w-[1080px]" : "min-w-[920px]",
+							)}
+						>
 							<thead className="bg-[var(--muted)] text-[var(--muted-foreground)]">
 								<tr>
 									<th className="px-3 py-2 font-medium">Case</th>
 									<th className="px-3 py-2 font-medium">Themes</th>
 									<th className="px-3 py-2 font-medium">{baselineLabel}</th>
 									<th className="px-3 py-2 font-medium">{candidateLabel}</th>
+									{hasReferenceTarget ? (
+										<th className="px-3 py-2 font-medium">Reference target</th>
+									) : null}
 									<th className="px-3 py-2 font-medium">
 										Overall {changeLabelLower}
 									</th>
 									<th className="px-3 py-2 font-medium">
 										Citation {changeLabelLower}
 									</th>
+									{hasReferenceTarget ? (
+										<th className="px-3 py-2 font-medium">Target gap</th>
+									) : null}
 								</tr>
 							</thead>
 							<tbody>
@@ -896,6 +982,19 @@ export function LabCaseInspector({
 													{formatScore(entry.candidate?.citationSupport)}
 												</p>
 											</td>
+											{hasReferenceTarget ? (
+												<td className="px-3 py-2">
+													<p className="font-semibold">
+														{formatScore(entry.referenceTarget?.overall)}
+													</p>
+													<p className="text-[var(--muted-foreground)] text-xs">
+														citations{" "}
+														{formatScore(
+															entry.referenceTarget?.citationSupport,
+														)}
+													</p>
+												</td>
+											) : null}
 											<td className="px-3 py-2">
 												<Badge
 													tone={changeTone(entry.delta.overall, changeLabel)}
@@ -913,6 +1012,30 @@ export function LabCaseInspector({
 													{formatDelta(entry.delta.citationSupport)}
 												</Badge>
 											</td>
+											{hasReferenceTarget ? (
+												<td className="px-3 py-2">
+													<div className="flex flex-col items-start gap-1">
+														<Badge
+															tone={targetGapBadgeTone(
+																entry.gapToTarget.overall,
+															)}
+														>
+															Overall{" "}
+															{formatTargetGap(entry.gapToTarget.overall)}
+														</Badge>
+														<Badge
+															tone={targetGapBadgeTone(
+																entry.gapToTarget.citationSupport,
+															)}
+														>
+															Citations{" "}
+															{formatTargetGap(
+																entry.gapToTarget.citationSupport,
+															)}
+														</Badge>
+													</div>
+												</td>
+											) : null}
 										</tr>
 									);
 								})}
@@ -975,6 +1098,12 @@ export function LabCaseInspector({
 									{selectedCase.diff.evaluatorNote}
 								</p>
 							</div>
+
+							<ReferenceTargetYardstick
+								gapToTarget={selectedCase.gapToTarget}
+								referenceTargetDetail={selectedCase.diff.referenceTargetDetail}
+								referenceTargetScores={selectedCase.referenceTarget}
+							/>
 
 							<EvaluatorOutputPanel
 								baselineDetail={selectedCase.diff.baselineDetail}

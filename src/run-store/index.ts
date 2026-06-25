@@ -140,16 +140,23 @@ export interface CaseBreakdownEntry {
 	failureTags: string[];
 	baseline: CaseScoreSummary | null;
 	candidate: CaseScoreSummary | null;
+	referenceTarget: CaseScoreSummary | null;
 	delta: {
+		overall: number | null;
+		citationSupport: number | null;
+	};
+	gapToTarget: {
 		overall: number | null;
 		citationSupport: number | null;
 	};
 	diff: {
 		baselineRecommendation: string;
 		candidateRecommendation: string;
+		referenceTargetRecommendation: string | null;
 		evaluatorNote: string;
 		baselineDetail: CaseArtifactDetail | null;
 		candidateDetail: CaseArtifactDetail | null;
+		referenceTargetDetail: CaseArtifactDetail | null;
 	};
 }
 
@@ -830,6 +837,18 @@ function scoreDelta(
 	return Math.round((candidate[metric] - baseline[metric]) * 100) / 100;
 }
 
+function scoreTargetGap(
+	candidate: CaseScoreSummary | null,
+	referenceTarget: CaseScoreSummary | null,
+	metric: keyof Omit<CaseScoreSummary, "artifactPath">,
+) {
+	if (!candidate || !referenceTarget) {
+		return null;
+	}
+
+	return Math.round((referenceTarget[metric] - candidate[metric]) * 100) / 100;
+}
+
 function caseArtifactDetailFor(
 	briefing: BriefingOutput | undefined,
 	evaluatorOutput: EvaluatorOutput | undefined,
@@ -876,23 +895,37 @@ export async function listCaseBreakdown(input?: {
 		evalCases,
 		baselineEvaluations,
 		candidateEvaluations,
+		referenceTargetEvaluations,
 		baselineBriefings,
 		candidateBriefings,
+		referenceTargetBriefings,
 	] = await Promise.all([
 		listEvalCases(),
 		listEvaluatorOutputs(comparison.baselineRunId),
 		listEvaluatorOutputs(comparison.candidateRunId),
+		comparison.candidateRunId === defaultCandidateRunId
+			? Promise.resolve([])
+			: listEvaluatorOutputs(defaultCandidateRunId),
 		listBriefingOutputs(comparison.baselineRunId),
 		listBriefingOutputs(comparison.candidateRunId),
+		comparison.candidateRunId === defaultCandidateRunId
+			? Promise.resolve([])
+			: listBriefingOutputs(defaultCandidateRunId),
 	]);
 	const evalCaseById = indexById(evalCases);
 	const baselineByCaseId = evaluatorOutputByCaseId(baselineEvaluations);
 	const candidateByCaseId = evaluatorOutputByCaseId(candidateEvaluations);
+	const referenceTargetByCaseId = evaluatorOutputByCaseId(
+		referenceTargetEvaluations,
+	);
 	const baselineBriefingByCaseId = new Map(
 		baselineBriefings.map((briefing) => [briefing.caseId, briefing]),
 	);
 	const candidateBriefingByCaseId = new Map(
 		candidateBriefings.map((briefing) => [briefing.caseId, briefing]),
+	);
+	const referenceTargetBriefingByCaseId = new Map(
+		referenceTargetBriefings.map((briefing) => [briefing.caseId, briefing]),
 	);
 	const caseIds = [
 		...new Set([
@@ -905,10 +938,15 @@ export async function listCaseBreakdown(input?: {
 		const evalCase = evalCaseById.get(caseId);
 		const baseline = caseScoreSummaryFor(baselineByCaseId.get(caseId));
 		const candidate = caseScoreSummaryFor(candidateByCaseId.get(caseId));
+		const referenceTarget = caseScoreSummaryFor(
+			referenceTargetByCaseId.get(caseId),
+		);
 		const baselineEvaluation = baselineByCaseId.get(caseId);
 		const candidateEvaluation = candidateByCaseId.get(caseId);
+		const referenceTargetEvaluation = referenceTargetByCaseId.get(caseId);
 		const baselineBriefing = baselineBriefingByCaseId.get(caseId);
 		const candidateBriefing = candidateBriefingByCaseId.get(caseId);
+		const referenceTargetBriefing = referenceTargetBriefingByCaseId.get(caseId);
 
 		return {
 			caseId,
@@ -919,9 +957,18 @@ export async function listCaseBreakdown(input?: {
 			failureTags: evalCase?.failureTags ?? [],
 			baseline,
 			candidate,
+			referenceTarget,
 			delta: {
 				overall: scoreDelta(candidate, baseline, "overall"),
 				citationSupport: scoreDelta(candidate, baseline, "citationSupport"),
+			},
+			gapToTarget: {
+				overall: scoreTargetGap(candidate, referenceTarget, "overall"),
+				citationSupport: scoreTargetGap(
+					candidate,
+					referenceTarget,
+					"citationSupport",
+				),
 			},
 			diff: {
 				baselineRecommendation:
@@ -930,6 +977,8 @@ export async function listCaseBreakdown(input?: {
 				candidateRecommendation:
 					candidateBriefing?.recommendation ??
 					"No reference recommendation available.",
+				referenceTargetRecommendation:
+					referenceTargetBriefing?.recommendation ?? null,
 				evaluatorNote:
 					candidateEvaluation?.notes ??
 					baselineEvaluation?.notes ??
@@ -941,6 +990,10 @@ export async function listCaseBreakdown(input?: {
 				candidateDetail: caseArtifactDetailFor(
 					candidateBriefing,
 					candidateEvaluation,
+				),
+				referenceTargetDetail: caseArtifactDetailFor(
+					referenceTargetBriefing,
+					referenceTargetEvaluation,
 				),
 			},
 		};
