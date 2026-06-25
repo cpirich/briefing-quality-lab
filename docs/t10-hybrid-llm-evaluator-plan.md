@@ -1,6 +1,6 @@
 # Phase 10 Hybrid LLM Evaluator Plan
 
-Status: planned
+Status: complete
 
 Parent plans:
 
@@ -32,7 +32,7 @@ Keep deterministic checks for:
 - briefing and trace schema validity
 - cited source ids exist in the source packet
 - no holdout leakage into public comparison output
-- artifact completeness for briefings, traces, evaluations, manifests, comparisons, and reports
+- artifact completeness for briefings, traces, evaluations, manifests, and comparisons
 - latency metadata
 - cost metadata
 - input, cached-input, and output token metadata
@@ -91,7 +91,7 @@ Defaults:
 
 Use `OPENAI_EVAL_MODEL` for the judge model when set. Otherwise, default to the dedicated evaluator model, currently `gpt-5.5`, so generation baselines can remain pinned separately from judge quality. The run scripts should abort before live judge calls when the judge model is missing from the pricing table.
 
-Use `eval:rejudge` when evaluator policy or judge model changes but the generated briefings and traces should stay fixed. Rejudge mode should reuse the existing run's briefing and trace artifacts, rewrite only evaluator outputs plus aggregate manifest metrics, and refresh the comparison/report for that run.
+Use `eval:rejudge` when evaluator policy or judge model changes but the generated briefings and traces should stay fixed. Rejudge mode should reuse the existing run's briefing and trace artifacts, rewrite only evaluator outputs plus aggregate manifest metrics, and refresh the comparison artifact for that run.
 
 The `/lab` action button may start a local background CLI process for demo convenience, but that is not production-grade job infrastructure. The API should return immediately and poll run status from manifests/artifacts, but a real hosted version would need a worker queue, durable job records, cancellation, retries, and process recovery instead of relying on an in-memory job map inside the web server.
 
@@ -158,6 +158,8 @@ For the first live hybrid baseline and candidate pair:
 Do not claim product or prompt improvement until the manual spot check supports the hybrid evaluator findings.
 
 ## Implementation Steps
+
+Completed in this phase:
 
 1. Split deterministic evaluator logic out of `scripts/run-eval.ts` into a reusable evaluator module.
 2. Add deterministic hard-check output and persist it in evaluator artifacts.
