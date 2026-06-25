@@ -15,7 +15,7 @@ Move the dashboard from TypeScript-only demo constants to Zod-validated filesyst
 - `runs/*/manifest.json`: run id, timestamp, variant label, git ref, aggregate metrics, artifact paths.
 - `runs/*/traces/*.json`: generation input, prompt/messages, model metadata, structured briefing, tool calls, cost, latency, errors, provider trace summaries.
 - `runs/*/evaluations/*.json`: evaluator scores, rubric evidence, failure tags, citation support, coverage notes.
-- `reports/*.md`: human-readable summaries generated from the validated run artifacts.
+- `runs/comparisons/*.json`: structured summaries generated from validated run artifacts.
 
 ## First Implementation Steps
 

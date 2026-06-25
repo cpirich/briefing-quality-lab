@@ -149,7 +149,6 @@
 		"runs/baseline-openai-20260624203921/evaluations/case-adoption-friction.json",
 		"runs/baseline-openai-20260624203921/evaluations/case-code-review-queues.json",
 		"runs/candidate-citation-gates/evaluations/case-adoption-friction.json",
-		"runs/candidate-citation-gates/evaluations/case-eval-loop.json",
-		"reports/latest-eval-summary.md"
+		"runs/candidate-citation-gates/evaluations/case-eval-loop.json"
 	]
 }

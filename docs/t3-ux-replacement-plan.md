@@ -253,7 +253,7 @@ The meaningful boundary is between probabilistic LLM communication and determini
 
 4. Schemas and run-store read model
    - Add Zod schemas for eval cases, briefing outputs, tool-call traces, generation traces, evaluator outputs, run manifests, and comparisons.
-   - Add filesystem helpers for discovering and validating `data/`, `runs/`, and `reports/`.
+   - Add filesystem helpers for discovering and validating `data/` and `runs/`.
    - Expose run summaries and selected case details through tRPC.
 
 5. Expanded synthetic eval set

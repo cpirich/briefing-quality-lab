@@ -256,7 +256,7 @@ function publicSafeArtifactPaths(
 
 	return artifactPaths.length > 0
 		? artifactPaths
-		: ["reports/latest-eval-summary.md"];
+		: [`runs/comparisons/${comparison.id}.json`];
 }
 
 async function publicSafeComparison(input?: {

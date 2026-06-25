@@ -5,22 +5,22 @@
 	"metrics": [
 		{
 			"label": "Overall quality",
-			"value": "0.83",
-			"delta": "+0.17",
+			"value": "0.91",
+			"delta": "+0.25",
 			"status": "Candidate clears expanded set",
 			"tone": "green"
 		},
 		{
 			"label": "Citation grounding",
-			"value": "0.79",
-			"delta": "+0.27",
+			"value": "0.96",
+			"delta": "+0.45",
 			"status": "Unsupported synthesis reduced",
 			"tone": "green"
 		},
 		{
 			"label": "Coverage",
-			"value": "0.86",
-			"delta": "+0.12",
+			"value": "0.93",
+			"delta": "+0.19",
 			"status": "Expected points covered",
 			"tone": "blue"
 		},
@@ -54,27 +54,27 @@
 		},
 		{
 			"label": "Phase 5",
-			"score": 83
+			"score": 91
 		}
 	],
 	"comparisonRows": [
 		{
 			"metric": "Overall score",
 			"baseline": "0.66",
-			"candidate": "0.83",
-			"delta": "+0.17"
+			"candidate": "0.91",
+			"delta": "+0.25"
 		},
 		{
 			"metric": "Citation support",
 			"baseline": "0.51",
-			"candidate": "0.80",
-			"delta": "+0.29"
+			"candidate": "0.96",
+			"delta": "+0.45"
 		},
 		{
 			"metric": "Grounding risk units",
 			"baseline": "26",
-			"candidate": "7",
-			"delta": "-19"
+			"candidate": "6",
+			"delta": "-20"
 		},
 		{
 			"metric": "Visible eval cases",
@@ -141,7 +141,6 @@
 		"runs/baseline-2026-06-10/manifest.json",
 		"runs/candidate-citation-gates/manifest.json",
 		"runs/candidate-citation-gates/traces/case-release-note-drift.json",
-		"runs/candidate-citation-gates/evaluations/case-release-note-drift.json",
-		"reports/latest-eval-summary.md"
+		"runs/candidate-citation-gates/evaluations/case-release-note-drift.json"
 	]
 }

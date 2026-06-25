@@ -252,14 +252,6 @@ async function writeJsonArtifact(relativePath: string, value: unknown) {
 	await rename(tempPath, targetPath);
 }
 
-async function writeTextArtifact(relativePath: string, value: string) {
-	const targetPath = absolutePath(relativePath);
-	await mkdir(path.dirname(targetPath), { recursive: true });
-	const tempPath = `${targetPath}.tmp`;
-	await writeFile(tempPath, value);
-	await rename(tempPath, targetPath);
-}
-
 async function clearRunOutputDirectories(runId: string) {
 	await Promise.all(
 		["briefings", "traces", "evaluations"].map((artifactDir) =>
@@ -1730,63 +1722,6 @@ function featuredCaseFor(
 	};
 }
 
-function comparisonLabelsFor(comparison: RunComparison) {
-	return {
-		baselineLabel: comparison.baselineLabel ?? "Baseline",
-		candidateLabel: comparison.candidateLabel ?? "Candidate",
-	};
-}
-
-function reportFor(comparison: RunComparison) {
-	const { baselineLabel, candidateLabel } = comparisonLabelsFor(comparison);
-	const changeLabel = comparisonChangeLabel(comparison);
-	const hasReferenceTargetColumns = comparison.comparisonRows.some(
-		(row) => row.referenceTarget || row.gapToTarget,
-	);
-	const rows = comparison.comparisonRows
-		.map((row) =>
-			hasReferenceTargetColumns
-				? `| ${row.metric} | ${row.baseline} | ${row.candidate} | ${row.delta} | ${row.referenceTarget ?? "n/a"} | ${row.gapToTarget ?? "n/a"} |`
-				: `| ${row.metric} | ${row.baseline} | ${row.candidate} | ${row.delta} |`,
-		)
-		.join("\n");
-	const clusters = comparison.failureClusters
-		.map(
-			(cluster) =>
-				`- ${cluster.title}: ${cluster.count} cases (${cluster.cases.join(", ")})`,
-		)
-		.join("\n");
-
-	return `# Latest Eval Summary
-
-Generated comparison: ${baselineLabel} \`${comparison.baselineRunId}\` vs ${candidateLabel} \`${comparison.candidateRunId}\`.
-
-${
-	hasReferenceTargetColumns
-		? `| Metric | ${baselineLabel} | ${candidateLabel} | Delta vs baseline | Reference target | Gap to target |
-| --- | --- | --- | --- | --- | --- |
-${rows}`
-		: `| Metric | ${baselineLabel} | ${candidateLabel} | ${changeLabel} |
-| --- | --- | --- | --- |
-${rows}`
-}
-
-Featured case: \`${comparison.featuredCase.id}\` - ${comparison.featuredCase.title}.
-
-${comparison.featuredCase.evaluatorNote}
-
-## Failure Clusters
-
-${clusters}
-
-## Evidence Status
-
-${comparison.recommendation.text}
-
-${comparison.recommendation.warning}
-`;
-}
-
 async function optionalArtifactsFor(runId: string) {
 	try {
 		return await artifactsFor(runId);
@@ -2083,16 +2018,11 @@ async function writeComparisonAndReport(input: {
 			...candidate.manifest.artifactPaths
 				.filter((artifactPath) => artifactPath.includes("/evaluations/"))
 				.slice(0, 2),
-			"reports/latest-eval-summary.md",
 		],
 	});
 
 	await writeJsonArtifact(`runs/comparisons/${comparison.id}.json`, comparison);
-	await writeTextArtifact(
-		"reports/latest-eval-summary.md",
-		reportFor(comparison),
-	);
-	console.log(`Wrote comparison ${comparison.id} and latest eval summary.`);
+	console.log(`Wrote comparison ${comparison.id}.`);
 	return comparison;
 }
 
@@ -2104,7 +2034,7 @@ async function main() {
 			baselineRunId: options.baselineRunId,
 			candidateRunId: options.candidateRunId,
 		});
-		console.log(`Wrote report for ${comparison.id}.`);
+		console.log(`Wrote comparison artifacts for ${comparison.id}.`);
 		return;
 	}
 

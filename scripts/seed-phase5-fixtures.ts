@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type {
 	BriefingOutput,
@@ -1536,7 +1536,6 @@ function runManifestFor(
 				...visibleFixtures.map(
 					(fixture) => `runs/${runId}/evaluations/${fixture.caseId}.json`,
 				),
-				"reports/latest-eval-summary.md",
 			]
 		: [];
 
@@ -1753,7 +1752,6 @@ function comparisonFor(): RunComparison {
 			"runs/candidate-citation-gates/manifest.json",
 			"runs/candidate-citation-gates/traces/case-release-note-drift.json",
 			"runs/candidate-citation-gates/evaluations/case-release-note-drift.json",
-			"reports/latest-eval-summary.md",
 		],
 	};
 }
@@ -1774,12 +1772,6 @@ async function writeJson(relativePath: string, value: unknown) {
 	const filePath = path.join(repoRoot, relativePath);
 	await mkdir(path.dirname(filePath), { recursive: true });
 	await writeFile(filePath, `${JSON.stringify(value, null, "\t")}\n`);
-}
-
-async function writeText(relativePath: string, value: string) {
-	const filePath = path.join(repoRoot, relativePath);
-	await mkdir(path.dirname(filePath), { recursive: true });
-	await writeFile(filePath, value);
 }
 
 async function main() {
@@ -1837,27 +1829,10 @@ async function main() {
 			"runs/comparisons/baseline-2026-06-10__candidate-citation-gates.json",
 			comparisonFor(),
 		),
-		writeText(
-			"reports/latest-eval-summary.md",
-			`# Latest Eval Summary
-
-This synthetic report compares \`${baselineRunId}\` with \`${candidateRunId}\` on the expanded Phase 5 demo corpus.
-
-The dataset now contains 9 synthetic eval cases: 7 visible cases for demo walkthroughs and 2 holdout cases that stay out of the Genie product flow. Source packets now include 3-6 richer documents with distractors, overlapping evidence, caveats, and explicit citation traps.
-
-The candidate improves overall quality from \`0.66\` to \`0.91\` and citation support from \`0.51\` to \`0.96\`. Grounding risk units drop from \`26\` to \`6\`, while cost stays inside the \`1.15x\` guardrail at \`1.10x\`.
-
-Featured case: \`case-release-note-drift\`. The baseline recommends publishing generated release notes because coverage is high. The candidate keeps the automation benefit but gates publication on stale-claim drift review and explicit approval for sensitive customer-facing statements.
-`,
-		),
 	]);
 
-	const priorReport = await readFile(
-		path.join(repoRoot, "reports/latest-eval-summary.md"),
-		"utf8",
-	);
 	console.log(
-		`Seeded ${fixtures.length} eval cases, ${visibleFixtures.length} visible briefing pairs, and report ${priorReport.length} bytes.`,
+		`Seeded ${fixtures.length} eval cases and ${visibleFixtures.length} visible briefing pairs.`,
 	);
 }
 

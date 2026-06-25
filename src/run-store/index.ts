@@ -284,9 +284,6 @@ function artifactTypeForPath(artifactPath: string) {
 	if (artifactPath.includes("/evaluations/")) {
 		return "Evaluator output";
 	}
-	if (artifactPath.startsWith("reports/")) {
-		return "Report";
-	}
 	if (artifactPath.includes("/briefings/")) {
 		return "Briefing output";
 	}
@@ -316,9 +313,6 @@ function artifactLabelForPath(artifactPath: string) {
 	}
 	if (artifactPath.includes("/traces/")) {
 		return "Featured trace";
-	}
-	if (artifactPath.startsWith("reports/")) {
-		return "Eval report";
 	}
 	if (artifactPath.includes("/evaluations/")) {
 		return "Featured evaluation";

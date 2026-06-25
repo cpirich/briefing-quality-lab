@@ -65,7 +65,6 @@
 		"runs/candidate-citation-gates/evaluations/case-release-note-drift.json",
 		"runs/candidate-citation-gates/evaluations/case-human-approval-boundary.json",
 		"runs/candidate-citation-gates/evaluations/case-cost-latency-budget.json",
-		"runs/candidate-citation-gates/evaluations/case-incident-recovery-comms.json",
-		"reports/latest-eval-summary.md"
+		"runs/candidate-citation-gates/evaluations/case-incident-recovery-comms.json"
 	]
 }

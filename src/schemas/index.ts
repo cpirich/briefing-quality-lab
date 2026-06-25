@@ -15,7 +15,7 @@ const artifactPathSchema = z
 	.min(1)
 	.refine(
 		(value) =>
-			/^(data|reports|runs)\//.test(value) &&
+			/^(data|runs)\//.test(value) &&
 			!value.startsWith("/") &&
 			!value.includes("\\") &&
 			!value.includes("//") &&
@@ -23,7 +23,7 @@ const artifactPathSchema = z
 			!value.split("/").includes(".."),
 		{
 			message:
-				"Artifact paths must be normalized repo-relative paths under data/, reports/, or runs/",
+				"Artifact paths must be normalized repo-relative paths under data/ or runs/",
 		},
 	);
 
