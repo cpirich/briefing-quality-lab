@@ -20,10 +20,11 @@
 		"coverage": 0.74,
 		"citationSupport": 0.51,
 		"unsupportedClaims": 26,
+		"groundingRiskUnits": 26,
 		"medianLatencyMs": 8400,
+		"estimatedCostUsd": 0.098,
 		"costRatio": 1,
-		"latencyRatio": 1,
-		"groundingRiskUnits": 26
+		"latencyRatio": 1
 	},
 	"guardrails": [
 		{

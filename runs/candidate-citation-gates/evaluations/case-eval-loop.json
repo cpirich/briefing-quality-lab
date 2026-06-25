@@ -3,10 +3,10 @@
 	"runId": "candidate-citation-gates",
 	"caseId": "case-eval-loop",
 	"scores": {
-		"overall": 0.88,
-		"grounding": 0.86,
-		"coverage": 0.92,
-		"citationSupport": 0.87
+		"overall": 0.94,
+		"grounding": 1,
+		"coverage": 0.95,
+		"citationSupport": 0.98
 	},
 	"failureTags": ["citation-grounding", "cost-guardrail"],
 	"rubricEvidence": [

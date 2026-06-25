@@ -3,10 +3,10 @@
 	"runId": "candidate-citation-gates",
 	"caseId": "case-adoption-friction",
 	"scores": {
-		"overall": 0.86,
-		"grounding": 0.83,
-		"coverage": 0.9,
-		"citationSupport": 0.85
+		"overall": 0.92,
+		"grounding": 0.86,
+		"coverage": 0.94,
+		"citationSupport": 0.96
 	},
 	"failureTags": ["setup-recovery", "citation-grounding"],
 	"rubricEvidence": [

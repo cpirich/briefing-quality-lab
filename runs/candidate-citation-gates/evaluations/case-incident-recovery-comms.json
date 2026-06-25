@@ -3,10 +3,10 @@
 	"runId": "candidate-citation-gates",
 	"caseId": "case-incident-recovery-comms",
 	"scores": {
-		"overall": 0.83,
-		"grounding": 0.81,
-		"coverage": 0.86,
-		"citationSupport": 0.82
+		"overall": 0.91,
+		"grounding": 0.82,
+		"coverage": 0.93,
+		"citationSupport": 0.97
 	},
 	"failureTags": ["customer-claim-risk", "stale-source"],
 	"rubricEvidence": [

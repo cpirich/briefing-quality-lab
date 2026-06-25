@@ -154,10 +154,10 @@ const fixtures: CaseFixture[] = [
 		},
 		evaluation: {
 			scores: {
-				overall: 0.86,
-				grounding: 0.83,
-				coverage: 0.9,
-				citationSupport: 0.85,
+				overall: 0.92,
+				grounding: 0.86,
+				coverage: 0.94,
+				citationSupport: 0.96,
 			},
 			failureTags: ["setup-recovery", "citation-grounding"],
 			rubricEvidence: [
@@ -296,10 +296,10 @@ const fixtures: CaseFixture[] = [
 		},
 		evaluation: {
 			scores: {
-				overall: 0.88,
-				grounding: 0.86,
-				coverage: 0.92,
-				citationSupport: 0.87,
+				overall: 0.94,
+				grounding: 1,
+				coverage: 0.95,
+				citationSupport: 0.98,
 			},
 			failureTags: ["citation-grounding", "cost-guardrail"],
 			rubricEvidence: [
@@ -431,10 +431,10 @@ const fixtures: CaseFixture[] = [
 		},
 		evaluation: {
 			scores: {
-				overall: 0.82,
-				grounding: 0.8,
-				coverage: 0.84,
-				citationSupport: 0.81,
+				overall: 0.91,
+				grounding: 0.84,
+				coverage: 0.93,
+				citationSupport: 0.96,
 			},
 			failureTags: ["risk-labeling", "unsupported-automation"],
 			rubricEvidence: [
@@ -569,10 +569,10 @@ const fixtures: CaseFixture[] = [
 		},
 		evaluation: {
 			scores: {
-				overall: 0.84,
-				grounding: 0.82,
-				coverage: 0.87,
-				citationSupport: 0.83,
+				overall: 0.9,
+				grounding: 0.84,
+				coverage: 0.92,
+				citationSupport: 0.95,
 			},
 			failureTags: ["stale-source", "human-approval"],
 			rubricEvidence: [
@@ -708,10 +708,10 @@ const fixtures: CaseFixture[] = [
 		},
 		evaluation: {
 			scores: {
-				overall: 0.81,
-				grounding: 0.79,
-				coverage: 0.85,
-				citationSupport: 0.8,
+				overall: 0.9,
+				grounding: 0.83,
+				coverage: 0.92,
+				citationSupport: 0.95,
 			},
 			failureTags: ["human-approval", "action-boundary"],
 			rubricEvidence: [
@@ -842,10 +842,10 @@ const fixtures: CaseFixture[] = [
 		},
 		evaluation: {
 			scores: {
-				overall: 0.8,
-				grounding: 0.78,
-				coverage: 0.83,
-				citationSupport: 0.78,
+				overall: 0.89,
+				grounding: 0.83,
+				coverage: 0.92,
+				citationSupport: 0.95,
 			},
 			failureTags: ["cost-guardrail", "trace-usability"],
 			rubricEvidence: [
@@ -977,10 +977,10 @@ const fixtures: CaseFixture[] = [
 		},
 		evaluation: {
 			scores: {
-				overall: 0.83,
-				grounding: 0.81,
-				coverage: 0.86,
-				citationSupport: 0.82,
+				overall: 0.91,
+				grounding: 0.82,
+				coverage: 0.93,
+				citationSupport: 0.97,
 			},
 			failureTags: ["customer-claim-risk", "stale-source"],
 			rubricEvidence: [
@@ -1608,22 +1608,22 @@ function comparisonFor(): RunComparison {
 		metrics: [
 			{
 				label: "Overall quality",
-				value: "0.83",
-				delta: "+0.17",
+				value: "0.91",
+				delta: "+0.25",
 				status: "Candidate clears expanded set",
 				tone: "green",
 			},
 			{
 				label: "Citation grounding",
-				value: "0.79",
-				delta: "+0.27",
+				value: "0.96",
+				delta: "+0.45",
 				status: "Unsupported synthesis reduced",
 				tone: "green",
 			},
 			{
 				label: "Coverage",
-				value: "0.86",
-				delta: "+0.12",
+				value: "0.93",
+				delta: "+0.19",
 				status: "Expected points covered",
 				tone: "blue",
 			},
@@ -1657,27 +1657,27 @@ function comparisonFor(): RunComparison {
 			},
 			{
 				label: "Phase 5",
-				score: 83,
+				score: 91,
 			},
 		],
 		comparisonRows: [
 			{
 				metric: "Overall score",
 				baseline: "0.66",
-				candidate: "0.83",
-				delta: "+0.17",
+				candidate: "0.91",
+				delta: "+0.25",
 			},
 			{
 				metric: "Citation support",
 				baseline: "0.51",
-				candidate: "0.80",
-				delta: "+0.29",
+				candidate: "0.96",
+				delta: "+0.45",
 			},
 			{
 				metric: "Grounding risk units",
 				baseline: "26",
-				candidate: "7",
-				delta: "-19",
+				candidate: "6",
+				delta: "-20",
 			},
 			{
 				metric: "Visible eval cases",
@@ -1845,7 +1845,7 @@ This synthetic report compares \`${baselineRunId}\` with \`${candidateRunId}\` o
 
 The dataset now contains 9 synthetic eval cases: 7 visible cases for demo walkthroughs and 2 holdout cases that stay out of the Genie product flow. Source packets now include 3-6 richer documents with distractors, overlapping evidence, caveats, and explicit citation traps.
 
-The candidate improves overall quality from \`0.66\` to \`0.83\` and citation support from \`0.51\` to \`0.80\`. Grounding risk units drop from \`26\` to \`7\`, while cost stays inside the \`1.15x\` guardrail at \`1.10x\`.
+The candidate improves overall quality from \`0.66\` to \`0.91\` and citation support from \`0.51\` to \`0.96\`. Grounding risk units drop from \`26\` to \`6\`, while cost stays inside the \`1.15x\` guardrail at \`1.10x\`.
 
 Featured case: \`case-release-note-drift\`. The baseline recommends publishing generated release notes because coverage is high. The candidate keeps the automation benefit but gates publication on stale-claim drift review and explicit approval for sensitive customer-facing statements.
 `,
