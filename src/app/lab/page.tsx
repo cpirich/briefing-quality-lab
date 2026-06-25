@@ -395,7 +395,7 @@ export default async function LabPage() {
 				</div>
 			</header>
 
-			<div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+			<div className="mx-auto grid max-w-7xl gap-4 px-4 py-5">
 				<section className="grid min-w-0 gap-4">
 					{inProgressRuns.length > 0 ? (
 						<div className="rounded-lg border border-[var(--warning-border)] bg-[var(--warning)] p-3 text-[var(--warning-foreground)]">
@@ -750,7 +750,7 @@ export default async function LabPage() {
 					</div>
 				</section>
 
-				<aside className="grid min-w-0 content-start gap-4">
+				<aside className="grid min-w-0 content-start gap-4 lg:grid-cols-2">
 					<Card>
 						<CardHeader>
 							<h2 className="font-semibold text-base">Evidence Status</h2>
