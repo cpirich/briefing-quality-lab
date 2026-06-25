@@ -3,10 +3,10 @@
 	"runId": "candidate-citation-gates",
 	"caseId": "case-code-review-queues",
 	"scores": {
-		"overall": 0.82,
-		"grounding": 0.8,
-		"coverage": 0.84,
-		"citationSupport": 0.81
+		"overall": 0.91,
+		"grounding": 0.84,
+		"coverage": 0.93,
+		"citationSupport": 0.96
 	},
 	"failureTags": ["risk-labeling", "unsupported-automation"],
 	"rubricEvidence": [

@@ -1,0 +1,41 @@
+{
+	"id": "case-eval-loop-openai-responses-v1",
+	"sourcePacketId": "packet-eval-loop",
+	"caseId": "case-eval-loop",
+	"title": "Recommendation: Expand automated evals cautiously (phased), with stronger gating + clustering first",
+	"summary": "Proceed with expansion only after one more smaller, highly-instrumented batch that makes failure patterns visible and enforces a citation-support shipping gate. The last broad run increased scored cases but reduced reviewer efficiency and pattern detection; cost also rose due to uncontrolled retries. A phased approach preserves trace/debug value while controlling cost and overfitting risk.",
+	"claims": [
+		{
+			"text": "Broad eval runs increased the number of scored cases but made it harder for reviewers to distinguish repeated failure patterns from one-off mistakes; smaller batches with visible clusters produced more actionable changes.",
+			"citations": ["S1", "S5"]
+		},
+		{
+			"text": "Coverage can improve while grounding/citation support regresses, so citation support should be an explicit release/shipping gate rather than a leaderboard target.",
+			"citations": ["S2", "S6"]
+		},
+		{
+			"text": "Long traces are useful for debugging, but unchecked retries caused a 1.34x cost increase; finance will accept trace retention if retries are capped and summarized in a run manifest (retry count, cost ratio, and what the trace resolved).",
+			"citations": ["S3"]
+		},
+		{
+			"text": "Holdout cases should be visible only as summaries/aggregate scores in dashboards; labels/expected answers should be excluded from prompt-iteration workflows to reduce memorization/overfitting risk.",
+			"citations": ["S4", "S6"]
+		},
+		{
+			"text": "Reviewers want dashboards that separately cluster unsupported claims, weak citations, cost regressions, and holdout concerns; they prefer fewer cases with clearer evidence over large runs requiring manual interpretation per row.",
+			"citations": ["S5"]
+		}
+	],
+	"openQuestions": [
+		"What exact citation-support threshold (block condition) will be used for the shipping gate, and how will ‘unsupported claim’ be operationally detected and clustered?",
+		"What retry cap will be set, and what is the acceptable cost ratio increase (guardrail) for an eval run?",
+		"What dashboard clustering taxonomy and UX will be implemented to make failure patterns ‘visible’ in the next batch (e.g., grouping by unsupported-claim pattern vs weak-citation pattern)?",
+		"What size constitutes the next ‘smaller visible batch,’ and what criteria will trigger expansion to broader coverage after it?"
+	],
+	"recommendation": "Do not immediately expand to broader automated coverage. Run one more smaller, reviewer-friendly batch first, with: (1) a hard citation-support shipping gate tracked separately from coverage, (2) a dashboard that clusters failures by pattern (unsupported claims/weak citations/cost/holdout signals), (3) retained long traces but with capped retries and a manifest summarizing retry count and cost ratio, and (4) holdout performance reported only in aggregate (no tuning labels in prompt-iteration tools). Expand automated eval coverage only if the next candidate improves grounding while staying within the cost guardrail.",
+	"metadata": {
+		"variant": "OpenAI Responses baseline",
+		"runId": "baseline-openai-20260624203921",
+		"model": "gpt-5.2"
+	}
+}

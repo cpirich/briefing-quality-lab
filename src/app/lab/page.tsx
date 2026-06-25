@@ -19,6 +19,11 @@ const lowerIsBetterMetrics = new Set([
 	"Cost ratio",
 ]);
 
+const targetMinusCurrentGapMetrics = new Set([
+	"Grounding risk units",
+	"Median latency",
+]);
+
 function comparisonSideLabel(runId: string) {
 	if (runId.startsWith("baseline-local-")) {
 		return "Generated baseline";
@@ -53,14 +58,22 @@ function comparisonChangeLabel(candidateLabel: string, candidateRunId: string) {
 		: "Delta";
 }
 
-function metricBadgeLabel(value: string, changeLabel: string) {
-	return changeLabel === "Gap" ? `gap ${value}` : value;
-}
+function comparisonBarClass(
+	label: string,
+	baselineLabel: string,
+	candidateLabel: string,
+) {
+	if (label === baselineLabel || label === "Baseline") {
+		return "bg-[var(--muted-foreground)]";
+	}
+	if (label === "Reference target") {
+		return "bg-[var(--info-foreground)]";
+	}
+	if (label === candidateLabel || label === "Latest variant") {
+		return "bg-[var(--accent)]";
+	}
 
-function comparisonBarClass(label: string, baselineLabel: string) {
-	return label === baselineLabel
-		? "bg-[var(--muted-foreground)]"
-		: "bg-[var(--accent)]";
+	return "bg-[var(--warning-foreground)]";
 }
 
 function numericDelta(value: string) {
@@ -68,19 +81,84 @@ function numericDelta(value: string) {
 	return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function changeTextClass(metric: string, value: string, changeLabel: string) {
-	const normalizedValue = value.toLowerCase();
-	if (normalizedValue.includes("under budget")) {
-		return "text-[var(--success-foreground)]";
-	}
-	if (normalizedValue.includes("over budget")) {
-		return "text-[var(--danger-foreground)]";
+function formatUsdCents(value: number) {
+	return `$${value.toFixed(2)}`;
+}
+
+function formatCostDeltaForDisplay(value: string) {
+	const trimmedValue = value.trim();
+	const amountMatch = trimmedValue.match(/\$?([0-9]+(?:\.[0-9]+)?)/);
+	const amount = amountMatch ? Number.parseFloat(amountMatch[1] ?? "") : NaN;
+	if (!Number.isFinite(amount)) {
+		return value;
 	}
 
+	const normalizedValue = value.toLowerCase();
+	const sign =
+		normalizedValue.includes("under budget") || trimmedValue.startsWith("-")
+			? "-"
+			: "+";
+
+	return `${sign}${formatUsdCents(Math.abs(amount))}`;
+}
+
+function formatDollarsForDisplay(value: string) {
+	return value.replace(/\$?([0-9]+(?:\.[0-9]+)?)/g, (_match, amount: string) =>
+		formatUsdCents(Number.parseFloat(amount)),
+	);
+}
+
+function formatCostValueForDisplay(value: string) {
+	const trimmedValue = value.trim();
+	const normalizedValue = value.toLowerCase();
+	if (
+		normalizedValue.includes("under budget") ||
+		normalizedValue.includes("over budget") ||
+		trimmedValue.match(/^[+-](?:\$?\d|\.)/)
+	) {
+		return formatCostDeltaForDisplay(value);
+	}
+
+	return formatDollarsForDisplay(value);
+}
+
+function displayMetricValue(metric: string, value: string) {
+	return metric === "Estimated cost" ? formatCostValueForDisplay(value) : value;
+}
+
+function metricBadgeLabel(
+	metric: string,
+	value: string,
+	changeLabel: string,
+	tone?: MetricDeltaTone,
+) {
+	const displayValue = displayMetricValue(metric, value);
+	if (changeLabel === "Gap" && tone === "green") {
+		return `✓ ${displayValue}`;
+	}
+
+	return changeLabel === "Gap" ? `gap ${displayValue}` : displayValue;
+}
+
+type MetricDeltaTone = "amber" | "blue" | "green" | "red" | "slate";
+
+function metricDeltaTone(
+	metric: string,
+	value: string,
+	changeLabel: string,
+): MetricDeltaTone {
 	const delta = numericDelta(value);
 
 	if (delta === 0 || value === "unknown") {
-		return "text-[var(--muted-foreground)]";
+		return "slate";
+	}
+
+	if (changeLabel === "Gap" && metric === "Estimated cost") {
+		const normalizedValue = value.toLowerCase();
+		const isUnderBudget =
+			normalizedValue.includes("under budget") || value.trim().startsWith("-");
+
+		return isUnderBudget ? "green" : "red";
 	}
 
 	const lowerIsBetter = lowerIsBetterMetrics.has(metric);
@@ -88,23 +166,61 @@ function changeTextClass(metric: string, value: string, changeLabel: string) {
 	if (changeLabel !== "Gap") {
 		const isImprovement = lowerIsBetter ? delta < 0 : delta > 0;
 
-		return isImprovement
-			? "text-[var(--success-foreground)]"
-			: "text-[var(--danger-foreground)]";
+		return isImprovement ? "green" : "red";
 	}
 
-	if (lowerIsBetter) {
-		return delta > 0
-			? "text-[var(--success-foreground)]"
-			: "text-[var(--danger-foreground)]";
+	if (targetMinusCurrentGapMetrics.has(metric)) {
+		return delta > 0 ? "green" : "red";
 	}
 
 	const hasRemainingGap = delta > 0;
 	if (hasRemainingGap) {
+		return "amber";
+	}
+	return "green";
+}
+
+function targetGapDeltaTone(metric: string, value: string): MetricDeltaTone {
+	const delta = numericDelta(value);
+
+	if (delta === 0 || value === "unknown") {
+		return "slate";
+	}
+
+	if (delta <= 0) {
+		return "green";
+	}
+
+	return lowerIsBetterMetrics.has(metric) ? "red" : "amber";
+}
+
+function toneTextClass(tone: MetricDeltaTone) {
+	if (tone === "green") {
+		return "text-[var(--success-foreground)]";
+	}
+	if (tone === "red") {
+		return "text-[var(--danger-foreground)]";
+	}
+	if (tone === "amber") {
 		return "text-[var(--warning-foreground)]";
 	}
-	return "text-[var(--success-foreground)]";
+	if (tone === "blue") {
+		return "text-[var(--info-foreground)]";
+	}
+	return "text-[var(--muted-foreground)]";
 }
+
+function changeTextClass(metric: string, value: string, changeLabel: string) {
+	return toneTextClass(metricDeltaTone(metric, value, changeLabel));
+}
+
+function targetGapTextClass(metric: string, value: string) {
+	return toneTextClass(targetGapDeltaTone(metric, value));
+}
+
+const baselineColumnClass = "bg-[var(--muted)]/50";
+const candidateColumnClass = "bg-[var(--accent-soft)]/45";
+const referenceColumnClass = "bg-[var(--info)]/80";
 
 function metadataValue(value: number | string | null | undefined) {
 	if (value === null || value === undefined || value === "") {
@@ -175,12 +291,31 @@ function clusterSeverityFor(count: number) {
 	return "Low" as const;
 }
 
+function inProgressRunLabel(run: {
+	provider: string;
+	role: string;
+	evaluationCount: number;
+	expectedCaseCount: number;
+}) {
+	if (run.expectedCaseCount <= 0) {
+		return `${run.provider} ${run.role}`;
+	}
+
+	const activeCaseNumber = Math.min(
+		run.expectedCaseCount,
+		run.evaluationCount + 1,
+	);
+	return `${run.provider} ${run.role} case ${activeCaseNumber}/${run.expectedCaseCount}`;
+}
+
 export default async function LabPage() {
-	const [runComparison, artifacts, caseBreakdown] = await Promise.all([
-		api.lab.compareRuns(),
-		api.lab.listArtifacts(),
-		api.lab.listCaseBreakdown(),
-	]);
+	const [runComparison, artifacts, caseBreakdown, inProgressRuns] =
+		await Promise.all([
+			api.lab.compareRuns(),
+			api.lab.listArtifacts(),
+			api.lab.listCaseBreakdown(),
+			api.lab.listInProgressRuns(),
+		]);
 	const publicCaseIds = new Set(
 		caseBreakdown.map((caseBreakdownEntry) => caseBreakdownEntry.caseId),
 	);
@@ -206,13 +341,36 @@ export default async function LabPage() {
 		candidateLabel,
 		runComparison.candidateRunId,
 	);
-	const summaryTitle =
-		changeLabel === "Gap" ? "Reference Target Summary" : "Candidate Summary";
-	const summaryDescription =
-		changeLabel === "Gap"
-			? `Large values are ${candidateLabel} metrics; badges show the gap from ${baselineLabel}.`
+	const hasReferenceTargetColumns = runComparison.comparisonRows.some(
+		(row) => row.referenceTarget || row.gapToTarget,
+	);
+	const summaryTitle = hasReferenceTargetColumns
+		? "Candidate vs Reference Target"
+		: changeLabel === "Gap"
+			? "Reference Target Summary"
+			: "Candidate Summary";
+	const summaryDescription = hasReferenceTargetColumns
+		? `Large values are ${candidateLabel} metrics; badges show the gap to the Reference target.`
+		: changeLabel === "Gap"
+			? `Cards show ${candidateLabel} metrics and budget checks; badges show where ${baselineLabel} sits relative to each target.`
 			: `Large values are ${candidateLabel} metrics; badges show deltas from ${baselineLabel}.`;
 	const comparedCaseCount = caseBreakdown.length;
+	const trendScores = runComparison.trend.map((point) => point.score);
+	const lowestTrendScore = Math.min(...trendScores);
+	const highestTrendScore = Math.max(...trendScores);
+	const trendPadding = Math.max(
+		2,
+		Math.ceil((highestTrendScore - lowestTrendScore) / 2),
+	);
+	const trendMin = Math.max(0, lowestTrendScore - trendPadding);
+	const trendMax = Math.min(100, highestTrendScore + trendPadding);
+	const trendRange = Math.max(1, trendMax - trendMin);
+	const trendTicks = [
+		trendMax,
+		trendMin + trendRange * 0.67,
+		trendMin + trendRange * 0.33,
+		trendMin,
+	];
 
 	return (
 		<main className="lab-route min-h-screen bg-[var(--background)] text-[var(--foreground)]">
@@ -239,6 +397,30 @@ export default async function LabPage() {
 
 			<div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 xl:grid-cols-[minmax(0,1fr)_360px]">
 				<section className="grid min-w-0 gap-4">
+					{inProgressRuns.length > 0 ? (
+						<div className="rounded-lg border border-[var(--warning-border)] bg-[var(--warning)] p-3 text-[var(--warning-foreground)]">
+							<div className="flex flex-wrap items-center justify-between gap-3">
+								<div>
+									<p className="font-medium text-sm">Run in progress</p>
+									<p className="text-xs">
+										Showing the last complete comparison while new artifacts are
+										being written.
+									</p>
+								</div>
+								<div className="flex flex-wrap gap-2">
+									{inProgressRuns.map((run) => (
+										<Badge key={run.runId} tone="amber">
+											<span
+												aria-hidden="true"
+												className="mr-1.5 size-2 animate-spin rounded-full border border-current border-t-transparent motion-reduce:animate-none"
+											/>
+											{inProgressRunLabel(run)}
+										</Badge>
+									))}
+								</div>
+							</div>
+						</div>
+					) : null}
 					<div className="grid gap-2">
 						<div>
 							<h2 className="font-semibold text-base">{summaryTitle}</h2>
@@ -247,24 +429,41 @@ export default async function LabPage() {
 							</p>
 						</div>
 						<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-							{runComparison.metrics.map((metric) => (
-								<Card className="min-h-32" key={metric.label}>
-									<CardBody className="space-y-3 p-3 xl:p-4">
-										<div className="grid min-h-8 grid-cols-[minmax(0,1fr)_auto] items-start gap-1.5 xl:gap-2">
-											<p className="min-w-0 font-medium text-[var(--muted-foreground)] text-xs uppercase leading-4">
-												{metric.label}
+							{runComparison.metrics.map((metric) => {
+								const badgeValue = metric.targetDelta ?? metric.delta;
+								const badgeChangeLabel = metric.targetDelta
+									? "Gap"
+									: changeLabel;
+								const badgeTone = metric.targetDelta
+									? targetGapDeltaTone(metric.label, metric.targetDelta)
+									: metricDeltaTone(metric.label, metric.delta, changeLabel);
+
+								return (
+									<Card className="min-h-32" key={metric.label}>
+										<CardBody className="space-y-3 p-3 xl:p-4">
+											<div className="grid min-h-8 grid-cols-[minmax(0,1fr)_auto] items-start gap-1.5 xl:gap-2">
+												<p className="min-w-0 font-medium text-[var(--muted-foreground)] text-xs uppercase leading-4">
+													{metric.label}
+												</p>
+												<Badge className="justify-self-end" tone={badgeTone}>
+													{metricBadgeLabel(
+														metric.label,
+														badgeValue,
+														badgeChangeLabel,
+														badgeTone,
+													)}
+												</Badge>
+											</div>
+											<p className="font-semibold text-3xl">
+												{displayMetricValue(metric.label, metric.value)}
 											</p>
-											<Badge className="justify-self-end" tone={metric.tone}>
-												{metricBadgeLabel(metric.delta, changeLabel)}
-											</Badge>
-										</div>
-										<p className="font-semibold text-3xl">{metric.value}</p>
-										<p className="text-[var(--muted-foreground)] text-xs">
-											{metric.status}
-										</p>
-									</CardBody>
-								</Card>
-							))}
+											<p className="text-[var(--muted-foreground)] text-xs">
+												{displayMetricValue(metric.label, metric.status)}
+											</p>
+										</CardBody>
+									</Card>
+								);
+							})}
 						</div>
 					</div>
 
@@ -283,39 +482,104 @@ export default async function LabPage() {
 							</div>
 						</CardHeader>
 						<CardBody>
-							<div className="grid h-52 grid-cols-4 gap-3 border-[var(--border)] border-b px-2">
-								{runComparison.trend.map((point) => (
+							<div className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-2 px-1">
+								<div className="grid h-52 grid-rows-4 pb-6 text-right text-[var(--muted-foreground)] text-xs">
+									{trendTicks.map((tick) => (
+										<span key={tick.toFixed(2)}>{(tick / 100).toFixed(2)}</span>
+									))}
+								</div>
+								<div className="relative">
 									<div
-										className="grid min-w-0 grid-rows-[1fr_auto] gap-2"
-										key={point.label}
+										aria-hidden="true"
+										className="pointer-events-none absolute inset-x-0 top-0 bottom-6 z-0"
 									>
-										<div className="flex h-full items-end">
-											<div
-												aria-label={`${point.label} score ${point.score}`}
-												className={cn(
-													"mx-auto w-full max-w-16 rounded-t-md",
-													comparisonBarClass(point.label, baselineLabel),
-												)}
-												role="img"
-												style={{ height: `${point.score}%` }}
-											/>
+										<div className="grid h-full grid-rows-4">
+											{trendTicks.map((tick) => (
+												<div
+													className="border-[var(--border)]/60 border-t"
+													key={tick.toFixed(2)}
+												/>
+											))}
 										</div>
-										<span className="text-center font-medium text-[var(--muted-foreground)] text-xs">
-											{point.label}
-										</span>
+										<div className="absolute inset-x-0 bottom-0 border-[var(--muted-foreground)]/35 border-t" />
 									</div>
-								))}
+									<div
+										className="relative z-10 grid h-52 gap-3 px-2"
+										style={{
+											gridTemplateColumns: `repeat(${Math.max(1, runComparison.trend.length)}, minmax(0, 1fr))`,
+										}}
+									>
+										{runComparison.trend.map((point) => (
+											<div
+												className="grid min-w-0 grid-rows-[1fr_auto] gap-2"
+												key={point.label}
+											>
+												<div className="flex h-full items-end">
+													<div
+														aria-label={`${point.label} score ${point.score}`}
+														className={cn(
+															"mx-auto w-full max-w-16 rounded-t-md",
+															comparisonBarClass(
+																point.label,
+																baselineLabel,
+																candidateLabel,
+															),
+														)}
+														role="img"
+														style={{
+															height: `${Math.max(3, ((point.score - trendMin) / trendRange) * 100)}%`,
+														}}
+													/>
+												</div>
+												<span className="text-center font-medium text-[var(--muted-foreground)] text-xs">
+													{point.label}
+												</span>
+											</div>
+										))}
+									</div>
+								</div>
 							</div>
-							<div className="overflow-x-auto rounded-md border border-[var(--border)]">
+							<div className="mt-4 overflow-x-auto rounded-md border border-[var(--border)]">
 								<table className="w-full text-left text-sm">
 									<thead className="bg-[var(--muted)] text-[var(--muted-foreground)]">
 										<tr>
 											<th className="px-3 py-2 font-medium">Metric</th>
-											<th className="px-3 py-2 font-medium">{baselineLabel}</th>
-											<th className="px-3 py-2 font-medium">
+											<th
+												className={cn(
+													"px-3 py-2 font-medium",
+													baselineColumnClass,
+												)}
+											>
+												{baselineLabel}
+											</th>
+											<th
+												className={cn(
+													"px-3 py-2 font-medium",
+													candidateColumnClass,
+												)}
+											>
 												{candidateLabel}
 											</th>
-											<th className="px-3 py-2 font-medium">{changeLabel}</th>
+											{hasReferenceTargetColumns ? (
+												<>
+													<th className="px-3 py-2 font-medium">
+														Delta vs baseline
+													</th>
+													<th
+														className={cn(
+															"px-3 py-2 font-medium",
+															referenceColumnClass,
+														)}
+													>
+														Reference target
+													</th>
+													<th className="px-3 py-2 font-medium">
+														Gap to target
+													</th>
+												</>
+											) : (
+												<th className="px-3 py-2 font-medium">{changeLabel}</th>
+											)}
 										</tr>
 									</thead>
 									<tbody>
@@ -325,20 +589,66 @@ export default async function LabPage() {
 												key={row.metric}
 											>
 												<td className="px-3 py-2 font-medium">{row.metric}</td>
-												<td className="px-3 py-2 text-[var(--muted-foreground)]">
-													{row.baseline}
+												<td
+													className={cn(
+														"px-3 py-2 text-[var(--muted-foreground)]",
+														baselineColumnClass,
+													)}
+												>
+													{displayMetricValue(row.metric, row.baseline)}
 												</td>
-												<td className="px-3 py-2 text-[var(--foreground)]">
-													{row.candidate}
+												<td
+													className={cn(
+														"px-3 py-2 text-[var(--foreground)]",
+														candidateColumnClass,
+													)}
+												>
+													{displayMetricValue(row.metric, row.candidate)}
 												</td>
 												<td
 													className={cn(
 														"px-3 py-2 font-medium",
-														changeTextClass(row.metric, row.delta, changeLabel),
+														changeTextClass(
+															row.metric,
+															row.delta,
+															hasReferenceTargetColumns ? "Delta" : changeLabel,
+														),
 													)}
 												>
-													{row.delta}
+													{displayMetricValue(row.metric, row.delta)}
 												</td>
+												{hasReferenceTargetColumns ? (
+													<td
+														className={cn(
+															"px-3 py-2 text-[var(--muted-foreground)]",
+															referenceColumnClass,
+														)}
+													>
+														{row.referenceTarget
+															? displayMetricValue(
+																	row.metric,
+																	row.referenceTarget,
+																)
+															: "n/a"}
+													</td>
+												) : null}
+												{hasReferenceTargetColumns ? (
+													<td
+														className={cn(
+															"px-3 py-2 font-medium",
+															row.gapToTarget
+																? targetGapTextClass(
+																		row.metric,
+																		row.gapToTarget,
+																	)
+																: "text-[var(--muted-foreground)]",
+														)}
+													>
+														{row.gapToTarget
+															? displayMetricValue(row.metric, row.gapToTarget)
+															: "n/a"}
+													</td>
+												) : null}
 											</tr>
 										))}
 									</tbody>

@@ -12,12 +12,17 @@ import path from "node:path";
 
 import { generateBriefing } from "~/genie/generate-briefing";
 import { pricingForOpenAIModel } from "~/genie/openai-pricing";
-import { defaultOpenAIModel } from "~/genie/variants";
+import {
+	defaultOpenAIEvaluatorModel,
+	defaultOpenAIModel,
+} from "~/genie/variants";
+import { type EvaluatorMode, evaluateBriefing } from "~/lab/evaluator";
 import {
 	listBriefingOutputs,
 	listEvalCases,
 	listEvaluatorOutputs,
 	listGenerationTraces,
+	listRunComparisons,
 	listRunManifests,
 	listSourcePackets,
 } from "~/run-store";
@@ -26,7 +31,6 @@ import {
 	BriefingOutputSchema,
 	type EvalCase,
 	type EvaluatorOutput,
-	EvaluatorOutputSchema,
 	type GenerationTrace,
 	GenerationTraceSchema,
 	type RunComparison,
@@ -36,13 +40,16 @@ import {
 	type SourcePacket,
 } from "~/schemas";
 
-type EvalMode = "baseline" | "variant" | "report";
+type RunRole = "baseline" | "variant";
+type EvalMode = RunRole | "report" | "rejudge";
 type EvalProvider = "local" | "openai";
 
 interface EvalOptions {
 	mode: EvalMode;
 	provider: EvalProvider;
+	evaluator: EvaluatorMode;
 	includeHoldouts: boolean;
+	caseIds: string[];
 	overwriteRun: boolean;
 	runId?: string;
 	baselineRunId?: string;
@@ -56,36 +63,15 @@ interface RunArtifacts {
 	traces: GenerationTrace[];
 }
 
+interface RejudgedRunArtifacts extends RunArtifacts {
+	role: RunRole;
+	referenceRunId?: string;
+}
+
 const repoRoot = process.cwd();
 const seededCandidateRunId = "candidate-citation-gates";
 const generatedBaselinePrefixes = ["baseline-local-", "baseline-openai-"];
 const generatedCandidatePrefixes = ["candidate-local-", "candidate-openai-"];
-const localEvaluatorCalibration = {
-	// This evaluator is a deterministic demo heuristic, not a statistically
-	// calibrated judge. These constants keep the local extractive baseline below
-	// the reference target fixture while preserving stable artifact generation.
-	coverageFloor: 0.25,
-	failureRiskCap: 0.18,
-	failureRiskPerTag: 0.025,
-	localExtractiveCoveragePenalty: 0.18,
-	localExtractiveCoverageCap: 0.72,
-	localExtractiveCoverageFloor: 0.35,
-	localExtractiveCitationSupportPenalty: 0.34,
-	localExtractiveCitationCoverageWeight: 0.12,
-	localExtractiveCitationSupportCap: 0.76,
-	localExtractiveCitationSupportFloor: 0.45,
-	groundingFloor: 0.35,
-	groundingCap: 0.95,
-	groundingCitationWeight: 0.72,
-	groundingCoverageWeight: 0.2,
-	overallFloor: 0.35,
-	overallCap: 0.95,
-	overallCoverageWeight: 0.34,
-	overallCitationWeight: 0.32,
-	overallGroundingWeight: 0.34,
-} as const;
-const coverageTermMinimumLength = 5;
-const coverageTermsPerPoint = 5;
 const fixtureIdPattern = /^[a-z0-9][a-z0-9-]*$/;
 const reservedRunIds = new Set(["comparisons"]);
 
@@ -95,15 +81,28 @@ function optionValue(name: string) {
 	return match?.slice(prefix.length);
 }
 
+function optionValues(name: string) {
+	const prefix = `${name}=`;
+	return process.argv
+		.filter((argument) => argument.startsWith(prefix))
+		.flatMap((argument) =>
+			argument
+				.slice(prefix.length)
+				.split(",")
+				.map((value) => value.trim())
+				.filter(Boolean),
+		);
+}
+
 function hasFlag(name: string) {
 	return process.argv.includes(name);
 }
 
 function parseOptions(): EvalOptions {
 	const mode = (process.argv[2] ?? "report") as EvalMode;
-	if (!["baseline", "variant", "report"].includes(mode)) {
+	if (!["baseline", "variant", "report", "rejudge"].includes(mode)) {
 		throw new Error(
-			`Unknown eval mode "${mode}". Use baseline, variant, or report.`,
+			`Unknown eval mode "${mode}". Use baseline, variant, rejudge, or report.`,
 		);
 	}
 
@@ -111,11 +110,22 @@ function parseOptions(): EvalOptions {
 	if (!["local", "openai"].includes(provider)) {
 		throw new Error(`Unknown provider "${provider}". Use local or openai.`);
 	}
+	const evaluator = (optionValue("--evaluator") ??
+		(provider === "openai" ? "hybrid" : "deterministic")) as EvaluatorMode;
+	if (!["deterministic", "hybrid"].includes(evaluator)) {
+		throw new Error(
+			`Unknown evaluator "${evaluator}". Use deterministic or hybrid.`,
+		);
+	}
 
 	return {
 		mode,
 		provider,
+		evaluator,
 		includeHoldouts: hasFlag("--include-holdouts"),
+		caseIds: optionValues("--case-id").map((caseId) =>
+			validateFixtureId(caseId, "case id"),
+		),
 		overwriteRun:
 			hasFlag("--overwrite-run") || process.env.EVAL_OVERWRITE_RUN === "1",
 		runId: optionValue("--run-id") ?? process.env.EVAL_RUN_ID,
@@ -147,20 +157,25 @@ function validateFixtureId(value: string, label: string) {
 
 function commandFor({
 	mode,
+	commandMode = mode,
 	provider,
+	evaluator,
 	runId,
 	includeHoldouts,
 	referenceManifest,
 }: {
-	mode: Exclude<EvalMode, "report">;
+	mode: RunRole;
+	commandMode?: RunRole | "rejudge";
 	provider: EvalProvider;
+	evaluator: EvaluatorMode;
 	runId: string;
 	includeHoldouts: boolean;
 	referenceManifest?: RunManifest;
 }) {
 	const parts = [
-		`bun run eval:${mode}`,
+		`bun run eval:${commandMode}`,
 		`--provider=${provider}`,
+		`--evaluator=${evaluator}`,
 		`--run-id=${runId}`,
 	];
 	if (includeHoldouts) {
@@ -168,6 +183,9 @@ function commandFor({
 	}
 	if (mode === "variant" && referenceManifest) {
 		parts.push(`--baseline=${referenceManifest.runId}`);
+	}
+	if (mode === "baseline" && commandMode === "rejudge" && referenceManifest) {
+		parts.push(`--candidate=${referenceManifest.runId}`);
 	}
 
 	return parts.join(" ");
@@ -231,14 +249,6 @@ async function writeJsonArtifact(relativePath: string, value: unknown) {
 	await mkdir(path.dirname(targetPath), { recursive: true });
 	const tempPath = `${targetPath}.tmp`;
 	await writeFile(tempPath, await formatJsonArtifact(relativePath, value));
-	await rename(tempPath, targetPath);
-}
-
-async function writeTextArtifact(relativePath: string, value: string) {
-	const targetPath = absolutePath(relativePath);
-	await mkdir(path.dirname(targetPath), { recursive: true });
-	const tempPath = `${targetPath}.tmp`;
-	await writeFile(tempPath, value);
 	await rename(tempPath, targetPath);
 }
 
@@ -336,32 +346,50 @@ function slugTimestamp(date = new Date()) {
 	return date.toISOString().replace(/\D/g, "").slice(0, 14);
 }
 
-function runIdFor(mode: Exclude<EvalMode, "report">, provider: EvalProvider) {
+function runIdFor(mode: RunRole, provider: EvalProvider) {
 	const prefix = mode === "baseline" ? "baseline" : "candidate";
 	return `${prefix}-${provider}-${slugTimestamp()}`;
 }
 
 function assertOpenAIPricingIsConfigured(options: EvalOptions) {
-	if (options.mode === "report" || options.provider !== "openai") {
+	if (options.mode === "report") {
 		return;
 	}
 
-	const modelName = process.env.OPENAI_MODEL ?? defaultOpenAIModel;
-	const pricing = pricingForOpenAIModel(modelName);
-	if (pricing) {
+	if (options.mode !== "rejudge" && options.provider === "openai") {
+		const modelName = process.env.OPENAI_MODEL ?? defaultOpenAIModel;
+		const pricing = pricingForOpenAIModel(modelName);
+		if (!pricing) {
+			throw new Error(
+				[
+					`OpenAI pricing is not configured for model "${modelName}".`,
+					"Add the model and reviewed token rates to src/genie/openai-pricing.ts before running live evals.",
+					"This aborts before provider calls so generated traces do not persist unknown estimatedUsd values.",
+				].join(" "),
+			);
+		}
 		console.log(
 			`Using ${pricing.source} for ${modelName}: input $${pricing.inputUsdPer1MTokens}/1M, cached input $${pricing.cachedInputUsdPer1MTokens}/1M, output $${pricing.outputUsdPer1MTokens}/1M.`,
 		);
-		return;
 	}
 
-	throw new Error(
-		[
-			`OpenAI pricing is not configured for model "${modelName}".`,
-			"Add the model and reviewed token rates to src/genie/openai-pricing.ts before running live evals.",
-			"This aborts before provider calls so generated traces do not persist unknown estimatedUsd values.",
-		].join(" "),
-	);
+	if (options.evaluator === "hybrid") {
+		const judgeModel =
+			process.env.OPENAI_EVAL_MODEL ?? defaultOpenAIEvaluatorModel;
+		const pricing = pricingForOpenAIModel(judgeModel);
+		if (!pricing) {
+			throw new Error(
+				[
+					`OpenAI evaluator pricing is not configured for model "${judgeModel}".`,
+					"Set OPENAI_EVAL_MODEL to a priced model or add reviewed token rates to src/genie/openai-pricing.ts.",
+					"This aborts before live judge calls.",
+				].join(" "),
+			);
+		}
+		console.log(
+			`Using ${pricing.source} for evaluator ${judgeModel}: input $${pricing.inputUsdPer1MTokens}/1M, cached input $${pricing.cachedInputUsdPer1MTokens}/1M, output $${pricing.outputUsdPer1MTokens}/1M.`,
+		);
+	}
 }
 
 function sourcePacketById(sourcePackets: SourcePacket[]) {
@@ -401,6 +429,12 @@ function sortedIds(values: string[]) {
 	return [...values].sort();
 }
 
+function caseIdsMatch(leftCaseIds: string[], rightCaseIds: string[]) {
+	return (
+		sortedIds(leftCaseIds).join("\0") === sortedIds(rightCaseIds).join("\0")
+	);
+}
+
 function assertMatchingCaseIds({
 	actualLabel,
 	actualCaseIds,
@@ -415,7 +449,7 @@ function assertMatchingCaseIds({
 	const sortedActualCaseIds = sortedIds(actualCaseIds);
 	const sortedReferenceCaseIds = sortedIds(referenceCaseIds);
 
-	if (sortedActualCaseIds.join("\0") !== sortedReferenceCaseIds.join("\0")) {
+	if (!caseIdsMatch(actualCaseIds, referenceCaseIds)) {
 		throw new Error(
 			`Cannot compare different case sets: ${actualLabel} has [${sortedActualCaseIds.join(", ")}], ${referenceLabel} has [${sortedReferenceCaseIds.join(", ")}].`,
 		);
@@ -443,172 +477,6 @@ function assertVariantCaseSetMatchesBaseline({
 
 function roundMetric(value: number) {
 	return Math.round(value * 100) / 100;
-}
-
-function coverageScore(evalCase: EvalCase, briefing: BriefingOutput) {
-	const briefingText = [
-		briefing.title,
-		briefing.summary,
-		...briefing.claims.map((claim) => claim.text),
-		briefing.recommendation,
-	]
-		.join(" ")
-		.toLowerCase();
-	const hits = evalCase.expectedCoverage.filter((coveragePoint) => {
-		const terms = coveragePoint
-			.toLowerCase()
-			.split(/[^a-z0-9]+/)
-			.filter((term) => term.length >= coverageTermMinimumLength)
-			.slice(0, coverageTermsPerPoint);
-
-		return terms.some((term) => briefingText.includes(term));
-	}).length;
-
-	return Math.max(
-		localEvaluatorCalibration.coverageFloor,
-		hits / evalCase.expectedCoverage.length,
-	);
-}
-
-function citationSupportScore(evalCase: EvalCase, briefing: BriefingOutput) {
-	const acceptedCitations = new Set(evalCase.acceptedCitations);
-	const claimScores = briefing.claims.map((claim) => {
-		if (claim.citations.length === 0) {
-			return 0;
-		}
-
-		const acceptedCount = claim.citations.filter((citation) =>
-			acceptedCitations.has(citation),
-		).length;
-		return acceptedCount / claim.citations.length;
-	});
-
-	return (
-		claimScores.reduce((total, score) => total + score, 0) /
-		Math.max(1, claimScores.length)
-	);
-}
-
-function evaluatorScores(evalCase: EvalCase, briefing: BriefingOutput) {
-	let coverage = coverageScore(evalCase, briefing);
-	let citationSupport = citationSupportScore(evalCase, briefing);
-	const failureRisk = Math.min(
-		localEvaluatorCalibration.failureRiskCap,
-		evalCase.failureTags.length * localEvaluatorCalibration.failureRiskPerTag,
-	);
-	const isLocalExtractive =
-		briefing.metadata.model === "deterministic-extractive";
-
-	if (isLocalExtractive) {
-		coverage = Math.min(
-			localEvaluatorCalibration.localExtractiveCoverageCap,
-			Math.max(
-				localEvaluatorCalibration.localExtractiveCoverageFloor,
-				coverage - localEvaluatorCalibration.localExtractiveCoveragePenalty,
-			),
-		);
-		citationSupport = Math.min(
-			localEvaluatorCalibration.localExtractiveCitationSupportCap,
-			Math.max(
-				localEvaluatorCalibration.localExtractiveCitationSupportFloor,
-				citationSupport -
-					localEvaluatorCalibration.localExtractiveCitationSupportPenalty +
-					coverage *
-						localEvaluatorCalibration.localExtractiveCitationCoverageWeight -
-					failureRisk,
-			),
-		);
-	}
-
-	// Score the run like a lightweight reviewer. Coverage rewards mentioning
-	// expected points, citation support rewards citing allowed evidence, grounding
-	// blends those signals while penalizing risky failure tags, and overall is a
-	// weighted summary. Scores near 1.0 mean strong demo evidence; scores around
-	// 0.6 are useful baselines with visible gaps; lower scores should read as
-	// clear failures.
-	const grounding = Math.max(
-		localEvaluatorCalibration.groundingFloor,
-		Math.min(
-			localEvaluatorCalibration.groundingCap,
-			citationSupport * localEvaluatorCalibration.groundingCitationWeight +
-				coverage * localEvaluatorCalibration.groundingCoverageWeight -
-				failureRisk,
-		),
-	);
-	const overall = Math.max(
-		localEvaluatorCalibration.overallFloor,
-		Math.min(
-			localEvaluatorCalibration.overallCap,
-			coverage * localEvaluatorCalibration.overallCoverageWeight +
-				citationSupport * localEvaluatorCalibration.overallCitationWeight +
-				grounding * localEvaluatorCalibration.overallGroundingWeight,
-		),
-	);
-
-	return {
-		overall: roundMetric(overall),
-		grounding: roundMetric(grounding),
-		coverage: roundMetric(coverage),
-		citationSupport: roundMetric(citationSupport),
-	};
-}
-
-function detectedFailureTags(scores: EvaluatorOutput["scores"]) {
-	const tags = new Set<string>();
-
-	if (scores.coverage < 0.65) {
-		tags.add("coverage-gap");
-	}
-	if (scores.citationSupport < 0.72) {
-		tags.add("citation-grounding");
-	}
-	if (scores.grounding < 0.65) {
-		tags.add("grounding-risk");
-	}
-
-	return [...tags];
-}
-
-function evaluatorOutputFor({
-	runId,
-	evalCase,
-	briefing,
-}: {
-	runId: string;
-	evalCase: EvalCase;
-	briefing: BriefingOutput;
-}) {
-	const acceptedCitations = new Set(evalCase.acceptedCitations);
-	const citationIds = [
-		...new Set(briefing.claims.flatMap((claim) => claim.citations)),
-	];
-	const citationSupport = citationIds.map((citation) => ({
-		citation,
-		supported: acceptedCitations.has(citation),
-		note: acceptedCitations.has(citation)
-			? `${citation} is accepted evidence for ${evalCase.id}.`
-			: `${citation} is not listed as accepted evidence for ${evalCase.id}.`,
-	}));
-	const scores = evaluatorScores(evalCase, briefing);
-
-	return EvaluatorOutputSchema.parse({
-		id: `evaluation-${runId}-${evalCase.id}`,
-		runId,
-		caseId: evalCase.id,
-		scores,
-		failureTags: detectedFailureTags(scores),
-		rubricEvidence: [
-			`Coverage heuristic score: ${scores.coverage.toFixed(2)}.`,
-			`Citation support heuristic score: ${scores.citationSupport.toFixed(2)}.`,
-		],
-		citationSupport,
-		notes:
-			"Deterministic local evaluator output for baseline-run artifact generation. Replace or augment with stronger evaluator logic before making production quality claims.",
-		artifactPaths: [
-			`runs/${runId}/evaluations/${evalCase.id}.json`,
-			`runs/${runId}/briefings/${evalCase.id}.json`,
-		],
-	});
 }
 
 function median(values: number[]) {
@@ -664,6 +532,20 @@ function knownEstimatedCost(traces: GenerationTrace[]) {
 	);
 }
 
+function evaluationsHaveUnknownCost(evaluations: EvaluatorOutput[]) {
+	return evaluations.some(
+		(evaluation) => evaluation.evaluator?.cost.estimatedUsd === null,
+	);
+}
+
+function knownEstimatedEvaluatorCost(evaluations: EvaluatorOutput[]) {
+	return evaluations.reduce(
+		(total, evaluation) =>
+			total + (evaluation.evaluator?.cost.estimatedUsd ?? 0),
+		0,
+	);
+}
+
 function roundCostUsd(value: number) {
 	return Math.round(value * 100_000_000) / 100_000_000;
 }
@@ -697,7 +579,9 @@ function latencyRatioFor({
 function manifestFor({
 	runId,
 	mode,
+	commandMode,
 	provider,
+	evaluator,
 	caseIds,
 	evaluations,
 	traces,
@@ -708,8 +592,10 @@ function manifestFor({
 	error,
 }: {
 	runId: string;
-	mode: Exclude<EvalMode, "report">;
+	mode: RunRole;
+	commandMode?: RunRole | "rejudge";
 	provider: EvalProvider;
+	evaluator: EvaluatorMode;
 	caseIds: string[];
 	evaluations: EvaluatorOutput[];
 	traces: GenerationTrace[];
@@ -720,11 +606,16 @@ function manifestFor({
 	error?: string;
 }) {
 	const hasUnknownCost = tracesHaveUnknownCost(traces);
+	const hasUnknownEvaluatorCost = evaluationsHaveUnknownCost(evaluations);
 	const groundingRiskUnitCount = groundingRiskUnits(evaluations);
 	const estimatedCostUsd =
 		hasUnknownCost || traces.length === 0
 			? null
 			: roundCostUsd(knownEstimatedCost(traces));
+	const evaluatorEstimatedCostUsd =
+		hasUnknownEvaluatorCost || evaluations.length === 0
+			? null
+			: roundCostUsd(knownEstimatedEvaluatorCost(evaluations));
 	const costRatio =
 		mode === "baseline"
 			? 1
@@ -742,7 +633,9 @@ function manifestFor({
 		gitRef: "local-worktree",
 		command: commandFor({
 			mode,
+			commandMode,
 			provider,
+			evaluator,
 			runId,
 			includeHoldouts,
 			referenceManifest,
@@ -757,6 +650,7 @@ function manifestFor({
 			groundingRiskUnits: groundingRiskUnitCount,
 			medianLatencyMs: median(traces.map((trace) => trace.latencyMs)),
 			estimatedCostUsd,
+			evaluatorEstimatedCostUsd,
 			costRatio,
 			latencyRatio: latencyRatioFor({ mode, traces, referenceManifest }),
 		},
@@ -781,19 +675,41 @@ function manifestFor({
 	});
 }
 
-async function generateRun(options: EvalOptions) {
-	if (options.mode === "report") {
-		throw new Error("Report mode does not generate a run.");
-	}
-
+async function generateRun(options: EvalOptions & { mode: RunRole }) {
 	const [evalCases, sourcePackets] = await Promise.all([
 		listEvalCases(),
 		listSourcePackets(),
 	]);
 	const sourcePacketsById = sourcePacketById(sourcePackets);
-	const selectedEvalCases = evalCases.filter(
-		(evalCase) => options.includeHoldouts || !evalCase.holdout,
-	);
+	const selectedEvalCases = evalCases.filter((evalCase) => {
+		if (!options.includeHoldouts && evalCase.holdout) {
+			return false;
+		}
+
+		return (
+			options.caseIds.length === 0 || options.caseIds.includes(evalCase.id)
+		);
+	});
+	if (options.caseIds.length > 0) {
+		const selectedCaseIds = new Set(
+			selectedEvalCases.map((evalCase) => evalCase.id),
+		);
+		const missingCaseIds = options.caseIds.filter(
+			(caseId) => !selectedCaseIds.has(caseId),
+		);
+		if (missingCaseIds.length > 0) {
+			throw new Error(
+				`Requested eval cases were not selected: ${missingCaseIds.join(", ")}`,
+			);
+		}
+	}
+	if (selectedEvalCases.length === 0) {
+		throw new Error(
+			options.caseIds.length > 0
+				? `No eval cases selected for requested case ids: ${options.caseIds.join(", ")}`
+				: "No visible eval cases are available for this run.",
+		);
+	}
 	const runId = options.runId ?? runIdFor(options.mode, options.provider);
 	validateFixtureId(runId, "run id");
 	const artifactPaths = [`runs/${runId}/manifest.json`];
@@ -807,6 +723,22 @@ async function generateRun(options: EvalOptions) {
 		`Starting ${options.provider} ${options.mode} run ${runId} with ${selectedEvalCases.length} cases.`,
 	);
 	await prepareRunOutputDirectories(runId, options.overwriteRun);
+	await writeJsonArtifact(
+		`runs/${runId}/manifest.json`,
+		manifestFor({
+			runId,
+			mode: options.mode,
+			provider: options.provider,
+			evaluator: options.evaluator,
+			caseIds: selectedEvalCases.map((evalCase) => evalCase.id),
+			evaluations,
+			traces,
+			artifactPaths,
+			referenceManifest,
+			includeHoldouts: options.includeHoldouts,
+			status: "running",
+		}),
+	);
 
 	try {
 		for (const [caseIndex, evalCase] of selectedEvalCases.entries()) {
@@ -839,32 +771,67 @@ async function generateRun(options: EvalOptions) {
 			const trace = GenerationTraceSchema.parse({
 				...result.trace,
 				output: persistedBriefing,
-				artifactPaths: [
-					...result.trace.artifactPaths,
-					briefingPath,
-					tracePath,
-					evaluationPath,
-				],
+				rawOutput: rawBriefing,
+				artifactPaths: [...result.trace.artifactPaths, briefingPath, tracePath],
 			});
-			const evaluation = evaluatorOutputFor({
+			await Promise.all([
+				writeJsonArtifact(briefingPath, persistedBriefing),
+				writeJsonArtifact(tracePath, trace),
+			]);
+			briefings.push(persistedBriefing);
+			traces.push(trace);
+			artifactPaths.push(briefingPath, tracePath);
+			await writeJsonArtifact(
+				`runs/${runId}/manifest.json`,
+				manifestFor({
+					runId,
+					mode: options.mode,
+					provider: options.provider,
+					evaluator: options.evaluator,
+					caseIds: selectedEvalCases.map(
+						(selectedEvalCase) => selectedEvalCase.id,
+					),
+					evaluations,
+					traces,
+					artifactPaths,
+					referenceManifest,
+					includeHoldouts: options.includeHoldouts,
+					status: "running",
+				}),
+			);
+			const evaluation = await evaluateBriefing({
 				runId,
 				evalCase,
+				sourcePacket,
 				briefing: rawBriefing,
+				trace,
+				mode: options.evaluator,
 			});
 			console.log(
 				`${casePrefix} Evaluated ${evalCase.id}: overall ${evaluation.scores.overall.toFixed(2)}, citation ${evaluation.scores.citationSupport.toFixed(2)}.`,
 			);
 
-			await Promise.all([
-				writeJsonArtifact(briefingPath, persistedBriefing),
-				writeJsonArtifact(tracePath, trace),
-				writeJsonArtifact(evaluationPath, evaluation),
-			]);
-
-			briefings.push(persistedBriefing);
-			traces.push(trace);
+			await writeJsonArtifact(evaluationPath, evaluation);
 			evaluations.push(evaluation);
-			artifactPaths.push(briefingPath, tracePath, evaluationPath);
+			artifactPaths.push(evaluationPath);
+			await writeJsonArtifact(
+				`runs/${runId}/manifest.json`,
+				manifestFor({
+					runId,
+					mode: options.mode,
+					provider: options.provider,
+					evaluator: options.evaluator,
+					caseIds: selectedEvalCases.map(
+						(selectedEvalCase) => selectedEvalCase.id,
+					),
+					evaluations,
+					traces,
+					artifactPaths,
+					referenceManifest,
+					includeHoldouts: options.includeHoldouts,
+					status: "running",
+				}),
+			);
 			console.log(`${casePrefix} Wrote artifacts for ${evalCase.id}.`);
 		}
 
@@ -872,6 +839,7 @@ async function generateRun(options: EvalOptions) {
 			runId,
 			mode: options.mode,
 			provider: options.provider,
+			evaluator: options.evaluator,
 			caseIds: selectedEvalCases.map((evalCase) => evalCase.id),
 			evaluations,
 			traces,
@@ -896,7 +864,8 @@ async function generateRun(options: EvalOptions) {
 			runId,
 			mode: options.mode,
 			provider: options.provider,
-			caseIds: evaluations.map((evaluation) => evaluation.caseId),
+			evaluator: options.evaluator,
+			caseIds: selectedEvalCases.map((evalCase) => evalCase.id),
 			evaluations,
 			traces,
 			artifactPaths,
@@ -949,6 +918,36 @@ function isProviderRun(manifest: RunManifest, provider: EvalProvider) {
 	return provider === "openai"
 		? isOpenAIProviderRun(manifest)
 		: isLocalProviderRun(manifest);
+}
+
+function runRoleForManifest(manifest: RunManifest): RunRole {
+	if (isGeneratedCandidateRun(manifest)) {
+		return "variant";
+	}
+	if (isGeneratedBaselineRun(manifest)) {
+		return "baseline";
+	}
+
+	throw new Error(
+		`Cannot infer whether run ${manifest.runId} is a generated baseline or variant.`,
+	);
+}
+
+function providerForManifest(manifest: RunManifest): EvalProvider {
+	if (isOpenAIProviderRun(manifest)) {
+		return "openai";
+	}
+	if (isLocalProviderRun(manifest)) {
+		return "local";
+	}
+
+	throw new Error(
+		`Cannot infer provider for run ${manifest.runId}. Rejudge supports generated local and OpenAI runs.`,
+	);
+}
+
+function isHybridEvaluatedRun(manifest: RunManifest) {
+	return manifest.command.includes("--evaluator=hybrid");
 }
 
 async function latestRunId(
@@ -1031,6 +1030,22 @@ async function referenceManifestForBaselineComparison(options: EvalOptions) {
 	return completeManifestForRunId(candidateRunId, "candidate");
 }
 
+async function baselineRunIdForExistingVariant(candidateRunId: string) {
+	const comparisons = await listRunComparisons();
+	return [...comparisons]
+		.reverse()
+		.find((comparison) => comparison.candidateRunId === candidateRunId)
+		?.baselineRunId;
+}
+
+async function candidateRunIdForExistingBaseline(baselineRunId: string) {
+	const comparisons = await listRunComparisons();
+	return [...comparisons]
+		.reverse()
+		.find((comparison) => comparison.baselineRunId === baselineRunId)
+		?.candidateRunId;
+}
+
 async function assertBaselineComparisonIsValid(options: EvalOptions) {
 	const referenceManifest =
 		await referenceManifestForBaselineComparison(options);
@@ -1041,6 +1056,10 @@ async function assertBaselineComparisonIsValid(options: EvalOptions) {
 	const evalCases = await listEvalCases();
 	const selectedCaseIds = evalCases
 		.filter((evalCase) => options.includeHoldouts || !evalCase.holdout)
+		.filter(
+			(evalCase) =>
+				options.caseIds.length === 0 || options.caseIds.includes(evalCase.id),
+		)
 		.map((evalCase) => evalCase.id);
 
 	assertMatchingCaseIds({
@@ -1049,6 +1068,201 @@ async function assertBaselineComparisonIsValid(options: EvalOptions) {
 		referenceLabel: `candidate ${referenceManifest.runId}`,
 		referenceCaseIds: referenceManifest.caseIds,
 	});
+}
+
+async function rejudgeRun(options: EvalOptions): Promise<RejudgedRunArtifacts> {
+	if (options.mode !== "rejudge") {
+		throw new Error("Rejudge mode is required to rejudge an existing run.");
+	}
+	if (!options.runId) {
+		throw new Error("Rejudge mode requires --run-id=<existing-run-id>.");
+	}
+
+	const runId = validateFixtureId(options.runId, "run id");
+	const existingManifest = await completeManifestForRunId(runId, "rejudge");
+	const role = runRoleForManifest(existingManifest);
+	const provider = providerForManifest(existingManifest);
+	const [evalCases, sourcePackets, briefings, traces] = await Promise.all([
+		listEvalCases(),
+		listSourcePackets(),
+		listBriefingOutputs(runId),
+		listGenerationTraces(runId),
+	]);
+	const evalCasesById = new Map(
+		evalCases.map((evalCase) => [evalCase.id, evalCase]),
+	);
+	const sourcePacketsById = sourcePacketById(sourcePackets);
+	const briefingsByCaseId = new Map(
+		briefings.map((briefing) => [briefing.caseId, briefing]),
+	);
+	const tracesByCaseId = new Map(traces.map((trace) => [trace.caseId, trace]));
+	const selectedEvalCases = existingManifest.caseIds.map((caseId) => {
+		const evalCase = evalCasesById.get(caseId);
+		if (!evalCase) {
+			throw new Error(`Run ${runId} references missing eval case ${caseId}.`);
+		}
+
+		return evalCase;
+	});
+	const existingVariantBaselineRunId =
+		role === "variant"
+			? (options.baselineRunId ??
+				(await baselineRunIdForExistingVariant(runId)))
+			: undefined;
+	const existingBaselineCandidateRunId =
+		role === "baseline"
+			? (options.candidateRunId ??
+				(await candidateRunIdForExistingBaseline(runId)))
+			: undefined;
+	const referenceManifest =
+		role === "variant"
+			? await referenceManifestForVariant({
+					...options,
+					mode: "variant",
+					provider,
+					baselineRunId: existingVariantBaselineRunId,
+				})
+			: await referenceManifestForBaselineComparison({
+					...options,
+					mode: "baseline",
+					provider,
+					candidateRunId: existingBaselineCandidateRunId,
+				});
+
+	if (role === "variant") {
+		assertVariantCaseSetMatchesBaseline({
+			referenceManifest,
+			selectedEvalCases,
+		});
+	} else if (referenceManifest) {
+		assertMatchingCaseIds({
+			actualLabel: `rejudged baseline ${runId}`,
+			actualCaseIds: selectedEvalCases.map((evalCase) => evalCase.id),
+			referenceLabel: `candidate ${referenceManifest.runId}`,
+			referenceCaseIds: referenceManifest.caseIds,
+		});
+	}
+
+	console.log(
+		`Rejudging ${role} run ${runId} with ${options.evaluator} evaluator across ${selectedEvalCases.length} cases.`,
+	);
+
+	const evaluations: EvaluatorOutput[] = [];
+	const orderedTraces: GenerationTrace[] = [];
+	const orderedBriefings: BriefingOutput[] = [];
+	const artifactPaths = [`runs/${runId}/manifest.json`];
+	const tempEvaluationDir = `runs/${runId}/evaluations-rejudge-${slugTimestamp()}`;
+	const pendingEvaluationWrites: Array<{
+		finalPath: string;
+		tempPath: string;
+	}> = [];
+
+	try {
+		for (const [caseIndex, evalCase] of selectedEvalCases.entries()) {
+			const caseNumber = caseIndex + 1;
+			const casePrefix = `[${caseNumber}/${selectedEvalCases.length}]`;
+			const sourcePacket = sourcePacketsById.get(evalCase.sourcePacketId);
+			const trace = tracesByCaseId.get(evalCase.id);
+			const persistedBriefing = briefingsByCaseId.get(evalCase.id);
+			if (!sourcePacket) {
+				throw new Error(
+					`Eval case ${evalCase.id} references missing source packet ${evalCase.sourcePacketId}`,
+				);
+			}
+			if (!trace) {
+				throw new Error(`Run ${runId} is missing trace for ${evalCase.id}.`);
+			}
+			if (!persistedBriefing) {
+				throw new Error(`Run ${runId} is missing briefing for ${evalCase.id}.`);
+			}
+
+			if (
+				(isGeneratedBaselineRun(existingManifest) ||
+					isGeneratedCandidateRun(existingManifest)) &&
+				!trace.rawOutput
+			) {
+				throw new Error(
+					[
+						`Cannot rejudge ${runId} case ${evalCase.id} because its trace is missing rawOutput.`,
+						"Older generated traces only persisted sanitized trace.output, which can inflate citation and grounding scores.",
+						"Create a fresh baseline or variant run so rejudge can evaluate the raw generated briefing.",
+					].join(" "),
+				);
+			}
+
+			const briefing = BriefingOutputSchema.parse(
+				trace.rawOutput ?? trace.output,
+			);
+			const briefingPath = `runs/${runId}/briefings/${evalCase.id}.json`;
+			const tracePath = `runs/${runId}/traces/${evalCase.id}.json`;
+			const evaluationPath = `runs/${runId}/evaluations/${evalCase.id}.json`;
+			const tempEvaluationPath = `${tempEvaluationDir}/${evalCase.id}.json`;
+			console.log(`${casePrefix} Rejudging ${evalCase.id}...`);
+			const evaluation = await evaluateBriefing({
+				runId,
+				evalCase,
+				sourcePacket,
+				briefing,
+				trace,
+				mode: options.evaluator,
+			});
+			await writeJsonArtifact(tempEvaluationPath, evaluation);
+			pendingEvaluationWrites.push({
+				finalPath: evaluationPath,
+				tempPath: tempEvaluationPath,
+			});
+			console.log(
+				`${casePrefix} Rejudged ${evalCase.id}: overall ${evaluation.scores.overall.toFixed(2)}, citation ${evaluation.scores.citationSupport.toFixed(2)}.`,
+			);
+
+			orderedBriefings.push(persistedBriefing);
+			orderedTraces.push(trace);
+			evaluations.push(evaluation);
+			artifactPaths.push(briefingPath, tracePath, evaluationPath);
+		}
+	} catch (error) {
+		await rm(absolutePath(tempEvaluationDir), { force: true, recursive: true });
+		throw error;
+	}
+
+	await Promise.all(
+		pendingEvaluationWrites.map(({ finalPath, tempPath }) =>
+			rename(absolutePath(tempPath), absolutePath(finalPath)),
+		),
+	);
+	await rm(absolutePath(tempEvaluationDir), { force: true, recursive: true });
+
+	const manifest = manifestFor({
+		runId,
+		mode: role,
+		commandMode: "rejudge",
+		provider,
+		evaluator: options.evaluator,
+		caseIds: selectedEvalCases.map((evalCase) => evalCase.id),
+		evaluations,
+		traces: orderedTraces,
+		artifactPaths,
+		referenceManifest,
+		includeHoldouts: selectedEvalCases.some((evalCase) => evalCase.holdout),
+	});
+	await writeJsonArtifact(`runs/${runId}/manifest.json`, manifest);
+	console.log(
+		`Rejudged ${runId}: overall ${manifest.aggregateMetrics.overall.toFixed(2)}, citation ${manifest.aggregateMetrics.citationSupport.toFixed(2)}, evaluator cost ${
+			manifest.aggregateMetrics.evaluatorEstimatedCostUsd === null ||
+			manifest.aggregateMetrics.evaluatorEstimatedCostUsd === undefined
+				? "unknown"
+				: `$${manifest.aggregateMetrics.evaluatorEstimatedCostUsd.toFixed(4)}`
+		}.`,
+	);
+
+	return {
+		role,
+		referenceRunId: referenceManifest?.runId,
+		manifest,
+		briefings: orderedBriefings,
+		evaluations,
+		traces: orderedTraces,
+	};
 }
 
 async function artifactsFor(runId: string): Promise<RunArtifacts> {
@@ -1101,16 +1315,6 @@ function targetGapTone(delta: number) {
 	return "blue" as const;
 }
 
-function lowerIsBetterTargetGapTone(delta: number) {
-	if (delta > 0.03) {
-		return "green" as const;
-	}
-	if (delta >= -0.03) {
-		return "green" as const;
-	}
-	return "red" as const;
-}
-
 function estimatedCostUsdFor(artifacts: RunArtifacts) {
 	const manifestCost = artifacts.manifest.aggregateMetrics.estimatedCostUsd;
 	if (manifestCost !== undefined) {
@@ -1124,8 +1328,26 @@ function estimatedCostUsdFor(artifacts: RunArtifacts) {
 	return roundCostUsd(knownEstimatedCost(artifacts.traces));
 }
 
-function formatUsd(value: number) {
-	return `$${value.toFixed(4)}`;
+function formatCostNumber(value: number) {
+	return String(roundCostUsd(value));
+}
+
+function formatSignedCostNumber(value: number) {
+	const roundedValue = roundCostUsd(value);
+	return roundedValue > 0 ? `+${roundedValue}` : String(roundedValue);
+}
+
+function formatSignedInteger(value: number) {
+	return value > 0 ? `+${value}` : String(value);
+}
+
+function formatSignedSeconds(value: number) {
+	const sign = value >= 0 ? "+" : "";
+	return `${sign}${value.toFixed(1)}s`;
+}
+
+function targetGapForLowerIsBetter(candidate: number, target: number) {
+	return candidate - target;
 }
 
 function referenceCostBudgetMetric({
@@ -1146,27 +1368,71 @@ function referenceCostBudgetMetric({
 		return {
 			label: "Estimated cost",
 			value:
-				estimatedCostUsd === null ? "unknown" : formatUsd(estimatedCostUsd),
+				estimatedCostUsd === null
+					? "unknown"
+					: formatCostNumber(estimatedCostUsd),
 			delta: "unknown",
 			status:
 				costBudgetUsd === undefined
 					? `${candidateLabel} budget not set`
-					: `${baselineLabel} vs ${candidateLabel} budget <= ${formatUsd(costBudgetUsd)}`,
+					: `${baselineLabel} vs ${candidateLabel} budget <= ${formatCostNumber(costBudgetUsd)}`,
 			tone: "amber" as const,
 		};
 	}
 
-	const remainingBudgetUsd = roundCostUsd(costBudgetUsd - estimatedCostUsd);
-	const isUnderBudget = remainingBudgetUsd >= 0;
+	const budgetDeltaUsd = roundCostUsd(estimatedCostUsd - costBudgetUsd);
+	const isUnderBudget = budgetDeltaUsd <= 0;
 
 	return {
 		label: "Estimated cost",
-		value: formatUsd(estimatedCostUsd),
-		delta: `${formatUsd(Math.abs(remainingBudgetUsd))} ${
-			isUnderBudget ? "under budget" : "over budget"
-		}`,
-		status: `${baselineLabel} vs ${candidateLabel} budget <= ${formatUsd(costBudgetUsd)}`,
+		value: formatCostNumber(estimatedCostUsd),
+		delta: formatSignedCostNumber(budgetDeltaUsd),
+		status: `${baselineLabel} vs ${candidateLabel} budget <= ${formatCostNumber(costBudgetUsd)}`,
 		tone: isUnderBudget ? ("green" as const) : ("red" as const),
+	};
+}
+
+function estimatedCostMetric({
+	baseline,
+	candidate,
+	referenceTarget,
+}: {
+	baseline: RunArtifacts;
+	candidate: RunArtifacts;
+	referenceTarget?: RunArtifacts;
+}) {
+	const baselineCostUsd = estimatedCostUsdFor(baseline);
+	const candidateCostUsd = estimatedCostUsdFor(candidate);
+	const referenceCostBudgetUsd =
+		referenceTarget?.manifest.aggregateMetrics.costBudgetUsd;
+
+	if (candidateCostUsd === null || baselineCostUsd === null) {
+		return {
+			label: "Estimated cost",
+			value:
+				candidateCostUsd === null
+					? "unknown"
+					: formatCostNumber(candidateCostUsd),
+			delta: "unknown",
+			targetDelta: undefined,
+			status: "Generation trace cost",
+			tone: "amber" as const,
+		};
+	}
+
+	const deltaUsd = roundCostUsd(candidateCostUsd - baselineCostUsd);
+	const targetDelta =
+		referenceCostBudgetUsd === undefined
+			? undefined
+			: formatSignedCostNumber(candidateCostUsd - referenceCostBudgetUsd);
+
+	return {
+		label: "Estimated cost",
+		value: formatCostNumber(candidateCostUsd),
+		delta: formatSignedCostNumber(deltaUsd),
+		targetDelta,
+		status: "Generation trace cost",
+		tone: deltaUsd <= 0 ? ("green" as const) : ("amber" as const),
 	};
 }
 
@@ -1184,25 +1450,61 @@ function referenceCostBudgetRow({
 		return {
 			metric: "Estimated cost",
 			baseline:
-				estimatedCostUsd === null ? "unknown" : formatUsd(estimatedCostUsd),
+				estimatedCostUsd === null
+					? "unknown"
+					: formatCostNumber(estimatedCostUsd),
 			candidate:
 				costBudgetUsd === undefined
 					? "budget not set"
-					: `<= ${formatUsd(costBudgetUsd)}`,
+					: `<= ${formatCostNumber(costBudgetUsd)}`,
 			delta: "unknown",
 		};
 	}
 
-	const remainingBudgetUsd = roundCostUsd(costBudgetUsd - estimatedCostUsd);
-	const isUnderBudget = remainingBudgetUsd >= 0;
+	const budgetDeltaUsd = roundCostUsd(estimatedCostUsd - costBudgetUsd);
 
 	return {
 		metric: "Estimated cost",
-		baseline: formatUsd(estimatedCostUsd),
-		candidate: `<= ${formatUsd(costBudgetUsd)}`,
-		delta: `${formatUsd(Math.abs(remainingBudgetUsd))} ${
-			isUnderBudget ? "under budget" : "over budget"
-		}`,
+		baseline: formatCostNumber(estimatedCostUsd),
+		candidate: `<= ${formatCostNumber(costBudgetUsd)}`,
+		delta: formatSignedCostNumber(budgetDeltaUsd),
+	};
+}
+
+function estimatedCostRow({
+	baseline,
+	candidate,
+	referenceTarget,
+}: {
+	baseline: RunArtifacts;
+	candidate: RunArtifacts;
+	referenceTarget?: RunArtifacts;
+}) {
+	const baselineCostUsd = estimatedCostUsdFor(baseline);
+	const candidateCostUsd = estimatedCostUsdFor(candidate);
+	const referenceCostBudgetUsd =
+		referenceTarget?.manifest.aggregateMetrics.costBudgetUsd;
+
+	return {
+		metric: "Estimated cost",
+		baseline:
+			baselineCostUsd === null ? "unknown" : formatCostNumber(baselineCostUsd),
+		candidate:
+			candidateCostUsd === null
+				? "unknown"
+				: formatCostNumber(candidateCostUsd),
+		referenceTarget:
+			referenceCostBudgetUsd === undefined
+				? undefined
+				: `<= ${formatCostNumber(referenceCostBudgetUsd)}`,
+		delta:
+			baselineCostUsd === null || candidateCostUsd === null
+				? "unknown"
+				: formatSignedCostNumber(candidateCostUsd - baselineCostUsd),
+		gapToTarget:
+			candidateCostUsd === null || referenceCostBudgetUsd === undefined
+				? undefined
+				: formatSignedCostNumber(candidateCostUsd - referenceCostBudgetUsd),
 	};
 }
 
@@ -1255,6 +1557,9 @@ function evidenceStatusFor({
 		isLocalProviderRun(baselineManifest) ||
 		isLocalProviderRun(candidateManifest);
 	const usesReferenceTarget = !usesGeneratedCandidate;
+	const usesHybridEvaluator =
+		isHybridEvaluatedRun(baselineManifest) &&
+		isHybridEvaluatedRun(candidateManifest);
 
 	if (!usesGeneratedBaseline || !usesGeneratedCandidate || !usesLiveProvider) {
 		const candidateDescription = usesReferenceTarget
@@ -1276,38 +1581,23 @@ function evidenceStatusFor({
 		};
 	}
 
-	return {
-		tone: overallDelta >= 0 ? ("green" as const) : ("amber" as const),
-		label: "Generated comparison",
-		text: `Use ${baselineLabel} and ${candidateLabel} as the current inspectable before/after story.`,
-		warning:
-			"Generated evaluator scores are deterministic heuristics; review evaluator quality before claiming production model quality.",
-	};
-}
-
-function hasUnknownCost(manifest: RunManifest) {
-	return manifest.guardrails.some(
-		(guardrail) =>
-			guardrail.id === "cost-ratio" && guardrail.value === "unknown",
-	);
-}
-
-function costRatioLabel(manifest: RunManifest) {
-	return hasUnknownCost(manifest)
-		? "unknown"
-		: `${manifest.aggregateMetrics.costRatio.toFixed(2)}x`;
-}
-
-function costRatioDeltaLabel(candidate: RunManifest, baseline: RunManifest) {
-	if (hasUnknownCost(candidate) || hasUnknownCost(baseline)) {
-		return "unknown";
+	if (!usesHybridEvaluator) {
+		return {
+			tone: "amber" as const,
+			label: "Legacy heuristic evidence",
+			text: `${baselineLabel} and ${candidateLabel} are live-provider artifacts, but their quality scores come from deterministic heuristics.`,
+			warning:
+				"Re-run both sides with --evaluator=hybrid before using this as live OpenAI quality improvement evidence.",
+		};
 	}
 
-	return formatDelta(
-		candidate.aggregateMetrics.costRatio,
-		baseline.aggregateMetrics.costRatio,
-		"x",
-	);
+	return {
+		tone: overallDelta >= 0 ? ("green" as const) : ("amber" as const),
+		label: "Hybrid judge comparison",
+		text: `Use ${baselineLabel} and ${candidateLabel} as the current inspectable before/after story.`,
+		warning:
+			"Hybrid LLM judge scores require manual spot checks of claim support, missing evidence, and overconfidence before claiming product improvement.",
+	};
 }
 
 function selectedPairLatencyMetric(
@@ -1316,23 +1606,13 @@ function selectedPairLatencyMetric(
 ) {
 	const baselineLatencyMs = baseline.aggregateMetrics.medianLatencyMs;
 	const candidateLatencyMs = candidate.aggregateMetrics.medianLatencyMs;
-	if (baselineLatencyMs < 100) {
-		return {
-			value: "not comparable",
-			delta: `${(candidateLatencyMs / 1000).toFixed(1)}s vs ${(
-				baselineLatencyMs / 1000
-			).toFixed(1)}s`,
-			tone: "amber" as const,
-		};
-	}
+	const latencyDeltaSeconds = (candidateLatencyMs - baselineLatencyMs) / 1000;
+	const latencyDeltaSign = latencyDeltaSeconds >= 0 ? "+" : "";
 
-	const latencyRatio = roundMetric(
-		Math.max(0.01, candidateLatencyMs / baselineLatencyMs),
-	);
 	return {
-		value: `${latencyRatio.toFixed(2)}x`,
-		delta: formatDelta(latencyRatio, 1, "x"),
-		tone: latencyRatio <= 1 ? ("green" as const) : ("amber" as const),
+		value: `${(candidateLatencyMs / 1000).toFixed(1)}s`,
+		delta: `${latencyDeltaSign}${latencyDeltaSeconds.toFixed(1)}s`,
+		tone: latencyDeltaSeconds <= 0 ? ("green" as const) : ("amber" as const),
 	};
 }
 
@@ -1442,51 +1722,12 @@ function featuredCaseFor(
 	};
 }
 
-function comparisonLabelsFor(comparison: RunComparison) {
-	return {
-		baselineLabel: comparison.baselineLabel ?? "Baseline",
-		candidateLabel: comparison.candidateLabel ?? "Candidate",
-	};
-}
-
-function reportFor(comparison: RunComparison) {
-	const { baselineLabel, candidateLabel } = comparisonLabelsFor(comparison);
-	const changeLabel = comparisonChangeLabel(comparison);
-	const rows = comparison.comparisonRows
-		.map(
-			(row) =>
-				`| ${row.metric} | ${row.baseline} | ${row.candidate} | ${row.delta} |`,
-		)
-		.join("\n");
-	const clusters = comparison.failureClusters
-		.map(
-			(cluster) =>
-				`- ${cluster.title}: ${cluster.count} cases (${cluster.cases.join(", ")})`,
-		)
-		.join("\n");
-
-	return `# Latest Eval Summary
-
-Generated comparison: ${baselineLabel} \`${comparison.baselineRunId}\` vs ${candidateLabel} \`${comparison.candidateRunId}\`.
-
-| Metric | ${baselineLabel} | ${candidateLabel} | ${changeLabel} |
-| --- | --- | --- | --- |
-${rows}
-
-Featured case: \`${comparison.featuredCase.id}\` - ${comparison.featuredCase.title}.
-
-${comparison.featuredCase.evaluatorNote}
-
-## Failure Clusters
-
-${clusters}
-
-## Evidence Status
-
-${comparison.recommendation.text}
-
-${comparison.recommendation.warning}
-`;
+async function optionalArtifactsFor(runId: string) {
+	try {
+		return await artifactsFor(runId);
+	} catch {
+		return undefined;
+	}
 }
 
 async function writeComparisonAndReport(input: {
@@ -1515,11 +1756,40 @@ async function writeComparisonAndReport(input: {
 		`Comparing ${baselineRunId} with ${candidateRunId} across ${baseline.manifest.caseIds.length} cases.`,
 	);
 	assertMatchingCaseSets(baseline.manifest, candidate.manifest);
+	const availableReferenceTarget =
+		isGeneratedCandidateRun(candidate.manifest) &&
+		candidate.manifest.runId !== seededCandidateRunId
+			? await optionalArtifactsFor(seededCandidateRunId)
+			: undefined;
+	const referenceTarget =
+		availableReferenceTarget &&
+		caseIdsMatch(
+			candidate.manifest.caseIds,
+			availableReferenceTarget.manifest.caseIds,
+		)
+			? availableReferenceTarget
+			: undefined;
+	if (availableReferenceTarget && !referenceTarget) {
+		console.log(
+			`Skipping reference target columns because candidate ${candidateRunId} uses a filtered case set.`,
+		);
+	}
 	const baselineMetrics = baseline.manifest.aggregateMetrics;
 	const candidateMetrics = candidate.manifest.aggregateMetrics;
+	const targetMetrics = referenceTarget?.manifest.aggregateMetrics;
+	const targetCaseCount = referenceTarget?.manifest.caseIds.length;
+	const baselineRiskUnits =
+		baselineMetrics.groundingRiskUnits ?? baselineMetrics.unsupportedClaims;
+	const candidateRiskUnits =
+		candidateMetrics.groundingRiskUnits ?? candidateMetrics.unsupportedClaims;
+	const targetRiskUnits =
+		targetMetrics === undefined
+			? undefined
+			: (targetMetrics.groundingRiskUnits ?? targetMetrics.unsupportedClaims);
 	const overallDelta = candidateMetrics.overall - baselineMetrics.overall;
 	const citationDelta =
 		candidateMetrics.citationSupport - baselineMetrics.citationSupport;
+	const coverageDelta = candidateMetrics.coverage - baselineMetrics.coverage;
 	const latencyMetric = selectedPairLatencyMetric(
 		candidate.manifest,
 		baseline.manifest,
@@ -1537,34 +1807,10 @@ async function writeComparisonAndReport(input: {
 				baselineLabel,
 				candidateLabel,
 			})
-		: {
-				label: "Cost ratio",
-				value: costRatioLabel(candidate.manifest),
-				delta: costRatioDeltaLabel(candidate.manifest, baseline.manifest),
-				status:
-					changeLabel === "Gap"
-						? `${candidateLabel} cost ratio`
-						: "Cost guardrail",
-				tone:
-					hasUnknownCost(candidate.manifest) ||
-					hasUnknownCost(baseline.manifest)
-						? ("amber" as const)
-						: changeLabel === "Gap"
-							? lowerIsBetterTargetGapTone(
-									candidateMetrics.costRatio - baselineMetrics.costRatio,
-								)
-							: candidateMetrics.costRatio <= 1.15
-								? ("amber" as const)
-								: ("red" as const),
-			};
+		: estimatedCostMetric({ baseline, candidate, referenceTarget });
 	const costRow = usesReferenceCostBudget
 		? referenceCostBudgetRow({ baseline, candidate })
-		: {
-				metric: "Cost ratio",
-				baseline: costRatioLabel(baseline.manifest),
-				candidate: costRatioLabel(candidate.manifest),
-				delta: costRatioDeltaLabel(candidate.manifest, baseline.manifest),
-			};
+		: estimatedCostRow({ baseline, candidate, referenceTarget });
 	const failureClusterEvaluations =
 		changeLabel === "Gap" ? baseline.evaluations : candidate.evaluations;
 	const comparison = RunComparisonSchema.parse({
@@ -1578,6 +1824,10 @@ async function writeComparisonAndReport(input: {
 				label: "Overall quality",
 				value: candidateMetrics.overall.toFixed(2),
 				delta: formatDelta(candidateMetrics.overall, baselineMetrics.overall),
+				targetDelta:
+					targetMetrics === undefined
+						? undefined
+						: formatDelta(targetMetrics.overall, candidateMetrics.overall),
 				status:
 					changeLabel === "Gap"
 						? `${candidateLabel} score`
@@ -1594,6 +1844,13 @@ async function writeComparisonAndReport(input: {
 					candidateMetrics.citationSupport,
 					baselineMetrics.citationSupport,
 				),
+				targetDelta:
+					targetMetrics === undefined
+						? undefined
+						: formatDelta(
+								targetMetrics.citationSupport,
+								candidateMetrics.citationSupport,
+							),
 				status:
 					changeLabel === "Gap"
 						? `${candidateLabel} citation score`
@@ -1607,26 +1864,37 @@ async function writeComparisonAndReport(input: {
 				label: "Coverage",
 				value: candidateMetrics.coverage.toFixed(2),
 				delta: formatDelta(candidateMetrics.coverage, baselineMetrics.coverage),
+				targetDelta:
+					targetMetrics === undefined
+						? undefined
+						: formatDelta(targetMetrics.coverage, candidateMetrics.coverage),
 				status:
 					changeLabel === "Gap"
 						? `${candidateLabel} coverage score`
 						: "Expected points covered",
 				tone:
 					changeLabel === "Gap"
-						? targetGapTone(
-								candidateMetrics.coverage - baselineMetrics.coverage,
-							)
-						: metricTone(candidateMetrics.coverage - baselineMetrics.coverage),
+						? targetGapTone(coverageDelta)
+						: metricTone(coverageDelta),
 			},
 			costMetric,
 			{
-				label: "Latency ratio",
+				label: "Median latency",
 				value: latencyMetric.value,
 				delta: latencyMetric.delta,
+				targetDelta:
+					targetMetrics === undefined
+						? undefined
+						: formatSignedSeconds(
+								targetGapForLowerIsBetter(
+									candidateMetrics.medianLatencyMs,
+									targetMetrics.medianLatencyMs,
+								) / 1000,
+							),
 				status:
 					changeLabel === "Gap"
-						? `${candidateLabel} latency ratio`
-						: "Median latency proxy",
+						? `${candidateLabel} median latency`
+						: "Median latency delta",
 				tone: latencyMetric.tone,
 			},
 		],
@@ -1645,50 +1913,90 @@ async function writeComparisonAndReport(input: {
 				metric: "Overall score",
 				baseline: baselineMetrics.overall.toFixed(2),
 				candidate: candidateMetrics.overall.toFixed(2),
+				referenceTarget: targetMetrics?.overall.toFixed(2),
 				delta: formatDelta(candidateMetrics.overall, baselineMetrics.overall),
+				gapToTarget:
+					targetMetrics === undefined
+						? undefined
+						: formatDelta(targetMetrics.overall, candidateMetrics.overall),
 			},
 			{
 				metric: "Citation support",
 				baseline: baselineMetrics.citationSupport.toFixed(2),
 				candidate: candidateMetrics.citationSupport.toFixed(2),
+				referenceTarget: targetMetrics?.citationSupport.toFixed(2),
 				delta: formatDelta(
 					candidateMetrics.citationSupport,
 					baselineMetrics.citationSupport,
 				),
+				gapToTarget:
+					targetMetrics === undefined
+						? undefined
+						: formatDelta(
+								targetMetrics.citationSupport,
+								candidateMetrics.citationSupport,
+							),
+			},
+			{
+				metric: "Coverage",
+				baseline: baselineMetrics.coverage.toFixed(2),
+				candidate: candidateMetrics.coverage.toFixed(2),
+				referenceTarget: targetMetrics?.coverage.toFixed(2),
+				delta: formatDelta(candidateMetrics.coverage, baselineMetrics.coverage),
+				gapToTarget:
+					targetMetrics === undefined
+						? undefined
+						: formatDelta(targetMetrics.coverage, candidateMetrics.coverage),
 			},
 			{
 				metric: "Grounding risk units",
-				baseline: String(
-					baselineMetrics.groundingRiskUnits ??
-						baselineMetrics.unsupportedClaims,
-				),
-				candidate: String(
-					candidateMetrics.groundingRiskUnits ??
-						candidateMetrics.unsupportedClaims,
-				),
-				delta: String(
-					(candidateMetrics.groundingRiskUnits ??
-						candidateMetrics.unsupportedClaims) -
-						(baselineMetrics.groundingRiskUnits ??
-							baselineMetrics.unsupportedClaims),
-				),
+				baseline: String(baselineRiskUnits),
+				candidate: String(candidateRiskUnits),
+				referenceTarget:
+					targetRiskUnits === undefined ? undefined : String(targetRiskUnits),
+				delta: formatSignedInteger(candidateRiskUnits - baselineRiskUnits),
+				gapToTarget:
+					targetRiskUnits === undefined
+						? undefined
+						: formatSignedInteger(candidateRiskUnits - targetRiskUnits),
 			},
 			{
 				metric: "Eval cases",
 				baseline: String(baseline.manifest.caseIds.length),
 				candidate: String(candidate.manifest.caseIds.length),
-				delta: String(
+				referenceTarget:
+					targetCaseCount === undefined ? undefined : String(targetCaseCount),
+				delta: formatSignedInteger(
 					candidate.manifest.caseIds.length - baseline.manifest.caseIds.length,
 				),
+				gapToTarget:
+					targetCaseCount === undefined
+						? undefined
+						: formatSignedInteger(
+								targetCaseCount - candidate.manifest.caseIds.length,
+							),
 			},
 			{
 				metric: "Median latency",
 				baseline: `${(baselineMetrics.medianLatencyMs / 1000).toFixed(1)}s`,
 				candidate: `${(candidateMetrics.medianLatencyMs / 1000).toFixed(1)}s`,
-				delta: `${(
+				referenceTarget:
+					targetMetrics === undefined
+						? undefined
+						: `${(targetMetrics.medianLatencyMs / 1000).toFixed(1)}s`,
+				delta: formatSignedSeconds(
 					(candidateMetrics.medianLatencyMs - baselineMetrics.medianLatencyMs) /
-						1000
-				).toFixed(1)}s`,
+						1000,
+				),
+				gapToTarget:
+					targetMetrics === undefined
+						? undefined
+						: formatSignedSeconds(
+								targetGapForLowerIsBetter(
+									candidateMetrics.medianLatencyMs,
+									targetMetrics.medianLatencyMs,
+								) / 1000,
+							),
 			},
 			costRow,
 		],
@@ -1710,16 +2018,11 @@ async function writeComparisonAndReport(input: {
 			...candidate.manifest.artifactPaths
 				.filter((artifactPath) => artifactPath.includes("/evaluations/"))
 				.slice(0, 2),
-			"reports/latest-eval-summary.md",
 		],
 	});
 
 	await writeJsonArtifact(`runs/comparisons/${comparison.id}.json`, comparison);
-	await writeTextArtifact(
-		"reports/latest-eval-summary.md",
-		reportFor(comparison),
-	);
-	console.log(`Wrote comparison ${comparison.id} and latest eval summary.`);
+	console.log(`Wrote comparison ${comparison.id}.`);
 	return comparison;
 }
 
@@ -1731,22 +2034,54 @@ async function main() {
 			baselineRunId: options.baselineRunId,
 			candidateRunId: options.candidateRunId,
 		});
-		console.log(`Wrote report for ${comparison.id}.`);
+		console.log(`Wrote comparison artifacts for ${comparison.id}.`);
 		return;
 	}
 
-	await assertBaselineComparisonIsValid(options);
-	assertOpenAIPricingIsConfigured(options);
-	const run = await generateRun(options);
+	if (options.mode === "rejudge") {
+		assertOpenAIPricingIsConfigured(options);
+		const run = await rejudgeRun(options);
+		const comparison = await writeComparisonAndReport({
+			baselineRunId:
+				run.role === "baseline"
+					? run.manifest.runId
+					: (options.baselineRunId ?? run.referenceRunId),
+			candidateRunId:
+				run.role === "variant"
+					? run.manifest.runId
+					: (options.candidateRunId ?? run.referenceRunId),
+		});
+
+		console.log(
+			`Wrote rejudged ${run.role} run ${run.manifest.runId} with ${run.manifest.caseIds.length} cases and comparison ${comparison.id}.`,
+		);
+		return;
+	}
+
+	if (options.mode !== "baseline" && options.mode !== "variant") {
+		throw new Error(`Unsupported eval mode "${options.mode}".`);
+	}
+	const generationOptions: EvalOptions & { mode: RunRole } = {
+		...options,
+		mode: options.mode,
+	};
+
+	await assertBaselineComparisonIsValid(generationOptions);
+	assertOpenAIPricingIsConfigured(generationOptions);
+	const run = await generateRun(generationOptions);
 	const comparison = await writeComparisonAndReport({
 		baselineRunId:
-			options.mode === "baseline" ? run.manifest.runId : options.baselineRunId,
+			generationOptions.mode === "baseline"
+				? run.manifest.runId
+				: generationOptions.baselineRunId,
 		candidateRunId:
-			options.mode === "variant" ? run.manifest.runId : options.candidateRunId,
+			generationOptions.mode === "variant"
+				? run.manifest.runId
+				: generationOptions.candidateRunId,
 	});
 
 	console.log(
-		`Wrote ${options.mode} run ${run.manifest.runId} with ${run.manifest.caseIds.length} cases and comparison ${comparison.id}.`,
+		`Wrote ${generationOptions.mode} run ${run.manifest.runId} with ${run.manifest.caseIds.length} cases and comparison ${comparison.id}.`,
 	);
 }
 

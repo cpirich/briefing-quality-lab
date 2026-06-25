@@ -1,0 +1,41 @@
+{
+	"id": "case-release-note-drift-openai-responses-v1",
+	"sourcePacketId": "packet-release-note-drift",
+	"caseId": "case-release-note-drift",
+	"title": "Improving Generated Release Notes While Keeping Customer-Facing Claims Accurate",
+	"summary": "Generated release notes are reasonably complete (83% coverage) but drift in a small set of high-risk items is causing customer-facing inaccuracies, especially when PR descriptions go stale after scope cuts or late QA changes. The best leverage is to (1) shift validation to QA deltas as the source of truth for “what actually shipped,” (2) route only changed/removed/sensitive claims into a lightweight review queue, and (3) enforce explicit human approval for security/retention/access-control statements.",
+	"claims": [
+		{
+			"text": "Current generated release notes cover most merged work (83%), but 14% of entries were inaccurate because behavior changed after final QA; the riskiest errors came from stale pull-request descriptions after scope cuts.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Customer escalations can be triggered by a single inaccurate promise (e.g., an admin toggle mentioned in notes but removed before release), and customers particularly value accurate migration warnings and compatibility caveats.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "QA changes after PR text is written include renamed features, a removed admin toggle, and a late-added migration warning—making stale PR text unreliable unless notes are compared to the QA delta log before publication.",
+			"citations": ["S5"]
+		},
+		{
+			"text": "Engineering will tag final-release deltas during QA but will not maintain a parallel/second changelog; they prefer a lightweight review queue that highlights changed or removed claims rather than full rewrites.",
+			"citations": ["S3"]
+		},
+		{
+			"text": "Compliance requires explicit human approval for any customer-facing note mentioning security, data retention, or access control, and wants sensitive statements to be easy to spot in the review flow.",
+			"citations": ["S4"]
+		}
+	],
+	"openQuestions": [
+		"What is the desired “source of truth” hierarchy when PR text, merged code, and QA delta log disagree, and who is accountable for resolving conflicts?",
+		"Which release-note claim types should be auto-blocked pending review (e.g., migration warnings, compatibility caveats, removed/renamed features, admin controls), and what is the SLA for clearing them?",
+		"How will “explicit approval record” be stored/audited for sensitive categories without adding heavy process overhead?",
+		"What is the acceptable residual error rate for customer-facing notes, and how will it be measured post-change (e.g., repeat audits vs. customer escalations)?"
+	],
+	"recommendation": "Implement a drift-resistant, risk-based workflow: (1) Generate notes from merged PRs but automatically diff them against the QA delta log before publication; (2) funnel only the diff and high-risk claim categories into a reviewer queue (changed/removed claims, migration warnings, compatibility caveats, and any mention of security/retention/access control); (3) require explicit human approval for sensitive categories with an auditable record; (4) align reviewers to the existing checklist focus—verify claims that could be treated as commitments or rollout instructions rather than rewriting the entire note. This targets the known failure mode (stale PR descriptions) while keeping engineering workload lightweight.",
+	"metadata": {
+		"variant": "OpenAI Responses baseline",
+		"runId": "baseline-openai-20260624203921",
+		"model": "gpt-5.2"
+	}
+}

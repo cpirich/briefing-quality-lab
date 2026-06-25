@@ -3,10 +3,10 @@
 	"runId": "candidate-citation-gates",
 	"caseId": "case-human-approval-boundary",
 	"scores": {
-		"overall": 0.81,
-		"grounding": 0.79,
-		"coverage": 0.85,
-		"citationSupport": 0.8
+		"overall": 0.9,
+		"grounding": 0.83,
+		"coverage": 0.92,
+		"citationSupport": 0.95
 	},
 	"failureTags": ["human-approval", "action-boundary"],
 	"rubricEvidence": [

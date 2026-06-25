@@ -1,0 +1,143 @@
+{
+	"id": "case-code-review-queues-openai-responses-v1-trace",
+	"runId": "baseline-openai-20260624203921",
+	"caseId": "case-code-review-queues",
+	"sourcePacketId": "packet-code-review-queues",
+	"input": {
+		"userRequest": "Recommend how to reduce code review queue time without increasing low-quality merges.",
+		"sourcePacketPath": "data/source-packets/packet-code-review-queues.json"
+	},
+	"messages": [
+		{
+			"role": "system",
+			"content": "You are Briefing Genie. Return a short briefing with source citations."
+		},
+		{
+			"role": "user",
+			"content": "User request: Recommend how to reduce code review queue time without increasing low-quality merges.\n\nSource packet: Code Review Queue Signals\n\nPacket summary: Operational notes on review latency, reviewer load, bot suggestions, and merge quality.\n\nSources:\n\n[S1] Queue analytics\nType: analytics digest\nMedian review wait time improved from 19 hours to 13 hours after adding reviewer rotation. The 90th percentile is still 46 hours because complex changes often wait for the same two senior reviewers.\n\nThe queue report breaks out routine changes from cross-service changes. Documentation and configuration reviews moved quickly after rotation, but changes touching shared services still waited on scarce reviewers. The report recommends treating tail latency as an ownership-routing problem, not only a staffing problem.\n\n[S2] Reviewer survey\nType: survey summary\nReviewers like auto-assignment for routine changes, but they distrust bot approvals when tests are flaky or ownership is unclear. Several asked for risk labels that explain why a change is safe to fast-track.\n\nSurvey comments supported automated assignment but were skeptical of automated approval. Reviewers wanted the bot to explain why a change looked low risk, including ownership metadata, test health, and file categories. Several comments said a fast-track label would be useful only if it could be challenged before merge.\n\n[S3] Post-merge defect review\nType: defect review\nDefects did not rise for small documentation and config changes, but two incidents came from fast-tracking cross-service changes without the owning team. The review lead wants different treatment for low-risk and cross-boundary changes.\n\nThe defect review found no measurable increase for low-risk docs and config changes. The incidents came from cross-service changes where the apparent owner was not the team responsible for runtime behavior. The review lead asked for a hard distinction between queue organization and approval authority.\n\n[S4] Tooling proposal\nType: tooling note\nThe proposed queue helper can suggest reviewers, group similar low-risk changes, and surface missing ownership metadata. It cannot yet verify semantic ownership or override branch protection.\n\nThe tooling proposal describes a helper that can cluster changes, suggest reviewers, and flag missing ownership data. It explicitly says semantic ownership remains outside the helper's capability. Branch protection and required reviewers stay in force even when the helper marks a change as likely low risk.\n\n[S5] Ownership metadata audit\nType: metadata audit\nThe ownership metadata audit found that low-risk docs changes usually have clear owners, while shared service changes often inherit stale ownership entries. The audit recommends showing missing or conflicting ownership as a queue risk, not hiding it behind an auto-assignment. Reviewers asked for the helper to explain uncertainty before suggesting a faster path.\n\n[S6] Branch protection policy note\nType: policy note\nThe branch protection policy note says automation may organize the queue and suggest reviewers, but it must not bypass required approvals. The policy owner approved fast-track labels for documentation and configuration changes when tests are healthy. Cross-service changes still require an owning-team reviewer even if the helper predicts low defect risk."
+		}
+	],
+	"model": {
+		"provider": "openai",
+		"name": "gpt-5.2",
+		"settings": {
+			"promptVersion": "briefing-genie-v1",
+			"maxOutputTokens": 1200,
+			"structuredOutputName": "briefing_genie_output",
+			"textVerbosity": null,
+			"reasoningEffort": null,
+			"reasoningSummary": null,
+			"temperature": null,
+			"topP": null,
+			"truncation": null,
+			"toolChoice": null,
+			"parallelToolCalls": null
+		}
+	},
+	"output": {
+		"id": "case-code-review-queues-openai-responses-v1",
+		"sourcePacketId": "packet-code-review-queues",
+		"caseId": "case-code-review-queues",
+		"title": "Reducing code review queue time without increasing low-quality merges",
+		"summary": "Cut median wait time by scaling what already works (rotation + automation for routine changes) while explicitly targeting tail latency as an ownership-routing problem. Use automation to organize and route work, not to bypass approvals, and apply fast-track only where policy and defect data indicate low risk (docs/config with healthy tests).",
+		"claims": [
+			{
+				"text": "Median review wait time dropped from 19h to 13h after adding reviewer rotation, but 90th percentile wait remains 46h because complex changes bottleneck on the same two senior reviewers.",
+				"citations": ["S1"]
+			},
+			{
+				"text": "Tail latency is driven mainly by cross-service/shared-service changes waiting on scarce, specific owners; docs and config changes moved quickly after rotation.",
+				"citations": ["S1"]
+			},
+			{
+				"text": "Reviewers are positive about auto-assignment for routine changes but distrust bot approvals when tests are flaky or ownership is unclear; they want explainable risk labels (ownership metadata, test health, file categories) and the ability to challenge a fast-track label before merge.",
+				"citations": ["S2"]
+			},
+			{
+				"text": "Post-merge data shows no measurable defect increase for low-risk docs/config changes, but incidents occurred when cross-service changes were fast-tracked without the owning team; leadership wants different treatment for low-risk vs cross-boundary changes and a distinction between queue organization and approval authority.",
+				"citations": ["S3"]
+			},
+			{
+				"text": "Proposed tooling can suggest reviewers, group low-risk changes, and surface missing ownership metadata, but cannot verify semantic ownership and cannot override branch protection.",
+				"citations": ["S4"]
+			}
+		],
+		"openQuestions": [
+			"Which shared services or paths account for most of the 46h p90 tail, and which two senior reviewers are the recurring bottleneck (by repo/path)?",
+			"What objective criteria define 'healthy tests' in practice (e.g., recent flake rate threshold) to avoid reviewer distrust of fast-track?",
+			"Where are ownership entries most stale/conflicting in shared services, and who owns fixing them (team/process)?",
+			"How will 'challenge before merge' work operationally (time window, who can challenge, what happens when challenged)?"
+		],
+		"recommendation": "1) Target tail latency via ownership routing, not more blanket staffing: introduce an explicit cross-service lane that requires owning-team review and routes directly to the correct owning team, rather than repeatedly queueing behind two senior reviewers. This aligns with the finding that p90 is dominated by complex cross-service work and should be treated as an ownership problem. [S1][S3]\n\n2) Expand fast-track only for low-risk docs/config changes with healthy tests, and keep it strictly as queue prioritization—not approval bypass. This is supported by defect data and policy allowance, while avoiding the documented cross-service fast-track failure mode. [S3][S6]\n\n3) Implement explainable risk labeling to increase trust: for every suggested fast-track, show why it’s low risk (file categories, ownership confidence, test health) and show uncertainty (missing/conflicting ownership) as a risk signal rather than hiding it behind auto-assignment. Pair with a “challenge before merge” mechanism so reviewers can block questionable fast-tracks. [S2][S5][S6]\n\n4) Use the queue helper for organization and routing: cluster similar low-risk changes, suggest reviewers for routine work, and prominently flag missing/conflicting ownership metadata. Do not attempt bot approvals, since reviewers distrust that and tooling can’t verify semantic ownership anyway. [S2][S4]\n\n5) Fix ownership metadata in shared services as a throughput lever: prioritize correcting stale/inherited ownership entries in shared services since that’s where waits concentrate; make missing/conflicting ownership visible and actionable to prevent mis-routing and avoid cross-service incidents. [S1][S5][S3]",
+		"metadata": {
+			"variant": "OpenAI Responses baseline",
+			"runId": "baseline-openai-20260624203921",
+			"model": "gpt-5.2"
+		}
+	},
+	"rawOutput": {
+		"id": "case-code-review-queues-openai-responses-v1",
+		"sourcePacketId": "packet-code-review-queues",
+		"caseId": "case-code-review-queues",
+		"title": "Reducing code review queue time without increasing low-quality merges",
+		"summary": "Cut median wait time by scaling what already works (rotation + automation for routine changes) while explicitly targeting tail latency as an ownership-routing problem. Use automation to organize and route work, not to bypass approvals, and apply fast-track only where policy and defect data indicate low risk (docs/config with healthy tests).",
+		"claims": [
+			{
+				"text": "Median review wait time dropped from 19h to 13h after adding reviewer rotation, but 90th percentile wait remains 46h because complex changes bottleneck on the same two senior reviewers.",
+				"citations": ["S1"]
+			},
+			{
+				"text": "Tail latency is driven mainly by cross-service/shared-service changes waiting on scarce, specific owners; docs and config changes moved quickly after rotation.",
+				"citations": ["S1"]
+			},
+			{
+				"text": "Reviewers are positive about auto-assignment for routine changes but distrust bot approvals when tests are flaky or ownership is unclear; they want explainable risk labels (ownership metadata, test health, file categories) and the ability to challenge a fast-track label before merge.",
+				"citations": ["S2"]
+			},
+			{
+				"text": "Post-merge data shows no measurable defect increase for low-risk docs/config changes, but incidents occurred when cross-service changes were fast-tracked without the owning team; leadership wants different treatment for low-risk vs cross-boundary changes and a distinction between queue organization and approval authority.",
+				"citations": ["S3"]
+			},
+			{
+				"text": "Proposed tooling can suggest reviewers, group low-risk changes, and surface missing ownership metadata, but cannot verify semantic ownership and cannot override branch protection.",
+				"citations": ["S4"]
+			}
+		],
+		"openQuestions": [
+			"Which shared services or paths account for most of the 46h p90 tail, and which two senior reviewers are the recurring bottleneck (by repo/path)?",
+			"What objective criteria define 'healthy tests' in practice (e.g., recent flake rate threshold) to avoid reviewer distrust of fast-track?",
+			"Where are ownership entries most stale/conflicting in shared services, and who owns fixing them (team/process)?",
+			"How will 'challenge before merge' work operationally (time window, who can challenge, what happens when challenged)?"
+		],
+		"recommendation": "1) Target tail latency via ownership routing, not more blanket staffing: introduce an explicit cross-service lane that requires owning-team review and routes directly to the correct owning team, rather than repeatedly queueing behind two senior reviewers. This aligns with the finding that p90 is dominated by complex cross-service work and should be treated as an ownership problem. [S1][S3]\n\n2) Expand fast-track only for low-risk docs/config changes with healthy tests, and keep it strictly as queue prioritization—not approval bypass. This is supported by defect data and policy allowance, while avoiding the documented cross-service fast-track failure mode. [S3][S6]\n\n3) Implement explainable risk labeling to increase trust: for every suggested fast-track, show why it’s low risk (file categories, ownership confidence, test health) and show uncertainty (missing/conflicting ownership) as a risk signal rather than hiding it behind auto-assignment. Pair with a “challenge before merge” mechanism so reviewers can block questionable fast-tracks. [S2][S5][S6]\n\n4) Use the queue helper for organization and routing: cluster similar low-risk changes, suggest reviewers for routine work, and prominently flag missing/conflicting ownership metadata. Do not attempt bot approvals, since reviewers distrust that and tooling can’t verify semantic ownership anyway. [S2][S4]\n\n5) Fix ownership metadata in shared services as a throughput lever: prioritize correcting stale/inherited ownership entries in shared services since that’s where waits concentrate; make missing/conflicting ownership visible and actionable to prevent mis-routing and avoid cross-service incidents. [S1][S5][S3]",
+		"metadata": {
+			"variant": "OpenAI Responses baseline",
+			"runId": "baseline-openai-20260624203921",
+			"model": "gpt-5.2"
+		}
+	},
+	"toolCalls": [],
+	"cost": {
+		"inputTokens": 759,
+		"cachedInputTokens": 0,
+		"outputTokens": 795,
+		"estimatedUsd": 0.01245825,
+		"pricing": {
+			"model": "gpt-5.2",
+			"inputUsdPer1MTokens": 1.75,
+			"cachedInputUsdPer1MTokens": 0.175,
+			"outputUsdPer1MTokens": 14,
+			"currency": "USD",
+			"serviceTier": "standard",
+			"context": "short",
+			"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+		}
+	},
+	"latencyMs": 17345,
+	"artifactPaths": [
+		"data/source-packets/packet-code-review-queues.json",
+		"runs/baseline-openai-20260624203921/briefings/case-code-review-queues.json",
+		"runs/baseline-openai-20260624203921/traces/case-code-review-queues.json",
+		"runs/baseline-openai-20260624203921/evaluations/case-code-review-queues.json"
+	]
+}

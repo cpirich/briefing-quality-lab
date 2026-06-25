@@ -1,0 +1,45 @@
+{
+	"id": "evaluation-incident-recovery-comms-baseline",
+	"runId": "baseline-2026-06-10",
+	"caseId": "case-incident-recovery-comms",
+	"scores": {
+		"overall": 0.68,
+		"grounding": 0.57,
+		"coverage": 0.78,
+		"citationSupport": 0.58
+	},
+	"failureTags": [
+		"incident-comms",
+		"platform-caveat",
+		"customer-forwarding-risk",
+		"docs-readiness",
+		"overbroad-resolution",
+		"missing-user-segmentation"
+	],
+	"rubricEvidence": [
+		"Baseline communicates recovery progress but blurs the unresolved Windows caveat.",
+		"It does not separate affected users, recommended action, and pending validation strongly enough."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "S1 supports a baseline claim, but the overall recommendation still misses important gates."
+		},
+		{
+			"citation": "S2",
+			"supported": false,
+			"note": "S2 is used for a claim that overstates or omits the relevant source caveat."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "S4 supports a baseline claim, but the overall recommendation still misses important gates."
+		}
+	],
+	"notes": "Baseline is useful but too broad about recovery status and customer-facing readiness.",
+	"artifactPaths": [
+		"runs/baseline-2026-06-10/evaluations/case-incident-recovery-comms.json",
+		"runs/baseline-2026-06-10/briefings/packet-incident-recovery.json"
+	]
+}

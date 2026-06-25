@@ -15,7 +15,7 @@ const artifactPathSchema = z
 	.min(1)
 	.refine(
 		(value) =>
-			/^(data|reports|runs)\//.test(value) &&
+			/^(data|runs)\//.test(value) &&
 			!value.startsWith("/") &&
 			!value.includes("\\") &&
 			!value.includes("//") &&
@@ -23,7 +23,7 @@ const artifactPathSchema = z
 			!value.split("/").includes(".."),
 		{
 			message:
-				"Artifact paths must be normalized repo-relative paths under data/, reports/, or runs/",
+				"Artifact paths must be normalized repo-relative paths under data/ or runs/",
 		},
 	);
 
@@ -146,6 +146,7 @@ export const GenerationTraceSchema = z
 			settings: GenerationModelSettingsSchema,
 		}),
 		output: BriefingOutputSchema,
+		rawOutput: BriefingOutputSchema.optional(),
 		toolCalls: z.array(ToolCallTraceSchema),
 		cost: z.object({
 			inputTokens: z.number().int().nonnegative(),
@@ -202,12 +203,114 @@ export const GenerationTraceSchema = z
 				path: ["output", "metadata", "runId"],
 			});
 		}
+
+		if (trace.rawOutput) {
+			if (trace.rawOutput.caseId !== trace.caseId) {
+				context.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "Trace rawOutput caseId must match trace caseId",
+					path: ["rawOutput", "caseId"],
+				});
+			}
+
+			if (trace.rawOutput.sourcePacketId !== trace.sourcePacketId) {
+				context.addIssue({
+					code: z.ZodIssueCode.custom,
+					message:
+						"Trace rawOutput sourcePacketId must match trace sourcePacketId",
+					path: ["rawOutput", "sourcePacketId"],
+				});
+			}
+
+			if (trace.rawOutput.metadata.runId !== trace.runId) {
+				context.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "Trace rawOutput metadata.runId must match trace runId",
+					path: ["rawOutput", "metadata", "runId"],
+				});
+			}
+		}
 	});
 
 export const EvaluatorOutputSchema = z.object({
 	id: fixtureIdSchema,
 	runId: fixtureIdSchema,
 	caseId: fixtureIdSchema,
+	evaluator: z
+		.object({
+			mode: z.enum(["deterministic", "hybrid"]),
+			provider: z.string().min(1),
+			model: z.string().min(1),
+			promptVersion: fixtureIdSchema,
+			settings: z.record(z.unknown()).optional(),
+			latencyMs: z.number().int().nonnegative(),
+			cost: z.object({
+				inputTokens: z.number().int().nonnegative(),
+				cachedInputTokens: z.number().int().nonnegative(),
+				outputTokens: z.number().int().nonnegative(),
+				estimatedUsd: z.number().nonnegative().nullable(),
+				pricing: z
+					.object({
+						model: z.string().min(1),
+						inputUsdPer1MTokens: z.number().nonnegative(),
+						cachedInputUsdPer1MTokens: z.number().nonnegative(),
+						outputUsdPer1MTokens: z.number().nonnegative(),
+						currency: z.literal("USD"),
+						serviceTier: z.string().min(1),
+						context: z.string().min(1),
+						source: z.string().min(1),
+					})
+					.optional(),
+			}),
+		})
+		.optional(),
+	hardChecks: z
+		.array(
+			z.object({
+				id: fixtureIdSchema,
+				label: z.string().min(1),
+				status: z.enum(["pass", "warn", "fail"]),
+				value: z.string().min(1),
+				threshold: z.string().min(1).optional(),
+				expectation: z.string().min(1).optional(),
+				note: z.string().min(1).optional(),
+			}),
+		)
+		.optional(),
+	claimJudgments: z
+		.array(
+			z.object({
+				claimText: z.string().min(1),
+				citedSourceIds: z.array(citationIdSchema),
+				supportStatus: z.enum([
+					"supported",
+					"partially-supported",
+					"unsupported",
+				]),
+				supportingEvidenceIds: z.array(citationIdSchema),
+				missingEvidence: z.array(z.string().min(1)),
+				explanation: z.string().min(1),
+				failureTags: z.array(z.string().min(1)),
+			}),
+		)
+		.optional(),
+	recommendationJudgment: z
+		.object({
+			taskAnswerStatus: z.enum([
+				"answers-task",
+				"partially-answers-task",
+				"misses-task",
+			]),
+			overconfidenceStatus: z.enum([
+				"calibrated",
+				"somewhat-overconfident",
+				"overconfident",
+			]),
+			missingImportantEvidence: z.array(z.string().min(1)),
+			explanation: z.string().min(1),
+			failureTags: z.array(z.string().min(1)),
+		})
+		.optional(),
 	scores: z.object({
 		overall: z.number().min(0).max(1),
 		grounding: z.number().min(0).max(1),
@@ -244,6 +347,7 @@ export const RunManifestSchema = z.object({
 		groundingRiskUnits: z.number().int().nonnegative().optional(),
 		medianLatencyMs: z.number().int().nonnegative(),
 		estimatedCostUsd: z.number().nonnegative().nullable().optional(),
+		evaluatorEstimatedCostUsd: z.number().nonnegative().nullable().optional(),
 		costBudgetUsd: z.number().positive().optional(),
 		costRatio: z.number().positive(),
 		latencyRatio: z.number().positive(),
@@ -292,6 +396,7 @@ export const RunComparisonSchema = z.object({
 			label: z.string().min(1),
 			value: z.string().min(1),
 			delta: z.string().min(1),
+			targetDelta: z.string().min(1).optional(),
 			status: z.string().min(1),
 			tone: MetricToneSchema,
 		}),
@@ -307,7 +412,9 @@ export const RunComparisonSchema = z.object({
 			metric: z.string().min(1),
 			baseline: z.string().min(1),
 			candidate: z.string().min(1),
+			referenceTarget: z.string().min(1).optional(),
 			delta: z.string().min(1),
+			gapToTarget: z.string().min(1).optional(),
 		}),
 	),
 	failureClusters: z.array(

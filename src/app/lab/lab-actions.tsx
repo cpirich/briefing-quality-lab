@@ -7,7 +7,7 @@ import { Button } from "~/components/button";
 import { api } from "~/trpc/react";
 
 export function LabActions() {
-	const [status, setStatus] = useState("Seeded artifacts loaded.");
+	const [status, setStatus] = useState<string | null>(null);
 	const activePollId = useRef(0);
 	const utils = api.useUtils();
 	async function pollEvalRun(jobId: string) {
@@ -67,24 +67,22 @@ export function LabActions() {
 				<Button
 					disabled={startEvalRun.isPending}
 					onClick={() => {
-						setStatus("Starting local generation run...");
-						startEvalRun.mutate({ provider: "local" });
+						setStatus("Starting OpenAI candidate run...");
+						startEvalRun.mutate({ provider: "openai" });
 					}}
 					type="button"
 				>
-					{startEvalRun.isPending ? "Starting..." : "Run evals"}
-				</Button>
-				<Button
-					onClick={() => setStatus("Showing the current run comparison.")}
-					tone="accent"
-					type="button"
-				>
-					Compare
+					{startEvalRun.isPending ? "Starting..." : "Run OpenAI variant"}
 				</Button>
 			</div>
-			<p aria-live="polite" className="text-[var(--muted-foreground)] text-xs">
-				{status}
-			</p>
+			{status ? (
+				<p
+					aria-live="polite"
+					className="text-[var(--muted-foreground)] text-xs"
+				>
+					{status}
+				</p>
+			) : null}
 		</div>
 	);
 }

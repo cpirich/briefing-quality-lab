@@ -74,7 +74,7 @@ Each generated baseline run should write the six artifact groups needed for a cr
 6. Comparison/report artifacts
    - Generate only when a candidate run exists or when comparing against the reference target fixture intentionally.
    - Store comparison JSON under `runs/comparisons/`.
-   - Refresh `reports/latest-eval-summary.md` only from validated run artifacts.
+   - Treat comparison JSON as the committed source of truth; avoid mutable `latest` report files in git.
 
 ## Commands
 
@@ -88,7 +88,7 @@ Command roles:
 
 - `eval:baseline` is the starting point for an experiment. It runs the current baseline generator across the selected eval cases, writes `runs/baseline-*` briefing, trace, evaluation, and manifest artifacts, then refreshes the latest comparison against the available candidate/reference target.
 - `eval:variant` is for a proposed improvement. It runs the candidate generator across the same artifact path shape under `runs/candidate-*`; when a generated baseline is available, latency is compared against that baseline instead of using a fixed placeholder ratio.
-- `eval:report` does not generate new briefings. It reads existing run manifests and per-case artifacts, writes a comparison JSON under `runs/comparisons/`, and refreshes `reports/latest-eval-summary.md`.
+- `eval:report` does not generate new briefings. It reads existing run manifests and per-case artifacts, then writes a comparison JSON under `runs/comparisons/`.
 
 The commands should support explicit ids through environment variables or flags so committed demo artifacts can have stable names. Because `runs/` is source-controlled, rerunning an existing committed run id should be guarded: if `runs/<run-id>/manifest.json` already exists, replacement requires `--overwrite-run` or `EVAL_OVERWRITE_RUN=1` so a failed rerun cannot silently delete committed briefing, trace, or evaluation artifacts.
 
@@ -136,7 +136,8 @@ Track the path from current breakdown table to an LLM-driven improvement loop:
 - Cluster repeated observations across cases to form improvement hypotheses.
 - Store the hypothesis or experiment note with the generated candidate run so the before/after story is explicit.
 - Add regression checks that flag cases where a targeted fix improves one cluster while worsening another.
-- Keep holdout cases separate so the loop can test whether the hypothesis generalizes.
+- Keep holdout cases separate so a future private validation run can test whether the hypothesis generalizes.
+- For the current demo loop, do not use holdouts in `/genie`, the public `/lab` dashboard, or default eval/report scripts. Treat `--include-holdouts` as an explicit internal validation mode until an authenticated holdout-results surface exists.
 
 ## Failure Theme Reality Check
 

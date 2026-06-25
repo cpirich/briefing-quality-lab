@@ -265,12 +265,200 @@ function CitationSupportNotes({
 					<div className="flex flex-wrap items-center gap-2">
 						<span className="font-medium text-sm">{support.citation}</span>
 						<Badge tone={support.supported ? "green" : "amber"}>
-							{support.supported ? "accepted" : "not accepted"}
+							{support.supported ? "supported" : "needs review"}
 						</Badge>
 					</div>
 					<p className="mt-1 text-sm">{support.note}</p>
 				</div>
 			))}
+		</div>
+	);
+}
+
+function hardCheckTone(status: "pass" | "warn" | "fail") {
+	if (status === "pass") {
+		return "green" as const;
+	}
+	if (status === "fail") {
+		return "red" as const;
+	}
+	return "amber" as const;
+}
+
+function supportTone(status: string) {
+	if (status === "supported" || status === "answers-task") {
+		return "green" as const;
+	}
+	if (status === "unsupported" || status === "misses-task") {
+		return "red" as const;
+	}
+	return "amber" as const;
+}
+
+function formatUsd(value: number | null) {
+	return value === null ? "unknown" : `$${value.toFixed(2)}`;
+}
+
+function hardCheckValueForDisplay(
+	check: CaseArtifactDetail["hardChecks"][number],
+) {
+	if (check.id !== "cost-metadata" || check.value === "unknown") {
+		return check.value;
+	}
+
+	const amount = Number.parseFloat(check.value.replace(/^\$/, ""));
+	return Number.isFinite(amount) ? formatUsd(amount) : check.value;
+}
+
+function EvaluatorMetadataSummary({
+	detail,
+}: {
+	detail: CaseArtifactDetail | null;
+}) {
+	if (!detail?.evaluator) {
+		return <p className="text-sm">No evaluator metadata available.</p>;
+	}
+
+	const evaluator = detail.evaluator;
+
+	return (
+		<div className="space-y-2 text-sm">
+			<div className="flex flex-wrap gap-1.5">
+				<Badge tone={evaluator.mode === "hybrid" ? "blue" : "slate"}>
+					{evaluator.mode}
+				</Badge>
+				<Badge>{evaluator.provider}</Badge>
+			</div>
+			<dl className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-x-3 gap-y-1">
+				<dt className="text-[var(--muted-foreground)]">Model</dt>
+				<dd className="break-words font-medium">{evaluator.model}</dd>
+				<dt className="text-[var(--muted-foreground)]">Prompt</dt>
+				<dd>{evaluator.promptVersion}</dd>
+				<dt className="text-[var(--muted-foreground)]">Latency</dt>
+				<dd>{(evaluator.latencyMs / 1000).toFixed(1)}s</dd>
+				<dt className="text-[var(--muted-foreground)]">Tokens</dt>
+				<dd>
+					{evaluator.inputTokens} in / {evaluator.cachedInputTokens} cached /{" "}
+					{evaluator.outputTokens} out
+				</dd>
+				<dt className="text-[var(--muted-foreground)]">Judge cost</dt>
+				<dd>{formatUsd(evaluator.estimatedUsd)}</dd>
+			</dl>
+		</div>
+	);
+}
+
+function HardCheckList({ detail }: { detail: CaseArtifactDetail | null }) {
+	if (!detail) {
+		return <p className="text-sm">No evaluator artifact available.</p>;
+	}
+	if (detail.hardChecks.length === 0) {
+		return (
+			<p className="text-[var(--muted-foreground)] text-xs">
+				No hard-check output available.
+			</p>
+		);
+	}
+
+	return (
+		<div className="space-y-2">
+			{detail.hardChecks.map((check) => (
+				<div
+					className="rounded-md border border-[var(--border)] bg-[var(--card)] p-2"
+					key={check.id}
+				>
+					<div className="flex flex-wrap items-center justify-between gap-2">
+						<p className="font-medium text-sm">{check.label}</p>
+						<Badge tone={hardCheckTone(check.status)}>{check.status}</Badge>
+					</div>
+					<p className="mt-1 text-sm">{hardCheckValueForDisplay(check)}</p>
+					{check.expectation || check.threshold || check.note ? (
+						<p className="mt-1 text-[var(--muted-foreground)] text-xs">
+							{[check.expectation, check.threshold, check.note]
+								.filter(Boolean)
+								.join(" ")}
+						</p>
+					) : null}
+				</div>
+			))}
+		</div>
+	);
+}
+
+function ClaimJudgmentList({ detail }: { detail: CaseArtifactDetail | null }) {
+	if (!detail) {
+		return <p className="text-sm">No evaluator artifact available.</p>;
+	}
+	if (detail.claimJudgments.length === 0) {
+		return (
+			<p className="text-[var(--muted-foreground)] text-xs">
+				No claim-level LLM judgments available.
+			</p>
+		);
+	}
+
+	return (
+		<div className="space-y-2">
+			{detail.claimJudgments.map((judgment) => (
+				<div
+					className="rounded-md border border-[var(--border)] bg-[var(--card)] p-2"
+					key={`${judgment.claimText}-${judgment.citedSourceIds.join("-")}`}
+				>
+					<div className="flex flex-wrap items-center gap-2">
+						<Badge tone={supportTone(judgment.supportStatus)}>
+							{judgment.supportStatus}
+						</Badge>
+						<CitationPills citations={judgment.citedSourceIds} />
+					</div>
+					<p className="mt-2 text-sm">{judgment.claimText}</p>
+					<p className="mt-1 text-[var(--muted-foreground)] text-xs">
+						{judgment.explanation}
+					</p>
+					{judgment.missingEvidence.length > 0 ? (
+						<p className="mt-1 text-[var(--warning-foreground)] text-xs">
+							Missing: {judgment.missingEvidence.join("; ")}
+						</p>
+					) : null}
+				</div>
+			))}
+		</div>
+	);
+}
+
+function RecommendationJudgment({
+	detail,
+}: {
+	detail: CaseArtifactDetail | null;
+}) {
+	const judgment = detail?.recommendationJudgment;
+	if (!judgment) {
+		return (
+			<p className="text-[var(--muted-foreground)] text-xs">
+				No recommendation LLM judgment available.
+			</p>
+		);
+	}
+
+	return (
+		<div className="rounded-md border border-[var(--border)] bg-[var(--card)] p-2 text-sm">
+			<div className="flex flex-wrap gap-1.5">
+				<Badge tone={supportTone(judgment.taskAnswerStatus)}>
+					{judgment.taskAnswerStatus}
+				</Badge>
+				<Badge
+					tone={
+						judgment.overconfidenceStatus === "calibrated" ? "green" : "amber"
+					}
+				>
+					{judgment.overconfidenceStatus}
+				</Badge>
+			</div>
+			<p className="mt-2">{judgment.explanation}</p>
+			{judgment.missingImportantEvidence.length > 0 ? (
+				<p className="mt-1 text-[var(--warning-foreground)] text-xs">
+					Missing: {judgment.missingImportantEvidence.join("; ")}
+				</p>
+			) : null}
 		</div>
 	);
 }
@@ -332,6 +520,34 @@ function EvaluatorOutputPanel({
 		<div className="space-y-3">
 			<div>
 				<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
+					Evaluator metadata
+				</p>
+				<div className="grid gap-3 lg:grid-cols-2">
+					<ComparisonCell label={baselineLabel} tone="danger">
+						<EvaluatorMetadataSummary detail={baselineDetail} />
+					</ComparisonCell>
+					<ComparisonCell label={candidateLabel} tone="success">
+						<EvaluatorMetadataSummary detail={candidateDetail} />
+					</ComparisonCell>
+				</div>
+			</div>
+
+			<div>
+				<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
+					Deterministic hard checks
+				</p>
+				<div className="grid gap-3 lg:grid-cols-2">
+					<ComparisonCell label={baselineLabel} tone="danger">
+						<HardCheckList detail={baselineDetail} />
+					</ComparisonCell>
+					<ComparisonCell label={candidateLabel} tone="success">
+						<HardCheckList detail={candidateDetail} />
+					</ComparisonCell>
+				</div>
+			</div>
+
+			<div>
+				<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
 					Structured evaluator scores
 				</p>
 				<div className="grid gap-3 lg:grid-cols-2">
@@ -376,6 +592,34 @@ function EvaluatorOutputPanel({
 							empty="No evaluator rationale available."
 							items={candidateDetail?.rubricEvidence ?? []}
 						/>
+					</ComparisonCell>
+				</div>
+			</div>
+
+			<div>
+				<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
+					Claim-level LLM judgments
+				</p>
+				<div className="grid gap-3 lg:grid-cols-2">
+					<ComparisonCell label={baselineLabel} tone="danger">
+						<ClaimJudgmentList detail={baselineDetail} />
+					</ComparisonCell>
+					<ComparisonCell label={candidateLabel} tone="success">
+						<ClaimJudgmentList detail={candidateDetail} />
+					</ComparisonCell>
+				</div>
+			</div>
+
+			<div>
+				<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
+					Recommendation judgment
+				</p>
+				<div className="grid gap-3 lg:grid-cols-2">
+					<ComparisonCell label={baselineLabel} tone="danger">
+						<RecommendationJudgment detail={baselineDetail} />
+					</ComparisonCell>
+					<ComparisonCell label={candidateLabel} tone="success">
+						<RecommendationJudgment detail={candidateDetail} />
 					</ComparisonCell>
 				</div>
 			</div>

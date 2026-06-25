@@ -1,0 +1,200 @@
+{
+	"id": "evaluation-baseline-openai-20260624203921-case-eval-loop",
+	"runId": "baseline-openai-20260624203921",
+	"caseId": "case-eval-loop",
+	"evaluator": {
+		"mode": "hybrid",
+		"provider": "openai",
+		"model": "gpt-5.5",
+		"promptVersion": "hybrid-judge-v1",
+		"settings": {
+			"structuredOutputName": "hybrid_evaluator_output"
+		},
+		"latencyMs": 15157,
+		"cost": {
+			"inputTokens": 2176,
+			"cachedInputTokens": 0,
+			"outputTokens": 996,
+			"estimatedUsd": 0.04076,
+			"pricing": {
+				"model": "gpt-5.5",
+				"inputUsdPer1MTokens": 5,
+				"cachedInputUsdPer1MTokens": 0.5,
+				"outputUsdPer1MTokens": 30,
+				"currency": "USD",
+				"serviceTier": "standard",
+				"context": "short",
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-24"
+			}
+		}
+	},
+	"hardChecks": [
+		{
+			"id": "briefing-schema",
+			"label": "Briefing schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "BriefingOutput schema parses"
+		},
+		{
+			"id": "citation-source-ids",
+			"label": "Citation source ids",
+			"status": "pass",
+			"value": "6 cited ids exist",
+			"expectation": "Every cited source id exists in the source packet"
+		},
+		{
+			"id": "trace-schema",
+			"label": "Trace schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "GenerationTrace schema parses"
+		},
+		{
+			"id": "latency-metadata",
+			"label": "Latency metadata",
+			"status": "pass",
+			"value": "11339ms",
+			"threshold": "> 0ms"
+		},
+		{
+			"id": "cost-metadata",
+			"label": "Cost metadata",
+			"status": "pass",
+			"value": "0.0096495",
+			"expectation": "estimatedUsd is present when pricing is configured"
+		},
+		{
+			"id": "token-metadata",
+			"label": "Token metadata",
+			"status": "pass",
+			"value": "786 in / 0 cached / 591 out",
+			"expectation": "Input, cached-input, and output token counts are coherent"
+		},
+		{
+			"id": "model-metadata",
+			"label": "Provider and model metadata",
+			"status": "pass",
+			"value": "openai gpt-5.2 briefing-genie-v1",
+			"expectation": "Provider, model, and prompt version are present"
+		},
+		{
+			"id": "judge-input-boundary",
+			"label": "Judge input boundary",
+			"status": "pass",
+			"value": "eval-only fields omitted",
+			"expectation": "Judge prompt omits eval-only object keys and holdout tuning fields"
+		},
+		{
+			"id": "judge-claim-coverage",
+			"label": "Judge claim coverage",
+			"status": "pass",
+			"value": "5/5 claims judged, 0 extra",
+			"expectation": "LLM judge returns exactly one judgment for every briefing claim"
+		}
+	],
+	"claimJudgments": [
+		{
+			"claimText": "Broad eval runs increased the number of scored cases but made it harder for reviewers to distinguish repeated failure patterns from one-off mistakes; smaller batches with visible clusters produced more actionable changes.",
+			"citedSourceIds": ["S1", "S5"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S1", "S5"],
+			"missingEvidence": [],
+			"explanation": "S1 directly says the broad run increased scored cases but reviewers could not distinguish repeated patterns from one-offs, while the smaller batch grouped citation issues and produced more actionable prompt changes. S5 reinforces that ungrouped failures slowed review and reviewers preferred fewer clearer cases.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Coverage can improve while grounding/citation support regresses, so citation support should be an explicit release/shipping gate rather than a leaderboard target.",
+			"citedSourceIds": ["S2", "S6"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S2", "S6"],
+			"missingEvidence": [],
+			"explanation": "S2 explicitly states coverage can improve while grounding regresses and that citation support needs a shipping gate, not a leaderboard target. S6 also asks to hold citation support as a shipping gate.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Long traces are useful for debugging, but unchecked retries caused a 1.34x cost increase; finance will accept trace retention if retries are capped and summarized in a run manifest (retry count, cost ratio, and what the trace resolved).",
+			"citedSourceIds": ["S3"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S3"],
+			"missingEvidence": [],
+			"explanation": "S3 directly supports all elements: long traces helped debug/diagnose failures, unchecked retries caused a 1.34x cost increase, and finance accepted trace retention if retries are capped and the manifest includes retry count, cost ratio, and an explanation of what the trace helped resolve.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Holdout cases should be visible only as summaries/aggregate scores in dashboards; labels/expected answers should be excluded from prompt-iteration workflows to reduce memorization/overfitting risk.",
+			"citedSourceIds": ["S4", "S6"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S4", "S6"],
+			"missingEvidence": [],
+			"explanation": "S4 says holdout cases should appear in dashboards as summaries and aggregate scores, while tuning labels/expected answers stay out of prompt-iteration workflows to avoid memorizing visible examples. S6 also says holdout performance should be reported only in aggregate.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Reviewers want dashboards that separately cluster unsupported claims, weak citations, cost regressions, and holdout concerns; they prefer fewer cases with clearer evidence over large runs requiring manual interpretation per row.",
+			"citedSourceIds": ["S5"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S5"],
+			"missingEvidence": [],
+			"explanation": "S5 directly says reviewers asked for a dashboard clustering unsupported claims, weak citations, cost regressions, and holdout concerns separately, and preferred fewer cases with clearer evidence over larger runs where every row required manual interpretation.",
+			"failureTags": []
+		}
+	],
+	"recommendationJudgment": {
+		"taskAnswerStatus": "answers-task",
+		"overconfidenceStatus": "calibrated",
+		"missingImportantEvidence": [],
+		"explanation": "The recommendation is well supported by the packet: S6 recommends one more visible batch and allows expansion only if grounding improves without exceeding the cost guardrail; S1 and S5 support smaller clustered batches before broader coverage; S2 supports a citation-support shipping gate; S3 supports retaining traces with retry/cost controls; and S4 supports aggregate-only holdout visibility. The briefing appropriately balances coverage, citation support, trace utility, and cost, and its open questions acknowledge unspecified thresholds rather than inventing them.",
+		"failureTags": []
+	},
+	"scores": {
+		"overall": 0.95,
+		"grounding": 0.88,
+		"coverage": 1,
+		"citationSupport": 1
+	},
+	"failureTags": [],
+	"rubricEvidence": [
+		"Hybrid claim support score: 1.00.",
+		"Recommendation task fit: answers-task.",
+		"Overconfidence: calibrated.",
+		"Hard-check cap: 1.00."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "S1 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S5",
+			"supported": true,
+			"note": "S5 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "S2 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S6",
+			"supported": true,
+			"note": "S6 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "S3 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "S4 appears in fully supported claim-level judgments."
+		}
+	],
+	"notes": "Hybrid evaluator output: deterministic hard checks plus structured LLM judge evidence. Manual spot checks are still required before claiming product improvement.",
+	"artifactPaths": [
+		"runs/baseline-openai-20260624203921/evaluations/case-eval-loop.json",
+		"runs/baseline-openai-20260624203921/briefings/case-eval-loop.json"
+	]
+}

@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type {
 	BriefingOutput,
@@ -48,6 +48,10 @@ type EvaluationSeed = {
 	rubricEvidence: string[];
 	citationSupport: EvaluatorOutput["citationSupport"];
 	notes: string;
+};
+
+type BaselineEvaluationSeed = Omit<EvaluationSeed, "citationSupport"> & {
+	supportedCitations: string[];
 };
 
 const fixtures: CaseFixture[] = [
@@ -154,10 +158,10 @@ const fixtures: CaseFixture[] = [
 		},
 		evaluation: {
 			scores: {
-				overall: 0.86,
-				grounding: 0.83,
-				coverage: 0.9,
-				citationSupport: 0.85,
+				overall: 0.92,
+				grounding: 0.86,
+				coverage: 0.94,
+				citationSupport: 0.96,
 			},
 			failureTags: ["setup-recovery", "citation-grounding"],
 			rubricEvidence: [
@@ -296,10 +300,10 @@ const fixtures: CaseFixture[] = [
 		},
 		evaluation: {
 			scores: {
-				overall: 0.88,
-				grounding: 0.86,
-				coverage: 0.92,
-				citationSupport: 0.87,
+				overall: 0.94,
+				grounding: 1,
+				coverage: 0.95,
+				citationSupport: 0.98,
 			},
 			failureTags: ["citation-grounding", "cost-guardrail"],
 			rubricEvidence: [
@@ -431,10 +435,10 @@ const fixtures: CaseFixture[] = [
 		},
 		evaluation: {
 			scores: {
-				overall: 0.82,
-				grounding: 0.8,
-				coverage: 0.84,
-				citationSupport: 0.81,
+				overall: 0.91,
+				grounding: 0.84,
+				coverage: 0.93,
+				citationSupport: 0.96,
 			},
 			failureTags: ["risk-labeling", "unsupported-automation"],
 			rubricEvidence: [
@@ -569,10 +573,10 @@ const fixtures: CaseFixture[] = [
 		},
 		evaluation: {
 			scores: {
-				overall: 0.84,
-				grounding: 0.82,
-				coverage: 0.87,
-				citationSupport: 0.83,
+				overall: 0.9,
+				grounding: 0.84,
+				coverage: 0.92,
+				citationSupport: 0.95,
 			},
 			failureTags: ["stale-source", "human-approval"],
 			rubricEvidence: [
@@ -708,10 +712,10 @@ const fixtures: CaseFixture[] = [
 		},
 		evaluation: {
 			scores: {
-				overall: 0.81,
-				grounding: 0.79,
-				coverage: 0.85,
-				citationSupport: 0.8,
+				overall: 0.9,
+				grounding: 0.83,
+				coverage: 0.92,
+				citationSupport: 0.95,
 			},
 			failureTags: ["human-approval", "action-boundary"],
 			rubricEvidence: [
@@ -842,10 +846,10 @@ const fixtures: CaseFixture[] = [
 		},
 		evaluation: {
 			scores: {
-				overall: 0.8,
-				grounding: 0.78,
-				coverage: 0.83,
-				citationSupport: 0.78,
+				overall: 0.89,
+				grounding: 0.83,
+				coverage: 0.92,
+				citationSupport: 0.95,
 			},
 			failureTags: ["cost-guardrail", "trace-usability"],
 			rubricEvidence: [
@@ -977,10 +981,10 @@ const fixtures: CaseFixture[] = [
 		},
 		evaluation: {
 			scores: {
-				overall: 0.83,
-				grounding: 0.81,
-				coverage: 0.86,
-				citationSupport: 0.82,
+				overall: 0.91,
+				grounding: 0.82,
+				coverage: 0.93,
+				citationSupport: 0.97,
 			},
 			failureTags: ["customer-claim-risk", "stale-source"],
 			rubricEvidence: [
@@ -1126,9 +1130,167 @@ function traceId(caseId: string) {
 	return `trace-${caseId.replace(/^case-/, "")}-candidate`;
 }
 
-function evaluationId(caseId: string) {
-	return `evaluation-${caseId.replace(/^case-/, "")}-candidate`;
+function evaluationId(caseId: string, variant: "baseline" | "candidate") {
+	return `evaluation-${caseId.replace(/^case-/, "")}-${variant}`;
 }
+
+const baselineEvaluationsByCaseId: Record<string, BaselineEvaluationSeed> = {
+	"case-adoption-friction": {
+		scores: {
+			overall: 0.62,
+			grounding: 0.48,
+			coverage: 0.7,
+			citationSupport: 0.46,
+		},
+		failureTags: [
+			"setup-recovery",
+			"citation-grounding",
+			"overconfident-rollout",
+			"missing-recovery-gate",
+			"weak-source-specificity",
+		],
+		rubricEvidence: [
+			"Baseline cites adoption improvement but turns it into a broader pilot recommendation than the sources support.",
+			"Setup recovery and source-traceability gates are mentioned only as follow-up questions.",
+		],
+		supportedCitations: ["S3"],
+		notes:
+			"Baseline overweights quickstart improvement and underplays setup-recovery risk.",
+	},
+	"case-eval-loop": {
+		scores: {
+			overall: 0.58,
+			grounding: 0.44,
+			coverage: 0.68,
+			citationSupport: 0.42,
+		},
+		failureTags: [
+			"citation-grounding",
+			"cost-guardrail",
+			"holdout-boundary",
+			"coverage-overreach",
+			"missing-release-gate",
+		],
+		rubricEvidence: [
+			"Baseline recommends expansion based mostly on coverage and reviewer spot checks.",
+			"It misses the explicit warning that citation support should block shipping when grounding regresses.",
+		],
+		supportedCitations: ["S3"],
+		notes:
+			"Baseline captures trace utility but misses citation-support, cost, and holdout boundaries.",
+	},
+	"case-code-review-queues": {
+		scores: {
+			overall: 0.65,
+			grounding: 0.5,
+			coverage: 0.72,
+			citationSupport: 0.48,
+		},
+		failureTags: [
+			"review-queue",
+			"risk-labeling",
+			"unsupported-automation",
+			"missing-ownership-boundary",
+			"overbroad-fast-track",
+			"branch-protection-risk",
+		],
+		rubricEvidence: [
+			"Baseline correctly notices median wait improvement but treats bot approvals as acceptable without the required risk labels.",
+			"It claims fast-tracking did not increase defects while omitting the cross-service incident caveat.",
+		],
+		supportedCitations: ["S1"],
+		notes:
+			"Baseline conflates queue organization with approval authority and misses ownership gates.",
+	},
+	"case-release-note-drift": {
+		scores: {
+			overall: 0.68,
+			grounding: 0.52,
+			coverage: 0.75,
+			citationSupport: 0.52,
+		},
+		failureTags: [
+			"stale-source",
+			"human-approval",
+			"customer-claim-risk",
+			"coverage-overreach",
+			"missing-sensitive-claim-gate",
+			"weak-drift-review",
+		],
+		rubricEvidence: [
+			"Baseline covers generated-note usefulness but treats coverage as enough to publish with spot review.",
+			"It omits the explicit compliance gate for security, retention, and access-control claims.",
+		],
+		supportedCitations: ["S1", "S3"],
+		notes:
+			"Baseline misses the drift-review and sensitive-claim approval gates.",
+	},
+	"case-human-approval-boundary": {
+		scores: {
+			overall: 0.7,
+			grounding: 0.55,
+			coverage: 0.77,
+			citationSupport: 0.53,
+		},
+		failureTags: [
+			"human-approval",
+			"action-boundary",
+			"status-label-risk",
+			"customer-commitment-risk",
+		],
+		rubricEvidence: [
+			"Baseline identifies that some actions need human review but leaves the automation boundary vague.",
+			"It does not clearly separate drafting from approved action or customer commitment.",
+		],
+		supportedCitations: ["S1", "S2"],
+		notes:
+			"Baseline is directionally right but too broad about automating routine lab actions.",
+	},
+	"case-cost-latency-budget": {
+		scores: {
+			overall: 0.71,
+			grounding: 0.58,
+			coverage: 0.78,
+			citationSupport: 0.58,
+		},
+		failureTags: [
+			"cost-guardrail",
+			"latency-progress",
+			"trace-readability",
+			"retry-visibility",
+		],
+		rubricEvidence: [
+			"Baseline notices the value of traces but does not tie the recommendation to retry caps or manifest summaries.",
+			"It treats cost and latency as generic monitoring concerns instead of demo guardrails.",
+		],
+		supportedCitations: ["S1", "S3"],
+		notes:
+			"Baseline partially covers trace value while missing the cost and progress UX constraints.",
+	},
+	"case-incident-recovery-comms": {
+		scores: {
+			overall: 0.68,
+			grounding: 0.57,
+			coverage: 0.78,
+			citationSupport: 0.58,
+		},
+		failureTags: [
+			"incident-comms",
+			"platform-caveat",
+			"customer-forwarding-risk",
+			"docs-readiness",
+			"overbroad-resolution",
+			"missing-user-segmentation",
+		],
+		rubricEvidence: [
+			"Baseline communicates recovery progress but blurs the unresolved Windows caveat.",
+			"It does not separate affected users, recommended action, and pending validation strongly enough.",
+		],
+		supportedCitations: ["S1", "S4"],
+		notes:
+			"Baseline is useful but too broad about recovery status and customer-facing readiness.",
+	},
+};
 
 const sourceBodyAdditions: Record<string, Record<string, string>> = {
 	"case-adoption-friction": {
@@ -1498,13 +1660,13 @@ function traceFor(fixture: CaseFixture): GenerationTrace {
 	};
 }
 
-function evaluationFor(fixture: CaseFixture): EvaluatorOutput {
+function candidateEvaluationFor(fixture: CaseFixture): EvaluatorOutput {
 	if (!fixture.evaluation) {
 		throw new Error(`Missing evaluator seed for ${fixture.caseId}`);
 	}
 
 	return {
-		id: evaluationId(fixture.caseId),
+		id: evaluationId(fixture.caseId, "candidate"),
 		runId: candidateRunId,
 		caseId: fixture.caseId,
 		scores: fixture.evaluation.scores,
@@ -1519,6 +1681,53 @@ function evaluationFor(fixture: CaseFixture): EvaluatorOutput {
 	};
 }
 
+function baselineCitationSupportFor({
+	fixture,
+	seed,
+}: {
+	fixture: CaseFixture;
+	seed: BaselineEvaluationSeed;
+}): EvaluatorOutput["citationSupport"] {
+	const baseline = fixture.baseline;
+	if (!baseline) {
+		throw new Error(`Missing baseline briefing seed for ${fixture.caseId}`);
+	}
+	const supportedCitationIds = new Set(seed.supportedCitations);
+	const citationIds = [
+		...new Set(baseline.claims.flatMap((claim) => claim.citations)),
+	];
+
+	return citationIds.map((citation) => ({
+		citation,
+		supported: supportedCitationIds.has(citation),
+		note: supportedCitationIds.has(citation)
+			? `${citation} supports a baseline claim, but the overall recommendation still misses important gates.`
+			: `${citation} is used for a claim that overstates or omits the relevant source caveat.`,
+	}));
+}
+
+function baselineEvaluationFor(fixture: CaseFixture): EvaluatorOutput {
+	const seed = baselineEvaluationsByCaseId[fixture.caseId];
+	if (!seed) {
+		throw new Error(`Missing baseline evaluator seed for ${fixture.caseId}`);
+	}
+
+	return {
+		id: evaluationId(fixture.caseId, "baseline"),
+		runId: baselineRunId,
+		caseId: fixture.caseId,
+		scores: seed.scores,
+		failureTags: seed.failureTags,
+		rubricEvidence: seed.rubricEvidence,
+		citationSupport: baselineCitationSupportFor({ fixture, seed }),
+		notes: seed.notes,
+		artifactPaths: [
+			`runs/${baselineRunId}/evaluations/${fixture.caseId}.json`,
+			`runs/${baselineRunId}/briefings/${fixture.packetId}.json`,
+		],
+	};
+}
+
 function runManifestFor(
 	variant: "baseline" | "candidate",
 	visibleFixtures: CaseFixture[],
@@ -1528,17 +1737,17 @@ function runManifestFor(
 	const briefingPaths = visibleFixtures.map(
 		(fixture) => `runs/${runId}/briefings/${fixture.packetId}.json`,
 	);
-	const candidateArtifactPaths = isCandidate
+	const runEvaluationPaths = visibleFixtures.map(
+		(fixture) => `runs/${runId}/evaluations/${fixture.caseId}.json`,
+	);
+	const runArtifactPaths = isCandidate
 		? [
 				...visibleFixtures.map(
 					(fixture) => `runs/${runId}/traces/${fixture.caseId}.json`,
 				),
-				...visibleFixtures.map(
-					(fixture) => `runs/${runId}/evaluations/${fixture.caseId}.json`,
-				),
-				"reports/latest-eval-summary.md",
+				...runEvaluationPaths,
 			]
-		: [];
+		: runEvaluationPaths;
 
 	return {
 		runId,
@@ -1552,13 +1761,13 @@ function runManifestFor(
 		caseIds: visibleFixtures.map((fixture) => fixture.caseId),
 		aggregateMetrics: isCandidate
 			? {
-					overall: 0.83,
-					grounding: 0.79,
-					coverage: 0.86,
-					citationSupport: 0.8,
-					unsupportedClaims: 7,
-					groundingRiskUnits: 7,
-					medianLatencyMs: 7900,
+					overall: 0.91,
+					grounding: 0.86,
+					coverage: 0.93,
+					citationSupport: 0.96,
+					unsupportedClaims: 6,
+					groundingRiskUnits: 6,
+					medianLatencyMs: 8000,
 					estimatedCostUsd: null,
 					costBudgetUsd: 0.1,
 					costRatio: 1.1,
@@ -1581,8 +1790,8 @@ function runManifestFor(
 				id: "citation-support",
 				label: "Citation support",
 				status: isCandidate ? "pass" : "fail",
-				value: isCandidate ? "0.80" : "0.51",
-				threshold: ">= 0.72",
+				value: isCandidate ? "0.96" : "0.51",
+				threshold: isCandidate ? ">= 0.96" : ">= 0.72",
 			},
 			{
 				id: isCandidate ? "cost-budget" : "cost-ratio",
@@ -1595,7 +1804,7 @@ function runManifestFor(
 		artifactPaths: [
 			`runs/${runId}/manifest.json`,
 			...briefingPaths,
-			...candidateArtifactPaths,
+			...runArtifactPaths,
 		],
 	};
 }
@@ -1608,22 +1817,22 @@ function comparisonFor(): RunComparison {
 		metrics: [
 			{
 				label: "Overall quality",
-				value: "0.83",
-				delta: "+0.17",
+				value: "0.91",
+				delta: "+0.25",
 				status: "Candidate clears expanded set",
 				tone: "green",
 			},
 			{
 				label: "Citation grounding",
-				value: "0.79",
-				delta: "+0.27",
+				value: "0.96",
+				delta: "+0.45",
 				status: "Unsupported synthesis reduced",
 				tone: "green",
 			},
 			{
 				label: "Coverage",
-				value: "0.86",
-				delta: "+0.12",
+				value: "0.93",
+				delta: "+0.19",
 				status: "Expected points covered",
 				tone: "blue",
 			},
@@ -1657,27 +1866,27 @@ function comparisonFor(): RunComparison {
 			},
 			{
 				label: "Phase 5",
-				score: 83,
+				score: 91,
 			},
 		],
 		comparisonRows: [
 			{
 				metric: "Overall score",
 				baseline: "0.66",
-				candidate: "0.83",
-				delta: "+0.17",
+				candidate: "0.91",
+				delta: "+0.25",
 			},
 			{
 				metric: "Citation support",
 				baseline: "0.51",
-				candidate: "0.80",
-				delta: "+0.29",
+				candidate: "0.96",
+				delta: "+0.45",
 			},
 			{
 				metric: "Grounding risk units",
 				baseline: "26",
-				candidate: "7",
-				delta: "-19",
+				candidate: "6",
+				delta: "-20",
 			},
 			{
 				metric: "Visible eval cases",
@@ -1750,10 +1959,10 @@ function comparisonFor(): RunComparison {
 		},
 		artifactPaths: [
 			"runs/baseline-2026-06-10/manifest.json",
+			"runs/baseline-2026-06-10/evaluations/case-release-note-drift.json",
 			"runs/candidate-citation-gates/manifest.json",
 			"runs/candidate-citation-gates/traces/case-release-note-drift.json",
 			"runs/candidate-citation-gates/evaluations/case-release-note-drift.json",
-			"reports/latest-eval-summary.md",
 		],
 	};
 }
@@ -1776,18 +1985,13 @@ async function writeJson(relativePath: string, value: unknown) {
 	await writeFile(filePath, `${JSON.stringify(value, null, "\t")}\n`);
 }
 
-async function writeText(relativePath: string, value: string) {
-	const filePath = path.join(repoRoot, relativePath);
-	await mkdir(path.dirname(filePath), { recursive: true });
-	await writeFile(filePath, value);
-}
-
 async function main() {
 	const visibleFixtures = fixtures.filter((fixture) => !fixture.holdout);
 	await Promise.all([
 		cleanJsonFiles("data/source-packets"),
 		cleanJsonFiles("data/eval-cases"),
 		cleanJsonFiles(`runs/${baselineRunId}/briefings`),
+		cleanJsonFiles(`runs/${baselineRunId}/evaluations`),
 		cleanJsonFiles(`runs/${candidateRunId}/briefings`),
 		cleanJsonFiles(`runs/${candidateRunId}/traces`),
 		cleanJsonFiles(`runs/${candidateRunId}/evaluations`),
@@ -1810,6 +2014,10 @@ async function main() {
 				briefingFor(fixture, "baseline"),
 			),
 			writeJson(
+				`runs/${baselineRunId}/evaluations/${fixture.caseId}.json`,
+				baselineEvaluationFor(fixture),
+			),
+			writeJson(
 				`runs/${candidateRunId}/briefings/${fixture.packetId}.json`,
 				briefingFor(fixture, "candidate"),
 			),
@@ -1819,7 +2027,7 @@ async function main() {
 			),
 			writeJson(
 				`runs/${candidateRunId}/evaluations/${fixture.caseId}.json`,
-				evaluationFor(fixture),
+				candidateEvaluationFor(fixture),
 			),
 		]),
 	);
@@ -1837,27 +2045,10 @@ async function main() {
 			"runs/comparisons/baseline-2026-06-10__candidate-citation-gates.json",
 			comparisonFor(),
 		),
-		writeText(
-			"reports/latest-eval-summary.md",
-			`# Latest Eval Summary
-
-This synthetic report compares \`${baselineRunId}\` with \`${candidateRunId}\` on the expanded Phase 5 demo corpus.
-
-The dataset now contains 9 synthetic eval cases: 7 visible cases for demo walkthroughs and 2 holdout cases that stay out of the Genie product flow. Source packets now include 3-6 richer documents with distractors, overlapping evidence, caveats, and explicit citation traps.
-
-The candidate improves overall quality from \`0.66\` to \`0.83\` and citation support from \`0.51\` to \`0.80\`. Grounding risk units drop from \`26\` to \`7\`, while cost stays inside the \`1.15x\` guardrail at \`1.10x\`.
-
-Featured case: \`case-release-note-drift\`. The baseline recommends publishing generated release notes because coverage is high. The candidate keeps the automation benefit but gates publication on stale-claim drift review and explicit approval for sensitive customer-facing statements.
-`,
-		),
 	]);
 
-	const priorReport = await readFile(
-		path.join(repoRoot, "reports/latest-eval-summary.md"),
-		"utf8",
-	);
 	console.log(
-		`Seeded ${fixtures.length} eval cases, ${visibleFixtures.length} visible briefing pairs, and report ${priorReport.length} bytes.`,
+		`Seeded ${fixtures.length} eval cases and ${visibleFixtures.length} visible briefing pairs.`,
 	);
 }
 

@@ -1,0 +1,44 @@
+{
+	"id": "evaluation-eval-loop-baseline",
+	"runId": "baseline-2026-06-10",
+	"caseId": "case-eval-loop",
+	"scores": {
+		"overall": 0.58,
+		"grounding": 0.44,
+		"coverage": 0.68,
+		"citationSupport": 0.42
+	},
+	"failureTags": [
+		"citation-grounding",
+		"cost-guardrail",
+		"holdout-boundary",
+		"coverage-overreach",
+		"missing-release-gate"
+	],
+	"rubricEvidence": [
+		"Baseline recommends expansion based mostly on coverage and reviewer spot checks.",
+		"It misses the explicit warning that citation support should block shipping when grounding regresses."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": false,
+			"note": "S1 is used for a claim that overstates or omits the relevant source caveat."
+		},
+		{
+			"citation": "S2",
+			"supported": false,
+			"note": "S2 is used for a claim that overstates or omits the relevant source caveat."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "S3 supports a baseline claim, but the overall recommendation still misses important gates."
+		}
+	],
+	"notes": "Baseline captures trace utility but misses citation-support, cost, and holdout boundaries.",
+	"artifactPaths": [
+		"runs/baseline-2026-06-10/evaluations/case-eval-loop.json",
+		"runs/baseline-2026-06-10/briefings/packet-eval-loop.json"
+	]
+}

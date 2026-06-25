@@ -110,9 +110,6 @@ data/
 runs/
   baseline/         committed or generated baseline artifacts
   variant-*/        experiment artifacts
-reports/
-  latest-eval-summary.md
-  failure-clusters.md
 ```
 
 ## Local Commands

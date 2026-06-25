@@ -1,0 +1,154 @@
+{
+	"id": "baseline-openai-20260624203921-candidate-citation-gates",
+	"baselineRunId": "baseline-openai-20260624203921",
+	"candidateRunId": "candidate-citation-gates",
+	"baselineLabel": "OpenAI baseline",
+	"candidateLabel": "Reference target",
+	"metrics": [
+		{
+			"label": "Overall quality",
+			"value": "0.91",
+			"delta": "+0.01",
+			"status": "Reference target score",
+			"tone": "green"
+		},
+		{
+			"label": "Citation grounding",
+			"value": "0.96",
+			"delta": "+0.01",
+			"status": "Reference target citation score",
+			"tone": "green"
+		},
+		{
+			"label": "Coverage",
+			"value": "0.93",
+			"delta": "-0.02",
+			"status": "Reference target coverage score",
+			"tone": "green"
+		},
+		{
+			"label": "Estimated cost",
+			"value": "0.06721575",
+			"delta": "-0.03278425",
+			"status": "OpenAI baseline vs Reference target budget <= 0.1",
+			"tone": "green"
+		},
+		{
+			"label": "Median latency",
+			"value": "8.0s",
+			"delta": "-2.7s",
+			"status": "Reference target median latency",
+			"tone": "green"
+		}
+	],
+	"trend": [
+		{
+			"label": "OpenAI baseline",
+			"score": 90
+		},
+		{
+			"label": "Reference target",
+			"score": 91
+		}
+	],
+	"comparisonRows": [
+		{
+			"metric": "Overall score",
+			"baseline": "0.90",
+			"candidate": "0.91",
+			"delta": "+0.01"
+		},
+		{
+			"metric": "Citation support",
+			"baseline": "0.95",
+			"candidate": "0.96",
+			"delta": "+0.01"
+		},
+		{
+			"metric": "Coverage",
+			"baseline": "0.95",
+			"candidate": "0.93",
+			"delta": "-0.02"
+		},
+		{
+			"metric": "Grounding risk units",
+			"baseline": "9",
+			"candidate": "6",
+			"delta": "-3"
+		},
+		{
+			"metric": "Eval cases",
+			"baseline": "7",
+			"candidate": "7",
+			"delta": "0"
+		},
+		{
+			"metric": "Median latency",
+			"baseline": "10.7s",
+			"candidate": "8.0s",
+			"delta": "-2.7s"
+		},
+		{
+			"metric": "Estimated cost",
+			"baseline": "0.06721575",
+			"candidate": "<= 0.1",
+			"delta": "-0.03278425"
+		}
+	],
+	"failureClusters": [
+		{
+			"title": "Partial Claim Support",
+			"count": 3,
+			"severity": "Medium",
+			"evidence": "Repeated partial-claim-support findings across evaluator outputs.",
+			"cases": [
+				"case-adoption-friction",
+				"case-cost-latency-budget",
+				"case-incident-recovery-comms"
+			]
+		},
+		{
+			"title": "Missing Strongest Citation",
+			"count": 1,
+			"severity": "Low",
+			"evidence": "Repeated missing-strongest-citation findings across evaluator outputs.",
+			"cases": ["case-adoption-friction"]
+		},
+		{
+			"title": "Quantifier Too Strong",
+			"count": 1,
+			"severity": "Low",
+			"evidence": "Repeated quantifier-too-strong findings across evaluator outputs.",
+			"cases": ["case-adoption-friction"]
+		},
+		{
+			"title": "Citation Mismatch",
+			"count": 1,
+			"severity": "Low",
+			"evidence": "Repeated citation-mismatch findings across evaluator outputs.",
+			"cases": ["case-cost-latency-budget"]
+		}
+	],
+	"featuredCase": {
+		"id": "case-adoption-friction",
+		"title": "Developer adoption friction briefing",
+		"sourceEvidence": "Quickstart completion is improving but setup remains a drop-off point.",
+		"baseline": "Prioritize a self-serve “Setup Recovery” improvement before adding more pilot teams: publish and productize a recovery checklist/flow that explicitly handles stale CLI installs, missing environment variables, credential/workspace mismatches, and repeated setup attempts—so a failed install has a documented path to a clean state without support pasting internal steps. This directly targets the main drop-off in setup/credentials and is an explicit pilot readiness gate blocking scheduling.",
+		"candidate": "Ship the recovery-path copy and trace-backed citation checks before widening the pilot.",
+		"evaluatorNote": "Comparison uses file-backed artifacts for the same eval case so the before/after story is inspectable."
+	},
+	"recommendation": {
+		"tone": "amber",
+		"label": "Pipeline rehearsal",
+		"text": "This comparison uses OpenAI baseline and a human-authored Reference target. It validates the eval artifact flow, but not live model quality improvement.",
+		"warning": "Run a generated candidate before using this as improvement evidence."
+	},
+	"artifactPaths": [
+		"runs/baseline-openai-20260624203921/manifest.json",
+		"runs/candidate-citation-gates/manifest.json",
+		"runs/baseline-openai-20260624203921/evaluations/case-adoption-friction.json",
+		"runs/baseline-openai-20260624203921/evaluations/case-code-review-queues.json",
+		"runs/candidate-citation-gates/evaluations/case-adoption-friction.json",
+		"runs/candidate-citation-gates/evaluations/case-eval-loop.json"
+	]
+}

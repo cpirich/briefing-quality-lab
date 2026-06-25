@@ -125,6 +125,14 @@ Do not claim real prompt, model, or product improvement until:
 - holdouts remain separate from tuning runs
 - the evaluator is strong enough for the claim being made, or the claim is explicitly framed as a heuristic/demo signal
 
+Current holdout policy:
+
+- The default OpenAI baseline, variant, and report commands use the visible non-holdout corpus.
+- `/genie` and the public `/lab` dashboard should not expose holdout cases or use holdout details in the demo narrative.
+- `--include-holdouts` is reserved for private validation after a visible-case candidate looks promising.
+- If a holdout-inclusive comparison is ever served through public-safe APIs, holdout-influenced aggregates, target deltas, artifact paths, and case details must be redacted.
+- Until an authenticated/internal holdout-results view exists, holdouts are future regression infrastructure rather than an active demo feature.
+
 ## Commit Guidance
 
 Commit OpenAI artifacts only after inspection shows they are useful demo evidence. If the first live run mainly proves connectivity, keep it local or replace it with a clearer run before committing.
