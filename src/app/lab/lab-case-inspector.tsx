@@ -38,13 +38,10 @@ function targetGapTone(value: number | null) {
 	if (value === null) {
 		return "slate" as const;
 	}
-	if (value > 0.03) {
+	if (value > 0) {
 		return "amber" as const;
 	}
-	if (value >= -0.03) {
-		return "green" as const;
-	}
-	return "blue" as const;
+	return "green" as const;
 }
 
 function changeTone(value: number | null, changeLabel: string) {
@@ -146,6 +143,50 @@ function ComparisonCell({
 				</p>
 			) : null}
 			<div className="mt-2">{children}</div>
+		</div>
+	);
+}
+
+function CollapsibleEvaluatorSection({
+	children,
+	title,
+}: {
+	children: ReactNode;
+	title: string;
+}) {
+	const [isOpen, setIsOpen] = useState(false);
+	const panelId = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+	return (
+		<div className="rounded-md border border-[var(--border)] bg-[var(--muted)]">
+			<button
+				aria-controls={panelId}
+				aria-expanded={isOpen}
+				className="flex w-full cursor-pointer flex-wrap items-center justify-between gap-2 p-3 text-left"
+				onClick={() => setIsOpen((current) => !current)}
+				type="button"
+			>
+				<span className="flex items-center gap-2">
+					<span
+						aria-hidden="true"
+						className={cn(
+							"text-[var(--muted-foreground)] transition-transform",
+							isOpen && "rotate-90",
+						)}
+					>
+						{">"}
+					</span>
+					<span className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
+						{title}
+					</span>
+				</span>
+				<Badge tone="blue">{isOpen ? "hide" : "show"}</Badge>
+			</button>
+			{isOpen ? (
+				<div className="border-[var(--border)] border-t p-3" id={panelId}>
+					{children}
+				</div>
+			) : null}
 		</div>
 	);
 }
@@ -518,10 +559,7 @@ function EvaluatorOutputPanel({
 }) {
 	return (
 		<div className="space-y-3">
-			<div>
-				<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
-					Evaluator metadata
-				</p>
+			<CollapsibleEvaluatorSection title="Evaluator metadata">
 				<div className="grid gap-3 lg:grid-cols-2">
 					<ComparisonCell label={baselineLabel} tone="danger">
 						<EvaluatorMetadataSummary detail={baselineDetail} />
@@ -530,7 +568,7 @@ function EvaluatorOutputPanel({
 						<EvaluatorMetadataSummary detail={candidateDetail} />
 					</ComparisonCell>
 				</div>
-			</div>
+			</CollapsibleEvaluatorSection>
 
 			<div>
 				<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
