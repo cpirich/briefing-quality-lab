@@ -642,10 +642,7 @@ function EvaluatorOutputPanel({
 				</div>
 			</CollapsibleEvaluatorSection>
 
-			<div>
-				<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
-					Deterministic hard checks
-				</p>
+			<CollapsibleEvaluatorSection title="Deterministic hard checks">
 				<div className="grid gap-3 lg:grid-cols-2">
 					<ComparisonCell label={baselineLabel} tone="danger">
 						<HardCheckList detail={baselineDetail} />
@@ -654,7 +651,7 @@ function EvaluatorOutputPanel({
 						<HardCheckList detail={candidateDetail} />
 					</ComparisonCell>
 				</div>
-			</div>
+			</CollapsibleEvaluatorSection>
 
 			<div>
 				<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
@@ -678,10 +675,7 @@ function EvaluatorOutputPanel({
 				</div>
 			</div>
 
-			<div>
-				<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
-					Evaluator rationale
-				</p>
+			<CollapsibleEvaluatorSection title="Evaluator rationale">
 				<div className="grid gap-3 lg:grid-cols-2">
 					<ComparisonCell
 						description={evidenceNoteFor(baselineLabel)}
@@ -704,7 +698,7 @@ function EvaluatorOutputPanel({
 						/>
 					</ComparisonCell>
 				</div>
-			</div>
+			</CollapsibleEvaluatorSection>
 
 			<div>
 				<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
@@ -1114,17 +1108,14 @@ export function LabCaseInspector({
 								candidateScores={selectedCase.candidate}
 							/>
 
-							<div>
-								<p className="mb-2 font-medium text-[var(--muted-foreground)] text-xs uppercase">
-									Per-case artifact paths
-								</p>
+							<CollapsibleEvaluatorSection title="Per-case artifact paths">
 								<ArtifactComparisonPanel
 									baselineDetail={selectedCase.diff.baselineDetail}
 									baselineLabel={baselineLabel}
 									candidateDetail={selectedCase.diff.candidateDetail}
 									candidateLabel={candidateLabel}
 								/>
-							</div>
+							</CollapsibleEvaluatorSection>
 						</section>
 
 						<div className="border-[var(--border)] border-t" />
