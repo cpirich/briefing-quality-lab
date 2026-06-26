@@ -291,6 +291,40 @@ function clusterSeverityFor(count: number) {
 	return "Low" as const;
 }
 
+function movementTone(status: string): MetricDeltaTone {
+	if (status === "resolved" || status === "reduced") {
+		return "green";
+	}
+	if (status === "new" || status === "increased") {
+		return "red";
+	}
+	return "slate";
+}
+
+function movementLabel(status: string) {
+	if (status === "new") {
+		return "new";
+	}
+	if (status === "resolved") {
+		return "resolved";
+	}
+	if (status === "reduced") {
+		return "reduced";
+	}
+	if (status === "increased") {
+		return "increased";
+	}
+	return "unchanged";
+}
+
+function movementDeltaLabel(delta: number) {
+	if (delta === 0) {
+		return "0";
+	}
+
+	return delta > 0 ? `+${delta}` : String(delta);
+}
+
 function inProgressRunLabel(run: {
 	provider: string;
 	role: string;
@@ -331,6 +365,7 @@ export default async function LabPage() {
 			};
 		})
 		.filter((cluster) => cluster.count > 0);
+	const failureThemeMovements = runComparison.failureThemeMovements ?? [];
 	const baselineLabel =
 		runComparison.baselineLabel ??
 		comparisonSideLabel(runComparison.baselineRunId);
@@ -664,19 +699,94 @@ export default async function LabPage() {
 						changeLabel={changeLabel}
 					/>
 
-					<div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
+					<div className="grid gap-4">
 						<Card>
 							<CardHeader>
 								<h2 className="font-semibold text-base">Failure Themes</h2>
 								<p className="text-[var(--muted-foreground)] text-sm">
-									Case-tag themes from file-backed evaluator outputs across{" "}
-									{comparedCaseCount} compared cases.
+									Theme movement from baseline to candidate, plus remaining
+									candidate-side findings across {comparedCaseCount} compared
+									cases.
 								</p>
 							</CardHeader>
 							<CardBody className="space-y-3">
+								<div>
+									<div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+										<h3 className="font-semibold text-sm">
+											Failure Theme Movement
+										</h3>
+										<Badge tone="blue">
+											{baselineLabel} to {candidateLabel}
+										</Badge>
+									</div>
+									{failureThemeMovements.length === 0 ? (
+										<p className="text-[var(--muted-foreground)] text-sm">
+											No baseline-to-candidate theme movement available.
+										</p>
+									) : (
+										<div className="overflow-x-auto rounded-md border border-[var(--border)]">
+											<table className="w-full min-w-[620px] text-left text-sm">
+												<thead className="bg-[var(--muted)] text-[var(--muted-foreground)]">
+													<tr>
+														<th className="px-3 py-2 font-medium">Theme</th>
+														<th className="px-3 py-2 font-medium">Baseline</th>
+														<th className="px-3 py-2 font-medium">Candidate</th>
+														<th className="px-3 py-2 font-medium">Change</th>
+													</tr>
+												</thead>
+												<tbody>
+													{failureThemeMovements.map((movement) => (
+														<tr
+															className="border-[var(--border)] border-t align-top"
+															key={movement.title}
+														>
+															<td className="px-3 py-2">
+																<p className="font-medium">{movement.title}</p>
+																<p className="mt-1 text-[var(--muted-foreground)] text-xs">
+																	{movement.baselineCases.length > 0
+																		? movement.baselineCases.join(", ")
+																		: "No baseline cases"}
+																</p>
+															</td>
+															<td className="px-3 py-2">
+																{movement.baselineCount}
+															</td>
+															<td className="px-3 py-2">
+																<p>{movement.candidateCount}</p>
+																<p className="mt-1 text-[var(--muted-foreground)] text-xs">
+																	{movement.candidateCases.length > 0
+																		? movement.candidateCases.join(", ")
+																		: "No candidate cases"}
+																</p>
+															</td>
+															<td className="px-3 py-2">
+																<div className="flex flex-wrap gap-1.5">
+																	<Badge tone={movementTone(movement.status)}>
+																		{movementLabel(movement.status)}
+																	</Badge>
+																	<Badge tone={movementTone(movement.status)}>
+																		{movementDeltaLabel(movement.delta)}
+																	</Badge>
+																</div>
+															</td>
+														</tr>
+													))}
+												</tbody>
+											</table>
+										</div>
+									)}
+								</div>
+								<div className="border-[var(--border)] border-t pt-3">
+									<h3 className="font-semibold text-sm">
+										Remaining Candidate Themes
+									</h3>
+									<p className="text-[var(--muted-foreground)] text-sm">
+										Current candidate findings grouped by evaluator tag.
+									</p>
+								</div>
 								{failureClusters.length === 0 ? (
 									<p className="text-[var(--muted-foreground)] text-sm">
-										No public failure themes for this comparison.
+										No public candidate failure themes for this comparison.
 									</p>
 								) : null}
 								{failureClusters.map((cluster) => (
@@ -708,44 +818,52 @@ export default async function LabPage() {
 						</Card>
 
 						<Card>
-							<CardHeader>
-								<h2 className="font-semibold text-base">Artifact Trail</h2>
-								<p className="text-[var(--muted-foreground)] text-sm">
-									File-backed paths for the current comparison, including local
-									generated artifacts and seeded fallback artifacts.
-								</p>
-							</CardHeader>
-							<CardBody>
-								<div className="overflow-x-auto rounded-md border border-[var(--border)]">
-									<table className="w-full text-left text-sm">
-										<thead className="bg-[var(--muted)] text-[var(--muted-foreground)]">
-											<tr>
-												<th className="px-3 py-2 font-medium">Artifact</th>
-												<th className="px-3 py-2 font-medium">Type</th>
-												<th className="px-3 py-2 font-medium">Path</th>
-											</tr>
-										</thead>
-										<tbody>
-											{artifacts.map((artifact) => (
-												<tr
-													className="border-[var(--border)] border-t"
-													key={artifact.path}
-												>
-													<td className="px-3 py-2 font-medium">
-														{artifact.label}
-													</td>
-													<td className="px-3 py-2 text-[var(--muted-foreground)]">
-														{artifact.type}
-													</td>
-													<td className="px-3 py-2 font-mono text-[var(--muted-foreground)] text-xs">
-														{artifact.path}
-													</td>
+							<details className="group">
+								<summary className="flex cursor-pointer list-none items-center justify-between gap-3 border-[var(--border)] border-b px-4 py-3 marker:hidden">
+									<div>
+										<h2 className="font-semibold text-base">Artifact Trail</h2>
+										<p className="text-[var(--muted-foreground)] text-sm">
+											File-backed paths for the current comparison, including
+											local generated artifacts and seeded fallback artifacts.
+										</p>
+									</div>
+									<Badge tone="blue">
+										<span className="group-open:hidden">show</span>
+										<span className="hidden group-open:inline">hide</span>
+									</Badge>
+								</summary>
+								<CardBody className="hidden group-open:block">
+									<div className="overflow-x-auto rounded-md border border-[var(--border)]">
+										<table className="w-full text-left text-sm">
+											<thead className="bg-[var(--muted)] text-[var(--muted-foreground)]">
+												<tr>
+													<th className="px-3 py-2 font-medium">Artifact</th>
+													<th className="px-3 py-2 font-medium">Type</th>
+													<th className="px-3 py-2 font-medium">Path</th>
 												</tr>
-											))}
-										</tbody>
-									</table>
-								</div>
-							</CardBody>
+											</thead>
+											<tbody>
+												{artifacts.map((artifact) => (
+													<tr
+														className="border-[var(--border)] border-t"
+														key={artifact.path}
+													>
+														<td className="px-3 py-2 font-medium">
+															{artifact.label}
+														</td>
+														<td className="px-3 py-2 text-[var(--muted-foreground)]">
+															{artifact.type}
+														</td>
+														<td className="px-3 py-2 font-mono text-[var(--muted-foreground)] text-xs">
+															{artifact.path}
+														</td>
+													</tr>
+												))}
+											</tbody>
+										</table>
+									</div>
+								</CardBody>
+							</details>
 						</Card>
 					</div>
 				</section>

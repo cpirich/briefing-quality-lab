@@ -600,17 +600,124 @@ function runModelMetadataFromTraces(
 	};
 }
 
+function titleForFailureTag(tag: string) {
+	return tag
+		.split("-")
+		.map((part) => `${part[0]?.toUpperCase() ?? ""}${part.slice(1)}`)
+		.join(" ");
+}
+
+function failureThemeCounts(evaluations: EvaluatorOutput[]) {
+	const counts = new Map<string, { cases: string[] }>();
+	for (const evaluation of evaluations) {
+		for (const tag of evaluation.failureTags) {
+			const entry = counts.get(tag) ?? { cases: [] };
+			entry.cases.push(evaluation.caseId);
+			counts.set(tag, entry);
+		}
+	}
+
+	return counts;
+}
+
+function failureThemeStatus({
+	baselineCount,
+	candidateCount,
+}: {
+	baselineCount: number;
+	candidateCount: number;
+}) {
+	if (baselineCount === 0 && candidateCount > 0) {
+		return "new" as const;
+	}
+	if (baselineCount > 0 && candidateCount === 0) {
+		return "resolved" as const;
+	}
+	if (candidateCount < baselineCount) {
+		return "reduced" as const;
+	}
+	if (candidateCount > baselineCount) {
+		return "increased" as const;
+	}
+	return "unchanged" as const;
+}
+
+function failureThemeMovementsFor({
+	baselineEvaluations,
+	candidateEvaluations,
+}: {
+	baselineEvaluations: EvaluatorOutput[];
+	candidateEvaluations: EvaluatorOutput[];
+}): NonNullable<RunComparison["failureThemeMovements"]> {
+	const baselineCounts = failureThemeCounts(baselineEvaluations);
+	const candidateCounts = failureThemeCounts(candidateEvaluations);
+	const tags = new Set([...baselineCounts.keys(), ...candidateCounts.keys()]);
+
+	return [...tags]
+		.map((tag) => {
+			const baselineCases = baselineCounts.get(tag)?.cases ?? [];
+			const candidateCases = candidateCounts.get(tag)?.cases ?? [];
+			const baselineCount = baselineCases.length;
+			const candidateCount = candidateCases.length;
+			const delta = candidateCount - baselineCount;
+
+			return {
+				title: titleForFailureTag(tag),
+				baselineCount,
+				candidateCount,
+				delta,
+				status: failureThemeStatus({ baselineCount, candidateCount }),
+				baselineCases,
+				candidateCases,
+			};
+		})
+		.sort((left, right) => {
+			const statusPriority = {
+				new: 0,
+				increased: 1,
+				unchanged: 2,
+				reduced: 3,
+				resolved: 4,
+			};
+			const statusDelta =
+				statusPriority[left.status] - statusPriority[right.status];
+			if (statusDelta !== 0) {
+				return statusDelta;
+			}
+
+			const volumeDelta =
+				Math.max(right.baselineCount, right.candidateCount) -
+				Math.max(left.baselineCount, left.candidateCount);
+			if (volumeDelta !== 0) {
+				return volumeDelta;
+			}
+
+			return left.title.localeCompare(right.title);
+		});
+}
+
 async function comparisonWithRunMetadata(
 	comparison: RunComparison,
 ): Promise<RunComparison> {
-	const [baselineTraces, candidateTraces, runManifests] = await Promise.all([
+	const [
+		baselineTraces,
+		candidateTraces,
+		runManifests,
+		baselineEvaluations,
+		candidateEvaluations,
+	] = await Promise.all([
 		listOptionalGenerationTraces(comparison.baselineRunId),
 		listOptionalGenerationTraces(comparison.candidateRunId),
 		listRunManifests(),
+		listEvaluatorOutputs(comparison.baselineRunId),
+		listEvaluatorOutputs(comparison.candidateRunId),
 	]);
 
 	return RunComparisonSchema.parse({
 		...comparison,
+		failureThemeMovements:
+			comparison.failureThemeMovements ??
+			failureThemeMovementsFor({ baselineEvaluations, candidateEvaluations }),
 		trend: curatedTrendForComparison(comparison, runManifests),
 		runMetadata: {
 			baseline: runModelMetadataFromTraces(baselineTraces),

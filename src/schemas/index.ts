@@ -426,6 +426,25 @@ export const RunComparisonSchema = z.object({
 			cases: z.array(fixtureIdSchema).min(1),
 		}),
 	),
+	failureThemeMovements: z
+		.array(
+			z.object({
+				title: z.string().min(1),
+				baselineCount: z.number().int().nonnegative(),
+				candidateCount: z.number().int().nonnegative(),
+				delta: z.number().int(),
+				status: z.enum([
+					"new",
+					"resolved",
+					"reduced",
+					"increased",
+					"unchanged",
+				]),
+				baselineCases: z.array(fixtureIdSchema),
+				candidateCases: z.array(fixtureIdSchema),
+			}),
+		)
+		.optional(),
 	featuredCase: z.object({
 		id: fixtureIdSchema,
 		title: z.string().min(1),

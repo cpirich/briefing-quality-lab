@@ -259,6 +259,63 @@ function publicSafeArtifactPaths(
 		: [`runs/comparisons/${comparison.id}.json`];
 }
 
+function failureThemeMovementStatus({
+	baselineCount,
+	candidateCount,
+}: {
+	baselineCount: number;
+	candidateCount: number;
+}) {
+	if (baselineCount === 0 && candidateCount > 0) {
+		return "new" as const;
+	}
+	if (baselineCount > 0 && candidateCount === 0) {
+		return "resolved" as const;
+	}
+	if (candidateCount < baselineCount) {
+		return "reduced" as const;
+	}
+	if (candidateCount > baselineCount) {
+		return "increased" as const;
+	}
+	return "unchanged" as const;
+}
+
+function publicSafeFailureThemeMovements(
+	comparison: RunComparison,
+	holdoutCaseIds: Set<string>,
+) {
+	return comparison.failureThemeMovements?.flatMap((movement) => {
+		const baselineCases = movement.baselineCases.filter(
+			(caseId) => !holdoutCaseIds.has(caseId),
+		);
+		const candidateCases = movement.candidateCases.filter(
+			(caseId) => !holdoutCaseIds.has(caseId),
+		);
+		const baselineCount = baselineCases.length;
+		const candidateCount = candidateCases.length;
+
+		if (baselineCount === 0 && candidateCount === 0) {
+			return [];
+		}
+
+		return [
+			{
+				...movement,
+				baselineCount,
+				candidateCount,
+				delta: candidateCount - baselineCount,
+				status: failureThemeMovementStatus({
+					baselineCount,
+					candidateCount,
+				}),
+				baselineCases,
+				candidateCases,
+			},
+		];
+	});
+}
+
 async function publicSafeComparison(input?: {
 	baselineRunId?: string;
 	candidateRunId?: string;
@@ -308,6 +365,10 @@ async function publicSafeComparison(input?: {
 				? []
 				: [{ ...cluster, count: publicCases.length, cases: publicCases }];
 		}),
+		failureThemeMovements: publicSafeFailureThemeMovements(
+			comparison,
+			holdoutCaseIds,
+		),
 		featuredCase: publicSafeFeaturedCase(
 			comparison,
 			caseBreakdown,
