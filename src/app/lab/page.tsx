@@ -376,6 +376,9 @@ export default async function LabPage() {
 		candidateLabel,
 		runComparison.candidateRunId,
 	);
+	const isReferenceTargetComparison = usesReferenceTarget(
+		runComparison.candidateRunId,
+	);
 	const hasReferenceTargetColumns = runComparison.comparisonRows.some(
 		(row) => row.referenceTarget || row.gapToTarget,
 	);
@@ -704,89 +707,109 @@ export default async function LabPage() {
 							<CardHeader>
 								<h2 className="font-semibold text-base">Failure Themes</h2>
 								<p className="text-[var(--muted-foreground)] text-sm">
-									Theme movement from baseline to candidate, plus remaining
-									candidate-side findings across {comparedCaseCount} compared
-									cases.
+									{isReferenceTargetComparison
+										? `Baseline findings and Reference target themes across ${comparedCaseCount} compared cases.`
+										: `Theme movement from baseline to candidate, plus remaining candidate-side findings across ${comparedCaseCount} compared cases.`}
 								</p>
 							</CardHeader>
 							<CardBody className="space-y-3">
-								<div>
-									<div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-										<h3 className="font-semibold text-sm">
-											Failure Theme Movement
-										</h3>
-										<Badge tone="blue">
-											{baselineLabel} to {candidateLabel}
-										</Badge>
+								{isReferenceTargetComparison ? (
+									<div className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-[var(--muted-foreground)] text-sm">
+										Reference target themes are a yardstick, not a generated
+										candidate. Run a generated candidate to see new, reduced, or
+										resolved failure-theme movement.
 									</div>
-									{failureThemeMovements.length === 0 ? (
-										<p className="text-[var(--muted-foreground)] text-sm">
-											No baseline-to-candidate theme movement available.
-										</p>
-									) : (
-										<div className="overflow-x-auto rounded-md border border-[var(--border)]">
-											<table className="w-full min-w-[620px] text-left text-sm">
-												<thead className="bg-[var(--muted)] text-[var(--muted-foreground)]">
-													<tr>
-														<th className="px-3 py-2 font-medium">Theme</th>
-														<th className="px-3 py-2 font-medium">Baseline</th>
-														<th className="px-3 py-2 font-medium">Candidate</th>
-														<th className="px-3 py-2 font-medium">Change</th>
-													</tr>
-												</thead>
-												<tbody>
-													{failureThemeMovements.map((movement) => (
-														<tr
-															className="border-[var(--border)] border-t align-top"
-															key={movement.title}
-														>
-															<td className="px-3 py-2">
-																<p className="font-medium">{movement.title}</p>
-																<p className="mt-1 text-[var(--muted-foreground)] text-xs">
-																	{movement.baselineCases.length > 0
-																		? movement.baselineCases.join(", ")
-																		: "No baseline cases"}
-																</p>
-															</td>
-															<td className="px-3 py-2">
-																{movement.baselineCount}
-															</td>
-															<td className="px-3 py-2">
-																<p>{movement.candidateCount}</p>
-																<p className="mt-1 text-[var(--muted-foreground)] text-xs">
-																	{movement.candidateCases.length > 0
-																		? movement.candidateCases.join(", ")
-																		: "No candidate cases"}
-																</p>
-															</td>
-															<td className="px-3 py-2">
-																<div className="flex flex-wrap gap-1.5">
-																	<Badge tone={movementTone(movement.status)}>
-																		{movementLabel(movement.status)}
-																	</Badge>
-																	<Badge tone={movementTone(movement.status)}>
-																		{movementDeltaLabel(movement.delta)}
-																	</Badge>
-																</div>
-															</td>
-														</tr>
-													))}
-												</tbody>
-											</table>
+								) : (
+									<div>
+										<div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+											<h3 className="font-semibold text-sm">
+												Failure Theme Movement
+											</h3>
+											<Badge tone="blue">
+												{baselineLabel} to {candidateLabel}
+											</Badge>
 										</div>
-									)}
-								</div>
+										{failureThemeMovements.length === 0 ? (
+											<p className="text-[var(--muted-foreground)] text-sm">
+												No baseline-to-candidate theme movement available.
+											</p>
+										) : (
+											<div className="overflow-x-auto rounded-md border border-[var(--border)]">
+												<table className="w-full min-w-[620px] text-left text-sm">
+													<thead className="bg-[var(--muted)] text-[var(--muted-foreground)]">
+														<tr>
+															<th className="px-3 py-2 font-medium">Theme</th>
+															<th className="px-3 py-2 font-medium">
+																Baseline
+															</th>
+															<th className="px-3 py-2 font-medium">
+																Candidate
+															</th>
+															<th className="px-3 py-2 font-medium">Change</th>
+														</tr>
+													</thead>
+													<tbody>
+														{failureThemeMovements.map((movement) => (
+															<tr
+																className="border-[var(--border)] border-t align-top"
+																key={movement.title}
+															>
+																<td className="px-3 py-2">
+																	<p className="font-medium">
+																		{movement.title}
+																	</p>
+																	<p className="mt-1 text-[var(--muted-foreground)] text-xs">
+																		{movement.baselineCases.length > 0
+																			? movement.baselineCases.join(", ")
+																			: "No baseline cases"}
+																	</p>
+																</td>
+																<td className="px-3 py-2">
+																	{movement.baselineCount}
+																</td>
+																<td className="px-3 py-2">
+																	<p>{movement.candidateCount}</p>
+																	<p className="mt-1 text-[var(--muted-foreground)] text-xs">
+																		{movement.candidateCases.length > 0
+																			? movement.candidateCases.join(", ")
+																			: "No candidate cases"}
+																	</p>
+																</td>
+																<td className="px-3 py-2">
+																	<div className="flex flex-wrap gap-1.5">
+																		<Badge tone={movementTone(movement.status)}>
+																			{movementLabel(movement.status)}
+																		</Badge>
+																		<Badge tone={movementTone(movement.status)}>
+																			{movementDeltaLabel(movement.delta)}
+																		</Badge>
+																	</div>
+																</td>
+															</tr>
+														))}
+													</tbody>
+												</table>
+											</div>
+										)}
+									</div>
+								)}
 								<div className="border-[var(--border)] border-t pt-3">
 									<h3 className="font-semibold text-sm">
-										Remaining Candidate Themes
+										{isReferenceTargetComparison
+											? "Reference Target Themes"
+											: "Remaining Candidate Themes"}
 									</h3>
 									<p className="text-[var(--muted-foreground)] text-sm">
-										Current candidate findings grouped by evaluator tag.
+										{isReferenceTargetComparison
+											? "Reference target findings grouped by evaluator tag."
+											: "Current candidate findings grouped by evaluator tag."}
 									</p>
 								</div>
 								{failureClusters.length === 0 ? (
 									<p className="text-[var(--muted-foreground)] text-sm">
-										No public candidate failure themes for this comparison.
+										{isReferenceTargetComparison
+											? "No public Reference target themes for this comparison."
+											: "No public candidate failure themes for this comparison."}
 									</p>
 								) : null}
 								{failureClusters.map((cluster) => (
