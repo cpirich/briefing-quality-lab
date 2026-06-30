@@ -1,0 +1,41 @@
+{
+	"id": "case-release-note-drift-openai-grounded-claims-v1",
+	"sourcePacketId": "packet-release-note-drift",
+	"caseId": "case-release-note-drift",
+	"title": "Improving Generated Release Notes Without Losing Customer-Facing Accuracy",
+	"summary": "Focus improvements on preventing “release note drift” caused by stale PR text and late QA changes, and on making high-risk claims (migration/compatibility, security/retention/access control) easy to detect and explicitly approve. Use lightweight QA tagging plus a targeted review queue rather than expecting engineers or editors to rewrite everything.",
+	"claims": [
+		{
+			"text": "Add a pre-publication accuracy gate that compares generated notes to final QA deltas, because an audit found 14% of generated entries described behavior that changed after final QA and QA notes that PR text becomes unreliable after scope cuts.",
+			"citations": ["S1", "S5"]
+		},
+		{
+			"text": "Prioritize review of “commitment-like” statements (e.g., migration warnings, compatibility caveats, admin toggles) since customer success reported escalations when a generated note promised an admin toggle that was removed before release, and QA logs show an admin toggle removal and a late-added migration warning.",
+			"citations": ["S2", "S5"]
+		},
+		{
+			"text": "Implement a lightweight review queue that highlights changed/removed/sensitive claims instead of requiring manual maintenance of a second changelog, aligning with engineering’s willingness to tag QA deltas but not maintain parallel documentation.",
+			"citations": ["S3"]
+		},
+		{
+			"text": "Auto-flag and require explicit human approval for any customer-facing notes touching security, data retention, or access control, since compliance requires an approval record and wants sensitive statements easy to spot before publishing.",
+			"citations": ["S4"]
+		},
+		{
+			"text": "Update reviewer guidance to focus on drift-prone and high-impact items (changed claims, removed features, sensitive categories, and compatibility warnings) rather than rewriting every note, matching the existing editor checklist expectations.",
+			"citations": ["S6"]
+		}
+	],
+	"openQuestions": [
+		"What taxonomy/keywords will define “sensitive claims” and “commitment-like” statements for reliable auto-flagging (e.g., security/retention/access control; migration/compatibility; admin controls)?",
+		"Where should QA delta tags live (e.g., in the QA delta log only, in PR metadata, or both), and what is the required completeness before publication?",
+		"Who is the approver of record for compliance-sensitive notes, and what tooling is needed to capture and audit that approval?",
+		"What is the acceptable threshold for coverage vs. accuracy (e.g., allow omission of minor items to reduce drift risk)?"
+	],
+	"recommendation": "Adopt a two-stage workflow: (1) generate notes from merged PRs but automatically diff/validate against the QA delta log and surface discrepancies; (2) route only highlighted items (changed/removed claims, migration/compatibility warnings, and compliance-sensitive statements) through a focused review queue with explicit approval for security/retention/access-control mentions. This targets the known drift sources while keeping reviewer effort lightweight.",
+	"metadata": {
+		"variant": "OpenAI grounded claims variant",
+		"runId": "candidate-openai-grounded-claims-v1",
+		"model": "gpt-5.2"
+	}
+}

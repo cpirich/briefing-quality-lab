@@ -16,6 +16,7 @@ import { estimateOpenAIUsd, type OpenAIPricing } from "./openai-pricing";
 import {
 	defaultOpenAIModel,
 	localExtractiveVariant,
+	openAIGroundedClaimsVariant,
 	openAIResponsesVariant,
 } from "./variants";
 
@@ -47,6 +48,7 @@ const sentenceBoundaryPattern = /(?<=[.!?])\s+/;
 const structuredOutputName = "briefing_genie_output";
 const openAIApiKey = process.env.OPENAI_API_KEY;
 const openAIModel = process.env.OPENAI_MODEL ?? defaultOpenAIModel;
+const openAIVariantId = process.env.BRIEFING_GENIE_OPENAI_VARIANT;
 
 function compactWhitespace(value: string) {
 	return value.replace(/\s+/g, " ").trim();
@@ -115,6 +117,27 @@ function buildPrompt(sourcePacket: SourcePacket, userRequest: string) {
 		"Sources:",
 		sourceText,
 	].join("\n\n");
+}
+
+function instructionsForVariant(variant: GenerationVariant) {
+	const baseInstructions = [
+		"You are Briefing Genie, a concise research briefing generator.",
+		"Use only the provided synthetic source packet.",
+		"Cite claims with source ids exactly as shown, such as A1 or B2.",
+		"Do not invent citation ids, facts, or private data.",
+		"Return a concise briefing suitable for a strategy review.",
+	];
+
+	if (variant.id === "openai-grounded-claims-v1") {
+		baseInstructions.push(
+			"Before finalizing each claim, make sure every cited source directly supports each number, ranking, causal link, recommendation constraint, and scope word in that claim.",
+			"When a source is directional but not exact, soften the wording instead of sharpening it; prefer phrases like reported, several, contributed to, or source-specific wording over unsupported absolutes.",
+			"If a sentence needs evidence from multiple sources, cite all of those sources or split it into narrower claims.",
+			"Keep the same concise coverage target: three to five claims, each with one directly supported assertion.",
+		);
+	}
+
+	return baseInstructions.join(" ");
 }
 
 function assertCitationsBelongToPacket(
@@ -339,13 +362,7 @@ async function generateOpenAIResponsesBriefing({
 	});
 	const response = await client.responses.parse({
 		model: variant.model,
-		instructions: [
-			"You are Briefing Genie, a concise research briefing generator.",
-			"Use only the provided synthetic source packet.",
-			"Cite claims with source ids exactly as shown, such as A1 or B2.",
-			"Do not invent citation ids, facts, or private data.",
-			"Return a concise briefing suitable for a strategy review.",
-		].join(" "),
+		instructions: instructionsForVariant(variant),
 		input: prompt,
 		text: {
 			format: zodTextFormat(
@@ -408,6 +425,10 @@ function resolveVariant(provider: GenerateBriefingInput["provider"]) {
 	}
 
 	if (provider === "openai" || openAIApiKey) {
+		if (openAIVariantId === "openai-grounded-claims-v1") {
+			return openAIGroundedClaimsVariant(openAIModel);
+		}
+
 		return openAIResponsesVariant(openAIModel);
 	}
 

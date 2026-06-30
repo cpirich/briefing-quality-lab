@@ -1,0 +1,162 @@
+{
+	"id": "baseline-openai-20260624203921-candidate-openai-grounded-claims-v1",
+	"baselineRunId": "baseline-openai-20260624203921",
+	"candidateRunId": "candidate-openai-grounded-claims-v1",
+	"baselineLabel": "OpenAI baseline",
+	"candidateLabel": "OpenAI candidate",
+	"metrics": [
+		{
+			"label": "Overall quality",
+			"value": "0.94",
+			"delta": "+0.04",
+			"targetDelta": "-0.03",
+			"status": "Generated candidate compared",
+			"tone": "blue"
+		},
+		{
+			"label": "Citation grounding",
+			"value": "0.99",
+			"delta": "+0.04",
+			"targetDelta": "-0.03",
+			"status": "Citation support delta",
+			"tone": "blue"
+		},
+		{
+			"label": "Coverage",
+			"value": "0.99",
+			"delta": "+0.04",
+			"targetDelta": "-0.06",
+			"status": "Expected points covered",
+			"tone": "blue"
+		},
+		{
+			"label": "Estimated cost",
+			"value": "0.0627865",
+			"delta": "-0.00442925",
+			"targetDelta": "-0.0372135",
+			"status": "Generation trace cost",
+			"tone": "green"
+		},
+		{
+			"label": "Median latency",
+			"value": "8.6s",
+			"delta": "-2.1s",
+			"targetDelta": "+0.6s",
+			"status": "Median latency delta",
+			"tone": "green"
+		}
+	],
+	"trend": [
+		{
+			"label": "OpenAI baseline",
+			"score": 90
+		},
+		{
+			"label": "OpenAI candidate",
+			"score": 94
+		}
+	],
+	"comparisonRows": [
+		{
+			"metric": "Overall score",
+			"baseline": "0.90",
+			"candidate": "0.94",
+			"referenceTarget": "0.91",
+			"delta": "+0.04",
+			"gapToTarget": "-0.03"
+		},
+		{
+			"metric": "Citation support",
+			"baseline": "0.95",
+			"candidate": "0.99",
+			"referenceTarget": "0.96",
+			"delta": "+0.04",
+			"gapToTarget": "-0.03"
+		},
+		{
+			"metric": "Coverage",
+			"baseline": "0.95",
+			"candidate": "0.99",
+			"referenceTarget": "0.93",
+			"delta": "+0.04",
+			"gapToTarget": "-0.06"
+		},
+		{
+			"metric": "Grounding risk units",
+			"baseline": "9",
+			"candidate": "7",
+			"referenceTarget": "6",
+			"delta": "-2",
+			"gapToTarget": "+1"
+		},
+		{
+			"metric": "Eval cases",
+			"baseline": "7",
+			"candidate": "7",
+			"referenceTarget": "7",
+			"delta": "0",
+			"gapToTarget": "0"
+		},
+		{
+			"metric": "Median latency",
+			"baseline": "10.7s",
+			"candidate": "8.6s",
+			"referenceTarget": "8.0s",
+			"delta": "-2.1s",
+			"gapToTarget": "+0.6s"
+		},
+		{
+			"metric": "Estimated cost",
+			"baseline": "0.06721575",
+			"candidate": "0.0627865",
+			"referenceTarget": "<= 0.1",
+			"delta": "-0.00442925",
+			"gapToTarget": "-0.0372135"
+		}
+	],
+	"failureClusters": [
+		{
+			"title": "Minor Unsupported Purpose",
+			"count": 1,
+			"severity": "Low",
+			"evidence": "Repeated minor-unsupported-purpose findings across evaluator outputs.",
+			"cases": ["case-cost-latency-budget"]
+		},
+		{
+			"title": "Missing Telemetry Context",
+			"count": 1,
+			"severity": "Low",
+			"evidence": "Repeated missing-telemetry-context findings across evaluator outputs.",
+			"cases": ["case-cost-latency-budget"]
+		},
+		{
+			"title": "Partial Claim Support",
+			"count": 1,
+			"severity": "Low",
+			"evidence": "Repeated partial-claim-support findings across evaluator outputs.",
+			"cases": ["case-cost-latency-budget"]
+		}
+	],
+	"featuredCase": {
+		"id": "case-adoption-friction",
+		"title": "Developer adoption friction briefing",
+		"sourceEvidence": "Quickstart completion is improving but setup remains a drop-off point.",
+		"baseline": "Prioritize a self-serve “Setup Recovery” improvement before adding more pilot teams: publish and productize a recovery checklist/flow that explicitly handles stale CLI installs, missing environment variables, credential/workspace mismatches, and repeated setup attempts—so a failed install has a documented path to a clean state without support pasting internal steps. This directly targets the main drop-off in setup/credentials and is an explicit pilot readiness gate blocking scheduling.",
+		"candidate": "Next product-quality improvement for pilot expansion: ship and publish a self-serve setup recovery path that covers failed installs and credential/environment issues (stale CLI, missing env vars, workspace credential mismatches, and repeated setup attempts), replacing reliance on support-pasted internal checklists. Validate it in the lab as a calm, end-to-end demo flow, and in parallel ensure generated recommendations visibly include source citations and provenance (analytics/support/interviews) to meet the pilot readiness gates before scheduling the next teams.",
+		"evaluatorNote": "Comparison uses file-backed artifacts for the same eval case so the before/after story is inspectable."
+	},
+	"recommendation": {
+		"tone": "green",
+		"label": "Hybrid judge comparison",
+		"text": "Use OpenAI baseline and OpenAI candidate as the current inspectable before/after story.",
+		"warning": "Hybrid LLM judge scores require manual spot checks of claim support, missing evidence, and overconfidence before claiming product improvement."
+	},
+	"artifactPaths": [
+		"runs/baseline-openai-20260624203921/manifest.json",
+		"runs/candidate-openai-grounded-claims-v1/manifest.json",
+		"runs/baseline-openai-20260624203921/evaluations/case-adoption-friction.json",
+		"runs/baseline-openai-20260624203921/evaluations/case-code-review-queues.json",
+		"runs/candidate-openai-grounded-claims-v1/evaluations/case-adoption-friction.json",
+		"runs/candidate-openai-grounded-claims-v1/evaluations/case-code-review-queues.json"
+	]
+}

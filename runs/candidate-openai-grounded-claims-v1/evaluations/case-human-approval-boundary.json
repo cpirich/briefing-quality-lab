@@ -1,0 +1,191 @@
+{
+	"id": "evaluation-candidate-openai-grounded-claims-v1-case-human-approval-boundary",
+	"runId": "candidate-openai-grounded-claims-v1",
+	"caseId": "case-human-approval-boundary",
+	"evaluator": {
+		"mode": "hybrid",
+		"provider": "openai",
+		"model": "gpt-5.5",
+		"promptVersion": "hybrid-judge-v1",
+		"settings": {
+			"structuredOutputName": "hybrid_evaluator_output"
+		},
+		"latencyMs": 17015,
+		"cost": {
+			"inputTokens": 2039,
+			"cachedInputTokens": 0,
+			"outputTokens": 782,
+			"estimatedUsd": 0.033655,
+			"pricing": {
+				"model": "gpt-5.5",
+				"inputUsdPer1MTokens": 5,
+				"cachedInputUsdPer1MTokens": 0.5,
+				"outputUsdPer1MTokens": 30,
+				"currency": "USD",
+				"serviceTier": "standard",
+				"context": "short",
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-24"
+			}
+		}
+	},
+	"hardChecks": [
+		{
+			"id": "briefing-schema",
+			"label": "Briefing schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "BriefingOutput schema parses"
+		},
+		{
+			"id": "citation-source-ids",
+			"label": "Citation source ids",
+			"status": "pass",
+			"value": "6 cited ids exist",
+			"expectation": "Every cited source id exists in the source packet"
+		},
+		{
+			"id": "trace-schema",
+			"label": "Trace schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "GenerationTrace schema parses"
+		},
+		{
+			"id": "latency-metadata",
+			"label": "Latency metadata",
+			"status": "pass",
+			"value": "7035ms",
+			"threshold": "> 0ms"
+		},
+		{
+			"id": "cost-metadata",
+			"label": "Cost metadata",
+			"status": "pass",
+			"value": "0.00816725",
+			"expectation": "estimatedUsd is present when pricing is configured"
+		},
+		{
+			"id": "token-metadata",
+			"label": "Token metadata",
+			"status": "pass",
+			"value": "827 in / 0 cached / 480 out",
+			"expectation": "Input, cached-input, and output token counts are coherent"
+		},
+		{
+			"id": "model-metadata",
+			"label": "Provider and model metadata",
+			"status": "pass",
+			"value": "openai gpt-5.2 briefing-genie-grounded-claims-v1",
+			"expectation": "Provider, model, and prompt version are present"
+		},
+		{
+			"id": "judge-input-boundary",
+			"label": "Judge input boundary",
+			"status": "pass",
+			"value": "eval-only fields omitted",
+			"expectation": "Judge prompt omits eval-only object keys and holdout tuning fields"
+		},
+		{
+			"id": "judge-claim-coverage",
+			"label": "Judge claim coverage",
+			"status": "pass",
+			"value": "4/4 claims judged, 0 extra",
+			"expectation": "LLM judge returns exactly one judgment for every briefing claim"
+		}
+	],
+	"claimJudgments": [
+		{
+			"claimText": "Automate drafting, summarization, and artifact linking as default behaviors when outputs are clearly marked as AI-generated and intended for inspection before action.",
+			"citedSourceIds": ["S1", "S5", "S4"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S1", "S5", "S4"],
+			"missingEvidence": [],
+			"explanation": "S1 directly approves automatic drafting, summarization, and artifact linking when clearly marked as generated and notes humans can inspect before action. S5 lists drafting and artifact linking as safe defaults, and S4 supports internal draft summaries as advisory if not confused with commitments.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Require human approval (with an accountable approver recorded) for policy changes, customer commitments, release blocking, and external/customer-facing messages because they change obligations or can stop work.",
+			"citedSourceIds": ["S1", "S5", "S4"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S1", "S5", "S4"],
+			"missingEvidence": [],
+			"explanation": "S1 rejects automatic policy changes, customer commitments, and release blocking because they change obligations or stop work. S5 says release blocks, customer commitments, policy changes, and external messages require an approver recorded in the artifact trail. S4 requires an accountable human reviewer for customer-facing commitments.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Add explicit status labels (e.g., draft, recommendation, approved action, blocked) and ensure recommendations cannot be presented in a way that looks like an approved decision, to prevent unnecessary pauses or mistaken execution.",
+			"citedSourceIds": ["S2", "S6"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S2", "S6"],
+			"missingEvidence": [],
+			"explanation": "S2 describes an incident where a recommendation was mistaken for an approved decision and teams paused work, and asks for the exact status labels listed. S6 also recommends visible status labels and distinguishing generated content from approved action.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Design the interface to visually separate evidence, recommendations, and action controls (avoiding a combined recommendation-and-execute cluster) to improve acceptance and reduce cancellations/clarification behavior.",
+			"citedSourceIds": ["S3", "S6"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S3", "S6"],
+			"missingEvidence": [],
+			"explanation": "S3 directly reports higher acceptance when evidence, recommendation, and action controls are separated, and more cancellations/clarification clicks when recommendation and action are combined. S6 reinforces separating panels and avoiding an execution button beside an AI recommendation.",
+			"failureTags": []
+		}
+	],
+	"recommendationJudgment": {
+		"taskAnswerStatus": "answers-task",
+		"overconfidenceStatus": "calibrated",
+		"missingImportantEvidence": [],
+		"explanation": "The recommendation directly answers which actions should be automated versus require approval, and its approval boundaries and UI safeguards are well supported by the packet. It does not materially overstate the evidence.",
+		"failureTags": []
+	},
+	"scores": {
+		"overall": 0.95,
+		"grounding": 0.88,
+		"coverage": 1,
+		"citationSupport": 1
+	},
+	"failureTags": [],
+	"rubricEvidence": [
+		"Hybrid claim support score: 1.00.",
+		"Recommendation task fit: answers-task.",
+		"Overconfidence: calibrated.",
+		"Hard-check cap: 1.00."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "S1 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S5",
+			"supported": true,
+			"note": "S5 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "S4 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "S2 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S6",
+			"supported": true,
+			"note": "S6 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "S3 appears in fully supported claim-level judgments."
+		}
+	],
+	"notes": "Hybrid evaluator output: deterministic hard checks plus structured LLM judge evidence. Manual spot checks are still required before claiming product improvement.",
+	"artifactPaths": [
+		"runs/candidate-openai-grounded-claims-v1/evaluations/case-human-approval-boundary.json",
+		"runs/candidate-openai-grounded-claims-v1/briefings/case-human-approval-boundary.json"
+	]
+}

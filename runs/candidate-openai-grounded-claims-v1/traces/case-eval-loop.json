@@ -1,0 +1,142 @@
+{
+	"id": "case-eval-loop-openai-grounded-claims-v1-trace",
+	"runId": "candidate-openai-grounded-claims-v1",
+	"caseId": "case-eval-loop",
+	"sourcePacketId": "packet-eval-loop",
+	"input": {
+		"userRequest": "Recommend whether to expand automated evals, balancing coverage, citation support, trace utility, and cost.",
+		"sourcePacketPath": "data/source-packets/packet-eval-loop.json"
+	},
+	"messages": [
+		{
+			"role": "system",
+			"content": "You are Briefing Genie. Return a short briefing with source citations."
+		},
+		{
+			"role": "user",
+			"content": "User request: Recommend whether to expand automated evals, balancing coverage, citation support, trace utility, and cost.\n\nSource packet: Eval Loop Strategy\n\nPacket summary: Notes comparing weekly human review, automated scoring, holdout cases, and release guardrails.\n\nSources:\n\n[S1] Quality review memo\nType: quality memo\nTeams need smaller eval batches with visible failure clusters before expanding model coverage. The last broad run increased the number of cases scored, but reviewers could not tell which failures were repeated patterns and which were one-off mistakes.\n\nThe memo compares a broad dry run with a smaller reviewed batch. The broad run produced more scores, but reviewers spent extra time rediscovering whether each failure was new. The smaller batch made repeated citation issues easier to group and produced more actionable prompt changes.\n\n[S2] Release guardrail notes\nType: release notes\nCoverage can improve while grounding regresses, so citation support needs an explicit shipping gate. The suggested threshold is not a leaderboard target; it is a release block when candidate outputs make unsupported claims.\n\nThe guardrail note came from a release review where the candidate covered more requested points but attached weak citations to several claims. Reviewers agreed that coverage and grounding must be tracked separately. A candidate can look better in aggregate and still be blocked if unsupported claims reach customer-facing recommendations.\n\n[S3] Cost review\nType: cost review\nLong traces help debug failures, but unchecked retries created a 1.34x cost increase in the last dry run. The finance reviewer accepted trace retention only if retries are capped and summarized in the run manifest.\n\nThe cost review separates trace usefulness from retry sprawl. Long traces helped diagnose why a claim failed, but retries created duplicate traces that nobody read. Finance accepted keeping detailed traces when the run manifest shows retry count, cost ratio, and a short explanation of what the trace helped resolve.\n\n[S4] Holdout protocol\nType: governance note\nHoldout cases should appear in dashboards as summaries and aggregate scores, but their tuning labels should stay out of prompt-iteration workflows. Reviewers want confidence that prompt changes are not simply memorizing visible examples.\n\nThe holdout protocol distinguishes dashboard visibility from tuning visibility. Aggregate holdout scores may appear in the lab so reviewers know the set exists, but labels and expected answers should not appear in prompt-editing screens. The goal is to catch overfitting to the visible demo cases.\n\n[S5] Reviewer retro notes\nType: retro notes\nThe reviewer retro says the last eval review felt slower than expected because failures were not grouped by pattern. Reviewers asked for a dashboard that clusters unsupported claims, weak citations, cost regressions, and holdout concerns separately. They preferred fewer cases with clearer evidence over a larger run where every row required manual interpretation.\n\n[S6] Experiment proposal\nType: experiment proposal\nThe experiment proposal recommends one more visible batch before live orchestration. It asks the team to hold citation support as a shipping gate, keep retry counts in the manifest, and report holdout performance only in aggregate. The proposal frames expansion as acceptable only if the next candidate improves grounding without exceeding the cost guardrail."
+		}
+	],
+	"model": {
+		"provider": "openai",
+		"name": "gpt-5.2",
+		"settings": {
+			"promptVersion": "briefing-genie-grounded-claims-v1",
+			"maxOutputTokens": 1200,
+			"structuredOutputName": "briefing_genie_output",
+			"textVerbosity": null,
+			"reasoningEffort": null,
+			"reasoningSummary": null,
+			"temperature": null,
+			"topP": null,
+			"truncation": null,
+			"toolChoice": null,
+			"parallelToolCalls": null
+		}
+	},
+	"output": {
+		"id": "case-eval-loop-openai-grounded-claims-v1",
+		"sourcePacketId": "packet-eval-loop",
+		"caseId": "case-eval-loop",
+		"title": "Recommendation on expanding automated evals (coverage vs grounding, trace utility, and cost)",
+		"summary": "Do not broadly expand automated eval coverage yet; expand in a controlled, smaller-batch loop with explicit grounding/citation gating, capped retries, and holdout governance. Use automated evals to surface clustered failure patterns and to enforce release guardrails, while keeping traces for debugging under a cost discipline.",
+		"claims": [
+			{
+				"text": "Broadening automated eval coverage without tighter review structure can reduce reviewer efficiency, because larger runs made it harder to distinguish repeated failure patterns from one-offs; smaller reviewed batches produced more actionable grouped issues (e.g., repeated citation problems).",
+				"citations": ["S1"]
+			},
+			{
+				"text": "Coverage gains can coincide with weaker grounding, so citation support should be an explicit shipping gate rather than inferred from aggregate coverage/score improvements.",
+				"citations": ["S2"]
+			},
+			{
+				"text": "Long traces are useful for diagnosing failures, but uncontrolled retries increased cost in the last dry run (1.34x); trace retention is acceptable if retries are capped and retry/cost context is summarized in the run manifest.",
+				"citations": ["S3"]
+			},
+			{
+				"text": "Holdout cases should be visible only as summaries/aggregate scores in dashboards, while keeping labels/expected answers out of prompt-iteration workflows to reduce memorization risk.",
+				"citations": ["S4"]
+			},
+			{
+				"text": "A prudent near-term approach is one more visible batch before live orchestration, expanding only if grounding improves without exceeding cost guardrails, while maintaining citation gating, manifest retry reporting, and aggregate-only holdout reporting.",
+				"citations": ["S6"]
+			}
+		],
+		"openQuestions": [
+			"What concrete cap will be set on retries per case/run to meet the cost guardrail while preserving enough trace detail for debugging?",
+			"What operational definition of the citation/grounding shipping gate will be used (e.g., threshold on unsupported-claim incidence), and how will violations be detected and clustered?",
+			"What minimum batch size and clustering view will be used so failures are visibly grouped by pattern (unsupported claims, weak citations, cost regressions, holdout concerns) before scaling coverage?",
+			"How will the dashboard segregate holdout visibility (aggregate only) from tuning workflows in practice?"
+		],
+		"recommendation": "Expand automated evals only in a constrained next step: run a smaller, highly visible batch that clusters failure patterns; enforce citation support as a release-blocking gate; keep long traces but cap retries and report retry count/cost ratio plus trace value in the manifest; and keep holdout results aggregate-only and out of prompt-iteration screens. Proceed to broader coverage/live orchestration only if the next candidate demonstrably improves grounding without breaching the cost guardrail.",
+		"metadata": {
+			"variant": "OpenAI grounded claims variant",
+			"runId": "candidate-openai-grounded-claims-v1",
+			"model": "gpt-5.2"
+		}
+	},
+	"rawOutput": {
+		"id": "case-eval-loop-openai-grounded-claims-v1",
+		"sourcePacketId": "packet-eval-loop",
+		"caseId": "case-eval-loop",
+		"title": "Recommendation on expanding automated evals (coverage vs grounding, trace utility, and cost)",
+		"summary": "Do not broadly expand automated eval coverage yet; expand in a controlled, smaller-batch loop with explicit grounding/citation gating, capped retries, and holdout governance. Use automated evals to surface clustered failure patterns and to enforce release guardrails, while keeping traces for debugging under a cost discipline.",
+		"claims": [
+			{
+				"text": "Broadening automated eval coverage without tighter review structure can reduce reviewer efficiency, because larger runs made it harder to distinguish repeated failure patterns from one-offs; smaller reviewed batches produced more actionable grouped issues (e.g., repeated citation problems).",
+				"citations": ["S1"]
+			},
+			{
+				"text": "Coverage gains can coincide with weaker grounding, so citation support should be an explicit shipping gate rather than inferred from aggregate coverage/score improvements.",
+				"citations": ["S2"]
+			},
+			{
+				"text": "Long traces are useful for diagnosing failures, but uncontrolled retries increased cost in the last dry run (1.34x); trace retention is acceptable if retries are capped and retry/cost context is summarized in the run manifest.",
+				"citations": ["S3"]
+			},
+			{
+				"text": "Holdout cases should be visible only as summaries/aggregate scores in dashboards, while keeping labels/expected answers out of prompt-iteration workflows to reduce memorization risk.",
+				"citations": ["S4"]
+			},
+			{
+				"text": "A prudent near-term approach is one more visible batch before live orchestration, expanding only if grounding improves without exceeding cost guardrails, while maintaining citation gating, manifest retry reporting, and aggregate-only holdout reporting.",
+				"citations": ["S6"]
+			}
+		],
+		"openQuestions": [
+			"What concrete cap will be set on retries per case/run to meet the cost guardrail while preserving enough trace detail for debugging?",
+			"What operational definition of the citation/grounding shipping gate will be used (e.g., threshold on unsupported-claim incidence), and how will violations be detected and clustered?",
+			"What minimum batch size and clustering view will be used so failures are visibly grouped by pattern (unsupported claims, weak citations, cost regressions, holdout concerns) before scaling coverage?",
+			"How will the dashboard segregate holdout visibility (aggregate only) from tuning workflows in practice?"
+		],
+		"recommendation": "Expand automated evals only in a constrained next step: run a smaller, highly visible batch that clusters failure patterns; enforce citation support as a release-blocking gate; keep long traces but cap retries and report retry count/cost ratio plus trace value in the manifest; and keep holdout results aggregate-only and out of prompt-iteration screens. Proceed to broader coverage/live orchestration only if the next candidate demonstrably improves grounding without breaching the cost guardrail.",
+		"metadata": {
+			"variant": "OpenAI grounded claims variant",
+			"runId": "candidate-openai-grounded-claims-v1",
+			"model": "gpt-5.2"
+		}
+	},
+	"toolCalls": [],
+	"cost": {
+		"inputTokens": 893,
+		"cachedInputTokens": 0,
+		"outputTokens": 551,
+		"estimatedUsd": 0.00927675,
+		"pricing": {
+			"model": "gpt-5.2",
+			"inputUsdPer1MTokens": 1.75,
+			"cachedInputUsdPer1MTokens": 0.175,
+			"outputUsdPer1MTokens": 14,
+			"currency": "USD",
+			"serviceTier": "standard",
+			"context": "short",
+			"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+		}
+	},
+	"latencyMs": 8605,
+	"artifactPaths": [
+		"data/source-packets/packet-eval-loop.json",
+		"runs/candidate-openai-grounded-claims-v1/briefings/case-eval-loop.json",
+		"runs/candidate-openai-grounded-claims-v1/traces/case-eval-loop.json"
+	]
+}

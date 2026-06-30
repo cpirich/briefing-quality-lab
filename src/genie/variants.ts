@@ -23,3 +23,16 @@ export function openAIResponsesVariant(modelName: string): GenerationVariant {
 		maxOutputTokens: 1200,
 	});
 }
+
+export function openAIGroundedClaimsVariant(
+	modelName: string,
+): GenerationVariant {
+	return GenerationVariantSchema.parse({
+		id: "openai-grounded-claims-v1",
+		label: "OpenAI grounded claims variant",
+		provider: "openai",
+		model: modelName,
+		promptVersion: "briefing-genie-grounded-claims-v1",
+		maxOutputTokens: 1200,
+	});
+}

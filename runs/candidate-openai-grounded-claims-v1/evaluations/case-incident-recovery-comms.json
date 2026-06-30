@@ -1,0 +1,200 @@
+{
+	"id": "evaluation-candidate-openai-grounded-claims-v1-case-incident-recovery-comms",
+	"runId": "candidate-openai-grounded-claims-v1",
+	"caseId": "case-incident-recovery-comms",
+	"evaluator": {
+		"mode": "hybrid",
+		"provider": "openai",
+		"model": "gpt-5.5",
+		"promptVersion": "hybrid-judge-v1",
+		"settings": {
+			"structuredOutputName": "hybrid_evaluator_output"
+		},
+		"latencyMs": 18193,
+		"cost": {
+			"inputTokens": 2001,
+			"cachedInputTokens": 0,
+			"outputTokens": 889,
+			"estimatedUsd": 0.036675,
+			"pricing": {
+				"model": "gpt-5.5",
+				"inputUsdPer1MTokens": 5,
+				"cachedInputUsdPer1MTokens": 0.5,
+				"outputUsdPer1MTokens": 30,
+				"currency": "USD",
+				"serviceTier": "standard",
+				"context": "short",
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-24"
+			}
+		}
+	},
+	"hardChecks": [
+		{
+			"id": "briefing-schema",
+			"label": "Briefing schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "BriefingOutput schema parses"
+		},
+		{
+			"id": "citation-source-ids",
+			"label": "Citation source ids",
+			"status": "pass",
+			"value": "6 cited ids exist",
+			"expectation": "Every cited source id exists in the source packet"
+		},
+		{
+			"id": "trace-schema",
+			"label": "Trace schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "GenerationTrace schema parses"
+		},
+		{
+			"id": "latency-metadata",
+			"label": "Latency metadata",
+			"status": "pass",
+			"value": "7127ms",
+			"threshold": "> 0ms"
+		},
+		{
+			"id": "cost-metadata",
+			"label": "Cost metadata",
+			"status": "pass",
+			"value": "0.00839825",
+			"expectation": "estimatedUsd is present when pricing is configured"
+		},
+		{
+			"id": "token-metadata",
+			"label": "Token metadata",
+			"status": "pass",
+			"value": "831 in / 0 cached / 496 out",
+			"expectation": "Input, cached-input, and output token counts are coherent"
+		},
+		{
+			"id": "model-metadata",
+			"label": "Provider and model metadata",
+			"status": "pass",
+			"value": "openai gpt-5.2 briefing-genie-grounded-claims-v1",
+			"expectation": "Provider, model, and prompt version are present"
+		},
+		{
+			"id": "judge-input-boundary",
+			"label": "Judge input boundary",
+			"status": "pass",
+			"value": "eval-only fields omitted",
+			"expectation": "Judge prompt omits eval-only object keys and holdout tuning fields"
+		},
+		{
+			"id": "judge-claim-coverage",
+			"label": "Judge claim coverage",
+			"status": "pass",
+			"value": "5/5 claims judged, 0 extra",
+			"expectation": "LLM judge returns exactly one judgment for every briefing claim"
+		}
+	],
+	"claimJudgments": [
+		{
+			"claimText": "Start the recovery message with symptoms (especially partial-install confusion) and then give one safe next action to reduce uncertainty about rerunning setup, credential clearing, or waiting for a patched CLI.",
+			"citedSourceIds": ["S1"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S1"],
+			"missingEvidence": [],
+			"explanation": "S1 states partial installs were the biggest source of confusion, users were unsure about rerunning setup, clearing credentials, or waiting for a patched CLI, and agents wanted a message that starts with symptoms and gives one safe next action.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Avoid broad language like “resolved” unless the environment caveat is prominently included, because engineering verification is currently limited to macOS and Linux and Windows recovery steps are still being validated.",
+			"citedSourceIds": ["S2"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S2"],
+			"missingEvidence": [],
+			"explanation": "S2 directly says the draft's 'resolved' language was too broad unless the environment caveat stayed visible, because recovery was verified only on macOS/Linux and Windows validation remained incomplete.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Structure the customer-facing update into three explicit sections—who is affected, what action to take, and which environments are still pending validation—and keep the Windows caveat in the first paragraph rather than as a footnote.",
+			"citedSourceIds": ["S3"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S3"],
+			"missingEvidence": [],
+			"explanation": "S3 explicitly asks to separate affected users, recommended action, and pending validation, and to put the Windows caveat in the first paragraph rather than a footnote.",
+			"failureTags": []
+		},
+		{
+			"claimText": "When recommending actions, point users to the patched CLI’s recovery command (available in the release candidate) because it addresses stale credentials and cleans partial-install state; align documentation/screenshots before broad promotion.",
+			"citedSourceIds": ["S4"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S4"],
+			"missingEvidence": [],
+			"explanation": "S4 says the patched CLI has a recovery command in the release candidate that checks stale credentials and cleans partial install state, and that docs/screenshots still show the old flow so docs should be updated before broad promotion.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Match support’s OS-segmented guidance (verified macOS, verified Linux, pending Windows) and ensure communications do not direct users to the old installer flow once the release candidate is promoted (Windows screenshots are still pending).",
+			"citedSourceIds": ["S5", "S6"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S5", "S6"],
+			"missingEvidence": [],
+			"explanation": "S6 supports the macOS/Linux/Windows segmentation and asks for it in incident briefings. S5 supports not pointing users to the old installer flow once the release candidate is promoted and notes Windows screenshots are pending.",
+			"failureTags": []
+		}
+	],
+	"recommendationJudgment": {
+		"taskAnswerStatus": "answers-task",
+		"overconfidenceStatus": "calibrated",
+		"missingImportantEvidence": [],
+		"explanation": "The recommendation is well grounded in the packet: it emphasizes symptoms and one safe action, OS segmentation with Windows validation caveat, avoiding universal resolution claims, and coordinating docs before promoting the release-candidate recovery path. It does not overclaim Windows readiness or universal resolution.",
+		"failureTags": []
+	},
+	"scores": {
+		"overall": 0.95,
+		"grounding": 0.88,
+		"coverage": 1,
+		"citationSupport": 1
+	},
+	"failureTags": [],
+	"rubricEvidence": [
+		"Hybrid claim support score: 1.00.",
+		"Recommendation task fit: answers-task.",
+		"Overconfidence: calibrated.",
+		"Hard-check cap: 1.00."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "S1 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "S2 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "S3 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "S4 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S5",
+			"supported": true,
+			"note": "S5 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S6",
+			"supported": true,
+			"note": "S6 appears in fully supported claim-level judgments."
+		}
+	],
+	"notes": "Hybrid evaluator output: deterministic hard checks plus structured LLM judge evidence. Manual spot checks are still required before claiming product improvement.",
+	"artifactPaths": [
+		"runs/candidate-openai-grounded-claims-v1/evaluations/case-incident-recovery-comms.json",
+		"runs/candidate-openai-grounded-claims-v1/briefings/case-incident-recovery-comms.json"
+	]
+}

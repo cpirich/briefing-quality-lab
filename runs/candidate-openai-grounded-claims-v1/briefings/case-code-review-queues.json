@@ -1,0 +1,41 @@
+{
+	"id": "case-code-review-queues-openai-grounded-claims-v1",
+	"sourcePacketId": "packet-code-review-queues",
+	"caseId": "case-code-review-queues",
+	"title": "Reducing code review queue time without increasing low-quality merges",
+	"summary": "Focus on cutting tail latency by routing work to the right owners and using automation to organize (not approve) low-risk changes. Keep strict approval rules for cross-service work, and use risk/ownership signals to safely fast-track routine docs/config when tests are healthy.",
+	"claims": [
+		{
+			"text": "Treat the long tail (e.g., 90th percentile wait time) primarily as an ownership/routing issue: complex cross-service changes are waiting on a small set of senior reviewers, even after reviewer rotation improved the median.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Introduce a fast-track path limited to documentation and configuration changes when tests are healthy, while keeping required approvals intact and explicitly disallowing automation from bypassing branch protection.",
+			"citations": ["S6"]
+		},
+		{
+			"text": "Harden cross-service review requirements by ensuring an owning-team reviewer is required for cross-service changes, since incidents were linked to fast-tracking cross-service work without the correct owning team.",
+			"citations": ["S3", "S6"]
+		},
+		{
+			"text": "Use a queue helper to reduce reviewer coordination overhead—suggest reviewers, cluster similar low-risk changes, and surface missing/conflicting ownership metadata—rather than relying on bot approvals.",
+			"citations": ["S4", "S5", "S2"]
+		},
+		{
+			"text": "Add reviewer-visible risk labels that explain why a change is considered low risk (ownership metadata, test health, file categories) and make the label challengeable before merge to build trust without weakening quality controls.",
+			"citations": ["S2"]
+		}
+	],
+	"openQuestions": [
+		"What concrete criteria will define 'healthy tests' for fast-track eligibility (e.g., recent flake rate thresholds) given reviewer distrust when tests are flaky?",
+		"How will cross-service changes be detected and mapped to the true runtime-behavior owning team, given that semantic ownership is not currently verifiable by the helper and ownership entries can be stale?",
+		"Which shared services create the most tail latency today (those tied to the same two senior reviewers), and can ownership metadata or reviewer pools be updated to distribute load?",
+		"What UI/UX will allow fast-track labels to be challenged before merge without reintroducing significant delay?"
+	],
+	"recommendation": "Implement a two-lane queue: (1) a fast-track lane for docs/config only when tests are healthy, with required approvals preserved; and (2) a cross-service lane that enforces owning-team review and prioritizes fixing ownership metadata. Deploy the queue helper to auto-suggest reviewers, cluster low-risk items, and prominently flag missing/conflicting ownership as a risk signal, paired with explainable, challengeable risk labels to maintain merge quality while reducing coordination and wait time.",
+	"metadata": {
+		"variant": "OpenAI grounded claims variant",
+		"runId": "candidate-openai-grounded-claims-v1",
+		"model": "gpt-5.2"
+	}
+}

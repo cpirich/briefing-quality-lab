@@ -1,0 +1,70 @@
+{
+	"runId": "candidate-openai-grounded-claims-v1",
+	"createdAt": "2026-06-30T20:19:06.353Z",
+	"variantLabel": "openai generated variant",
+	"status": "complete",
+	"gitRef": "local-worktree",
+	"command": "bun run eval:variant --provider=openai --evaluator=hybrid --run-id=candidate-openai-grounded-claims-v1 --baseline=baseline-openai-20260624203921",
+	"caseIds": [
+		"case-adoption-friction",
+		"case-code-review-queues",
+		"case-cost-latency-budget",
+		"case-eval-loop",
+		"case-human-approval-boundary",
+		"case-incident-recovery-comms",
+		"case-release-note-drift"
+	],
+	"aggregateMetrics": {
+		"overall": 0.94,
+		"grounding": 0.86,
+		"coverage": 0.99,
+		"citationSupport": 0.99,
+		"unsupportedClaims": 7,
+		"groundingRiskUnits": 7,
+		"medianLatencyMs": 8605,
+		"estimatedCostUsd": 0.0627865,
+		"evaluatorEstimatedCostUsd": 0.26814,
+		"costRatio": 1.06,
+		"latencyRatio": 0.81
+	},
+	"guardrails": [
+		{
+			"id": "citation-support",
+			"label": "Citation support",
+			"status": "pass",
+			"value": "0.99",
+			"threshold": ">= 0.72"
+		},
+		{
+			"id": "cost-ratio",
+			"label": "Cost ratio",
+			"status": "pass",
+			"value": "1.06x",
+			"threshold": "<= 1.15x"
+		}
+	],
+	"artifactPaths": [
+		"runs/candidate-openai-grounded-claims-v1/manifest.json",
+		"runs/candidate-openai-grounded-claims-v1/briefings/case-adoption-friction.json",
+		"runs/candidate-openai-grounded-claims-v1/traces/case-adoption-friction.json",
+		"runs/candidate-openai-grounded-claims-v1/evaluations/case-adoption-friction.json",
+		"runs/candidate-openai-grounded-claims-v1/briefings/case-code-review-queues.json",
+		"runs/candidate-openai-grounded-claims-v1/traces/case-code-review-queues.json",
+		"runs/candidate-openai-grounded-claims-v1/evaluations/case-code-review-queues.json",
+		"runs/candidate-openai-grounded-claims-v1/briefings/case-cost-latency-budget.json",
+		"runs/candidate-openai-grounded-claims-v1/traces/case-cost-latency-budget.json",
+		"runs/candidate-openai-grounded-claims-v1/evaluations/case-cost-latency-budget.json",
+		"runs/candidate-openai-grounded-claims-v1/briefings/case-eval-loop.json",
+		"runs/candidate-openai-grounded-claims-v1/traces/case-eval-loop.json",
+		"runs/candidate-openai-grounded-claims-v1/evaluations/case-eval-loop.json",
+		"runs/candidate-openai-grounded-claims-v1/briefings/case-human-approval-boundary.json",
+		"runs/candidate-openai-grounded-claims-v1/traces/case-human-approval-boundary.json",
+		"runs/candidate-openai-grounded-claims-v1/evaluations/case-human-approval-boundary.json",
+		"runs/candidate-openai-grounded-claims-v1/briefings/case-incident-recovery-comms.json",
+		"runs/candidate-openai-grounded-claims-v1/traces/case-incident-recovery-comms.json",
+		"runs/candidate-openai-grounded-claims-v1/evaluations/case-incident-recovery-comms.json",
+		"runs/candidate-openai-grounded-claims-v1/briefings/case-release-note-drift.json",
+		"runs/candidate-openai-grounded-claims-v1/traces/case-release-note-drift.json",
+		"runs/candidate-openai-grounded-claims-v1/evaluations/case-release-note-drift.json"
+	]
+}
