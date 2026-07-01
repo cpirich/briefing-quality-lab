@@ -1,0 +1,4 @@
+interface:
+  display_name: "Briefing Improvement Loop"
+  short_description: "Operate the Briefing Genie improvement loop."
+  default_prompt: "Operate the Briefing Genie improvement loop."

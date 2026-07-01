@@ -18,9 +18,24 @@ This plan is based on Addy Osmani's "Loop Engineering" framing: useful loops com
 - Keep human judgment visible. The loop may recommend, but the human decides whether the eval is valid and whether to ship.
 - Avoid recurring live-provider work by default. Automations should start with artifact triage and only run model-backed evals when explicitly configured.
 
+## Implementation Status
+
+Implemented as of 2026-07-01:
+
+- Phase 1 durable Markdown loop state exists at `docs/briefing-loop-state.md`.
+- Phase 2 repo-local Codex skill exists at `.codex/skills/briefing-improvement-loop/SKILL.md` and passes skill structural validation.
+- Phase 3 variant specs exist for already-implemented variants under `data/variant-specs/`, with Zod validation wired through `src/schemas/index.ts` and `src/run-store/index.ts`.
+
+Not implemented yet:
+
+- Candidate variant selection is intentionally not pre-decided. The current variant specs document the captured OpenAI baseline and local smoke-test baseline only.
+- Maker/checker subagents, the focused variant matrix, automation-friendly triage, and the Lab UI loop panel remain future phases.
+
 ## Phase 1: Durable Loop State
 
 Create a repo-visible state artifact that lets Codex resume the improvement loop across sessions.
+
+Status: implemented for Markdown state. The optional JSON ledger remains deferred.
 
 ### Proposed Files
 
@@ -55,6 +70,8 @@ Create a repo-visible state artifact that lets Codex resume the improvement loop
 ## Phase 2: Briefing Improvement Loop Skill
 
 Add a Codex skill that encodes the repeatable improvement loop so future sessions do not rediscover the process from scratch.
+
+Status: implemented as `.codex/skills/briefing-improvement-loop/SKILL.md`. It is structurally valid and can be dry-run by following the checked-in workflow; a fresh Codex session may be needed before `$briefing-improvement-loop` auto-triggers from the skill registry.
 
 ### Proposed Files
 
@@ -99,10 +116,12 @@ human approval.
 
 Move variant intent into data artifacts while keeping runtime variant construction in TypeScript.
 
+Status: partially implemented. Specs are validated for the existing `openai-responses-v1` captured baseline and `local-extractive-v1` smoke-test baseline. No generated candidate variant has been selected or wired yet.
+
 ### Proposed Files
 
-- `data/variant-specs/openai-responses-v1.json`
-- `data/variant-specs/openai-grounded-claims-v1.json`
+- `data/variant-specs/openai-responses-baseline-v1.json`
+- A future candidate spec chosen by the loop, for example `data/variant-specs/openai-grounded-claims-v1.json`
 - `src/schemas/variant-specs.ts` or an addition to `src/schemas/index.ts`
 - `scripts/validate-data.ts` updates to validate variant specs
 
@@ -137,6 +156,7 @@ Move variant intent into data artifacts while keeping runtime variant constructi
 - Variant specs are validated with Zod.
 - The Lab can eventually show why each variant exists, not only how it scored.
 - Runtime code still resolves variants safely through TypeScript functions.
+- Baseline spec filenames should make their baseline/reference role obvious, even when the internal variant id matches the runtime id used by traces.
 - Variant ids remain lowercase, hyphenated, and path-safe.
 
 ## Phase 4: Maker/Checker Subagents
@@ -283,10 +303,10 @@ Add a compact "Improvement Loop" panel to the Lab dashboard.
 
 ## Suggested Implementation Order
 
-1. Add `docs/briefing-loop-state.md`.
-2. Add `.codex/skills/briefing-improvement-loop/SKILL.md`.
+1. Add `docs/briefing-loop-state.md`. Done.
+2. Add `.codex/skills/briefing-improvement-loop/SKILL.md`. Done.
 3. Add `lab-verifier` and `eval-failure-analyst` subagents.
-4. Add Zod-validated variant specs.
+4. Add Zod-validated variant specs. Partially done for existing baseline variants; candidate specs should be added only after the loop selects a candidate.
 5. Add `eval:matrix` with OpenAI/hybrid defaults and bounded run controls.
 6. Add `lab:triage`.
 7. Add the Lab UI loop panel.

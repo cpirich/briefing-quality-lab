@@ -1,0 +1,24 @@
+{
+	"id": "openai-responses-v1",
+	"label": "OpenAI Responses captured baseline",
+	"status": "baseline",
+	"provider": "openai",
+	"model": "gpt-5.2",
+	"promptVersion": "briefing-genie-v1",
+	"hypothesis": "The captured OpenAI Responses baseline provides the comparison anchor for generated candidate variants, with inspectable claims, citations, cost, latency, and evaluator traces.",
+	"targetFailureTags": ["partial-claim-support", "weak-citation-support"],
+	"expectedMetricMovement": {
+		"overall": "flat",
+		"grounding": "flat",
+		"coverage": "flat",
+		"citationSupport": "flat",
+		"unsupportedClaims": "flat",
+		"latency": "flat",
+		"cost": "flat"
+	},
+	"budget": {
+		"maxCostRatio": 1,
+		"maxMedianLatencyMs": 11000
+	},
+	"rollbackReason": "Replace this baseline spec when a newer generated baseline has complete traces, hybrid evaluator outputs, and a matching visible case set."
+}

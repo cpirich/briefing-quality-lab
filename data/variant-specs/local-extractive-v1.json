@@ -1,0 +1,24 @@
+{
+	"id": "local-extractive-v1",
+	"label": "Local extractive baseline",
+	"status": "baseline",
+	"provider": "local",
+	"model": "deterministic-extractive",
+	"promptVersion": "briefing-genie-v1",
+	"hypothesis": "A deterministic extractive baseline gives the lab a cheap smoke-test path for schemas, artifact writing, and UI state without making provider-backed quality claims.",
+	"targetFailureTags": ["weak-citation-support", "missing-strongest-citation"],
+	"expectedMetricMovement": {
+		"overall": "flat",
+		"grounding": "flat",
+		"coverage": "flat",
+		"citationSupport": "flat",
+		"unsupportedClaims": "flat",
+		"latency": "flat",
+		"cost": "flat"
+	},
+	"budget": {
+		"maxCostRatio": 1,
+		"maxMedianLatencyMs": 1000
+	},
+	"rollbackReason": "Use only as an offline smoke test; reject it as product-quality evidence when choosing a generated candidate."
+}

@@ -96,6 +96,51 @@ export const GenerationVariantSchema = z.object({
 	maxOutputTokens: z.number().int().positive().optional(),
 });
 
+export const VariantSpecSchema = z.object({
+	id: fixtureIdSchema,
+	label: z.string().min(1),
+	status: z.enum([
+		"baseline",
+		"candidate",
+		"reference",
+		"rejected",
+		"archived",
+	]),
+	provider: z.string().min(1),
+	model: z.string().min(1),
+	promptVersion: fixtureIdSchema,
+	hypothesis: z.string().min(1),
+	targetFailureTags: z.array(fixtureIdSchema).min(1),
+	expectedMetricMovement: z
+		.object({
+			overall: z.enum(["up", "down", "flat", "flat-or-up", "flat-or-down"]),
+			grounding: z.enum(["up", "down", "flat", "flat-or-up", "flat-or-down"]),
+			coverage: z.enum(["up", "down", "flat", "flat-or-up", "flat-or-down"]),
+			citationSupport: z.enum([
+				"up",
+				"down",
+				"flat",
+				"flat-or-up",
+				"flat-or-down",
+			]),
+			unsupportedClaims: z.enum([
+				"up",
+				"down",
+				"flat",
+				"flat-or-up",
+				"flat-or-down",
+			]),
+			latency: z.enum(["up", "down", "flat", "flat-or-up", "flat-or-down"]),
+			cost: z.enum(["up", "down", "flat", "flat-or-up", "flat-or-down"]),
+		})
+		.strict(),
+	budget: z.object({
+		maxCostRatio: z.number().positive(),
+		maxMedianLatencyMs: z.number().int().positive(),
+	}),
+	rollbackReason: z.string().min(1),
+});
+
 export const GenerationModelSettingsSchema = z.object({
 	promptVersion: fixtureIdSchema,
 	maxOutputTokens: z.number().int().positive().nullable(),
@@ -472,6 +517,7 @@ export type SourcePacket = z.infer<typeof SourcePacketSchema>;
 export type EvalCase = z.infer<typeof EvalCaseSchema>;
 export type BriefingOutput = z.infer<typeof BriefingOutputSchema>;
 export type GenerationVariant = z.infer<typeof GenerationVariantSchema>;
+export type VariantSpec = z.infer<typeof VariantSpecSchema>;
 export type GenerationModelSettings = z.infer<
 	typeof GenerationModelSettingsSchema
 >;

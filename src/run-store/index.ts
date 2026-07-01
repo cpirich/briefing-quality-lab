@@ -20,6 +20,8 @@ import {
 	type RunModelMetadata,
 	type SourcePacket,
 	SourcePacketSchema,
+	type VariantSpec,
+	VariantSpecSchema,
 } from "~/schemas";
 
 const repoRoot = process.cwd();
@@ -54,6 +56,7 @@ type FixtureCounts = {
 	generationTraces: number;
 	evaluatorOutputs: number;
 	runComparisons: number;
+	variantSpecs: number;
 	artifacts: number;
 };
 
@@ -339,6 +342,14 @@ export async function listSourcePackets(): Promise<SourcePacket[]> {
 export async function listEvalCases(): Promise<EvalCase[]> {
 	const evalCases = await loadJsonFixtures("data/eval-cases", EvalCaseSchema);
 	return sortById(evalCases);
+}
+
+export async function listVariantSpecs(): Promise<VariantSpec[]> {
+	const variantSpecs = await loadJsonFixtures(
+		"data/variant-specs",
+		VariantSpecSchema,
+	);
+	return sortById(variantSpecs);
 }
 
 export async function listRunManifests(): Promise<RunManifest[]> {
@@ -1320,14 +1331,21 @@ async function listAllEvaluatorOutputs(runManifests: RunManifest[]) {
 }
 
 export async function validateRunStore(): Promise<FixtureCounts> {
-	const [sourcePackets, evalCases, runManifests, runComparisons, artifacts] =
-		await Promise.all([
-			listSourcePackets(),
-			listEvalCases(),
-			listRunManifests(),
-			listRunComparisons(),
-			listArtifacts(),
-		]);
+	const [
+		sourcePackets,
+		evalCases,
+		variantSpecs,
+		runManifests,
+		runComparisons,
+		artifacts,
+	] = await Promise.all([
+		listSourcePackets(),
+		listEvalCases(),
+		listVariantSpecs(),
+		listRunManifests(),
+		listRunComparisons(),
+		listArtifacts(),
+	]);
 	const [briefingOutputs, generationTraces, evaluatorOutputs] =
 		await Promise.all([
 			listAllBriefingOutputs(runManifests),
@@ -1493,6 +1511,7 @@ export async function validateRunStore(): Promise<FixtureCounts> {
 		generationTraces: generationTraces.length,
 		evaluatorOutputs: evaluatorOutputs.length,
 		runComparisons: runComparisons.length,
+		variantSpecs: variantSpecs.length,
 		artifacts: artifacts.length,
 	};
 }
