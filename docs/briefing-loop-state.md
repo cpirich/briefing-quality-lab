@@ -54,3 +54,14 @@ Ask Codex to evaluate potential variants against the current failure clusters, p
 ## Human Decision Needed
 
 Approve the next live-provider candidate experiment scope, including the variant-selection criteria, visible case slice, expected provider cost, and whether the first candidate should target citation discipline, coverage recovery, or another smaller change.
+
+## Latest Automation-Friendly Triage
+
+Last triage: 2026-07-01T16:55:50.994Z
+Triage artifact: `runs/comparisons/triage/triage-20260701165550.json`
+Data validation: pass - Run store fixtures validate.
+Latest run: `baseline-openai-20260624203921` (complete, overall 0.90, citation 0.95)
+Latest comparison: `baseline-openai-20260624203921-candidate-citation-gates` (Pipeline rehearsal)
+Top failure cluster: Partial Claim Support across case-adoption-friction, case-cost-latency-budget, case-incident-recovery-comms
+Recommendation: needs human review - Review the top failure cluster (Partial Claim Support) and approve a bounded matrix slice before live-provider work.
+Next command: `mise exec -- bun run eval:matrix`

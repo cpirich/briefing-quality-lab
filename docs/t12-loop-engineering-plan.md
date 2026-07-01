@@ -221,7 +221,9 @@ mise exec -- bun run eval:matrix
 - Run OpenAI/hybrid mode by default because local/deterministic results are too weak to guide useful variant selection.
 - Keep the matrix intentionally small so provider cost stays low and the loop does not drift into unbounded iteration.
 - Optionally support local/deterministic mode later as an offline smoke test, not as the primary decision signal.
-- Write a matrix artifact under `runs/comparisons/`.
+- Preserve the existing full-run comparison guardrail: `eval:variant` should continue to reject filtered candidates when the selected case set does not match the baseline case set.
+- Implement the matrix as a separate bounded mini-run flow rather than weakening pairwise comparisons. The matrix runner should create small matrix-specific run directories for each variant/case slice and write a dedicated matrix artifact under `runs/comparisons/matrices/`.
+- Matrix artifacts should point to inspectable mini-run manifests, briefings, traces, and evaluator outputs, but should not masquerade as pairwise `RunComparison` artifacts.
 
 ### Matrix Metrics
 

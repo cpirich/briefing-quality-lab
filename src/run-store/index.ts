@@ -11,8 +11,12 @@ import {
 	EvalCaseSchema,
 	type EvaluatorOutput,
 	EvaluatorOutputSchema,
+	type FocusedVariantMatrix,
+	FocusedVariantMatrixSchema,
 	type GenerationTrace,
 	GenerationTraceSchema,
+	type LoopTriageArtifact,
+	LoopTriageArtifactSchema,
 	type RunComparison,
 	RunComparisonSchema,
 	type RunManifest,
@@ -56,6 +60,8 @@ type FixtureCounts = {
 	generationTraces: number;
 	evaluatorOutputs: number;
 	runComparisons: number;
+	focusedVariantMatrices: number;
+	loopTriageArtifacts: number;
 	variantSpecs: number;
 	artifacts: number;
 };
@@ -523,6 +529,24 @@ export async function listRunComparisons(): Promise<RunComparison[]> {
 		RunComparisonSchema,
 	);
 	return sortById(comparisons);
+}
+
+export async function listFocusedVariantMatrices(): Promise<
+	FocusedVariantMatrix[]
+> {
+	const matrices = await loadOptionalJsonFixtures(
+		"runs/comparisons/matrices",
+		FocusedVariantMatrixSchema,
+	);
+	return sortById(matrices);
+}
+
+export async function listLoopTriageArtifacts(): Promise<LoopTriageArtifact[]> {
+	const triageArtifacts = await loadOptionalJsonFixtures(
+		"runs/comparisons/triage",
+		LoopTriageArtifactSchema,
+	);
+	return sortById(triageArtifacts);
 }
 
 function isGeneratedRunManifest(manifest: RunManifest | undefined) {
@@ -1337,6 +1361,8 @@ export async function validateRunStore(): Promise<FixtureCounts> {
 		variantSpecs,
 		runManifests,
 		runComparisons,
+		focusedVariantMatrices,
+		loopTriageArtifacts,
 		artifacts,
 	] = await Promise.all([
 		listSourcePackets(),
@@ -1344,6 +1370,8 @@ export async function validateRunStore(): Promise<FixtureCounts> {
 		listVariantSpecs(),
 		listRunManifests(),
 		listRunComparisons(),
+		listFocusedVariantMatrices(),
+		listLoopTriageArtifacts(),
 		listArtifacts(),
 	]);
 	const [briefingOutputs, generationTraces, evaluatorOutputs] =
@@ -1503,6 +1531,40 @@ export async function validateRunStore(): Promise<FixtureCounts> {
 		);
 	}
 
+	for (const matrix of focusedVariantMatrices) {
+		assertFixtureReference(
+			runManifestById.has(matrix.baselineRunId),
+			`Focused variant matrix ${matrix.id} references missing baseline run ${matrix.baselineRunId}`,
+		);
+		for (const caseId of matrix.caseIds) {
+			assertFixtureReference(
+				evalCaseById.has(caseId),
+				`Focused variant matrix ${matrix.id} references missing eval case ${caseId}`,
+			);
+		}
+		for (const variant of matrix.variants) {
+			assertFixtureReference(
+				runManifestById.has(variant.runId),
+				`Focused variant matrix ${matrix.id} references missing variant run ${variant.runId}`,
+			);
+			await assertArtifactPathsExist(
+				variant.artifactPaths,
+				`Focused variant matrix ${matrix.id} variant ${variant.variantId}`,
+			);
+		}
+		await assertArtifactPathsExist(
+			matrix.artifactPaths,
+			`Focused variant matrix ${matrix.id}`,
+		);
+	}
+
+	for (const triageArtifact of loopTriageArtifacts) {
+		await assertArtifactPathsExist(
+			triageArtifact.artifactPaths,
+			`Loop triage artifact ${triageArtifact.id}`,
+		);
+	}
+
 	return {
 		sourcePackets: sourcePackets.length,
 		evalCases: evalCases.length,
@@ -1511,6 +1573,8 @@ export async function validateRunStore(): Promise<FixtureCounts> {
 		generationTraces: generationTraces.length,
 		evaluatorOutputs: evaluatorOutputs.length,
 		runComparisons: runComparisons.length,
+		focusedVariantMatrices: focusedVariantMatrices.length,
+		loopTriageArtifacts: loopTriageArtifacts.length,
 		variantSpecs: variantSpecs.length,
 		artifacts: artifacts.length,
 	};
