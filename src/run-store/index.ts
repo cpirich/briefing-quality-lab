@@ -713,16 +713,10 @@ function isGeneratedCandidateRunManifest(manifest: RunManifest | undefined) {
 		return false;
 	}
 
-	const variantLabel = manifest.variantLabel.toLowerCase();
-
 	return (
 		manifest.runId.startsWith("candidate-local-") ||
 		manifest.runId.startsWith("candidate-openai-") ||
-		(manifest.runId.startsWith("matrix-") &&
-			!variantLabel.includes("baseline")) ||
 		manifest.command.includes("eval:variant") ||
-		(manifest.command.includes("eval:matrix") &&
-			!variantLabel.includes("baseline")) ||
 		manifest.variantLabel.endsWith("generated variant")
 	);
 }
@@ -741,6 +735,11 @@ function comparisonRecency(
 	runComparison: RunComparison,
 	manifestById: Map<string, RunManifest>,
 ) {
+	const promotedAt = Date.parse(runComparison.promotedAt ?? "");
+	if (!Number.isNaN(promotedAt)) {
+		return promotedAt;
+	}
+
 	const baselineCreatedAt = Date.parse(
 		manifestById.get(runComparison.baselineRunId)?.createdAt ?? "",
 	);

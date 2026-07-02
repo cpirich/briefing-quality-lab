@@ -393,12 +393,17 @@ function metricRows({
 function topMetrics({
 	baseline,
 	candidate,
+	referenceTarget,
 }: {
 	baseline: RunManifest;
 	candidate: RunManifest;
+	referenceTarget?: RunManifest;
 }): RunComparison["metrics"] {
 	const baselineCost = totalCostUsd(baseline);
 	const candidateCost = totalCostUsd(candidate);
+	const referenceTargetCost = referenceTarget
+		? comparisonCostValue(referenceTarget)
+		: null;
 	const costDelta =
 		candidateCost === null || baselineCost === null
 			? null
@@ -412,6 +417,12 @@ function topMetrics({
 				candidate.aggregateMetrics.overall,
 				baseline.aggregateMetrics.overall,
 			),
+			targetDelta: referenceTarget
+				? signedMetricGap(
+						candidate.aggregateMetrics.overall,
+						referenceTarget.aggregateMetrics.overall,
+					)
+				: undefined,
 			status: "Promoted candidate score",
 			tone: improvementTone(
 				candidate.aggregateMetrics.overall - baseline.aggregateMetrics.overall,
@@ -424,6 +435,12 @@ function topMetrics({
 				candidate.aggregateMetrics.citationSupport,
 				baseline.aggregateMetrics.citationSupport,
 			),
+			targetDelta: referenceTarget
+				? signedMetricGap(
+						candidate.aggregateMetrics.citationSupport,
+						referenceTarget.aggregateMetrics.citationSupport,
+					)
+				: undefined,
 			status: "Promoted candidate citation score",
 			tone: improvementTone(
 				candidate.aggregateMetrics.citationSupport -
@@ -437,6 +454,12 @@ function topMetrics({
 				candidate.aggregateMetrics.coverage,
 				baseline.aggregateMetrics.coverage,
 			),
+			targetDelta: referenceTarget
+				? signedMetricGap(
+						candidate.aggregateMetrics.coverage,
+						referenceTarget.aggregateMetrics.coverage,
+					)
+				: undefined,
 			status: "Promoted candidate coverage score",
 			tone: improvementTone(
 				candidate.aggregateMetrics.coverage -
@@ -451,6 +474,9 @@ function topMetrics({
 				costDelta === null
 					? "unknown"
 					: `${costDelta >= 0 ? "+" : ""}${costDelta}`,
+			targetDelta: referenceTarget
+				? signedCostGap(candidateCost, referenceTargetCost)
+				: undefined,
 			status: "Promoted candidate total generation + evaluator cost",
 			tone: costDelta === null ? "amber" : improvementTone(costDelta, true),
 		},
@@ -461,6 +487,12 @@ function topMetrics({
 				candidate.aggregateMetrics.medianLatencyMs,
 				baseline.aggregateMetrics.medianLatencyMs,
 			),
+			targetDelta: referenceTarget
+				? signedSecondsGap(
+						candidate.aggregateMetrics.medianLatencyMs,
+						referenceTarget.aggregateMetrics.medianLatencyMs,
+					)
+				: undefined,
 			status: "Promoted candidate median latency",
 			tone: improvementTone(
 				candidate.aggregateMetrics.medianLatencyMs -
@@ -741,13 +773,14 @@ async function main() {
 		id: comparisonId,
 		baselineRunId: baseline.runId,
 		candidateRunId: candidate.runId,
+		promotedAt: new Date().toISOString(),
 		baselineLabel,
 		candidateLabel,
 		runMetadata: {
 			baseline: runModelMetadata(baselineTraces),
 			candidate: runModelMetadata(candidateTraces),
 		},
-		metrics: topMetrics({ baseline, candidate }),
+		metrics: topMetrics({ baseline, candidate, referenceTarget }),
 		trend: [
 			{
 				label: baselineLabel,

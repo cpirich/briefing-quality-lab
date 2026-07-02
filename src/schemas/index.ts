@@ -428,6 +428,7 @@ export const RunComparisonSchema = z.object({
 	id: fixtureIdSchema,
 	baselineRunId: fixtureIdSchema,
 	candidateRunId: fixtureIdSchema,
+	promotedAt: z.string().datetime().optional(),
 	baselineLabel: z.string().min(1).optional(),
 	candidateLabel: z.string().min(1).optional(),
 	runMetadata: z
