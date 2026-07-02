@@ -428,6 +428,7 @@ export const RunComparisonSchema = z.object({
 	id: fixtureIdSchema,
 	baselineRunId: fixtureIdSchema,
 	candidateRunId: fixtureIdSchema,
+	promotedAt: z.string().datetime().optional(),
 	baselineLabel: z.string().min(1).optional(),
 	candidateLabel: z.string().min(1).optional(),
 	runMetadata: z
@@ -515,13 +516,13 @@ export const FocusedVariantMatrixSchema = z.object({
 	evaluator: z.enum(["deterministic", "hybrid"]),
 	bounds: z.object({
 		variantCount: z.number().int().min(1).max(4),
-		caseCount: z.number().int().min(1).max(5),
+		caseCount: z.number().int().min(1).max(9),
 		retryCap: z.number().int().nonnegative().max(3),
 		includeHoldouts: z.boolean(),
 		estimatedMaxCostUsd: z.number().nonnegative().nullable(),
 		liveProviderCalls: z.boolean(),
 	}),
-	caseIds: z.array(fixtureIdSchema).min(1).max(5),
+	caseIds: z.array(fixtureIdSchema).min(1).max(9),
 	variants: z.array(
 		z.object({
 			variantId: fixtureIdSchema,

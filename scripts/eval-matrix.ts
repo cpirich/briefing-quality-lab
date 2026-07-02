@@ -144,7 +144,7 @@ function parseOptions(): MatrixOptions {
 			name: "--case-limit",
 			defaultValue: 3,
 			min: 3,
-			max: 5,
+			max: 9,
 		}),
 		variantLimit: parseBoundedInteger({
 			name: "--variant-limit",
@@ -333,7 +333,6 @@ function variantFromSpec(spec: VariantSpec): GenerationVariant {
 			`Variant ${spec.id} uses provider ${spec.provider}; eval:matrix supports local and openai providers.`,
 		);
 	}
-
 	return GenerationVariantSchema.parse({
 		id: spec.id,
 		label: spec.label,

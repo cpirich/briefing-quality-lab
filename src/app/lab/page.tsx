@@ -633,6 +633,9 @@ export default async function LabPage() {
 		})
 		.filter((cluster) => cluster.count > 0);
 	const failureThemeMovements = runComparison.failureThemeMovements ?? [];
+	const comparisonRows = runComparison.comparisonRows.filter(
+		(row) => row.metric !== "Cost ratio",
+	);
 	const baselineLabel =
 		runComparison.baselineLabel ??
 		comparisonSideLabel(runComparison.baselineRunId);
@@ -646,7 +649,7 @@ export default async function LabPage() {
 	const isReferenceTargetComparison = usesReferenceTarget(
 		runComparison.candidateRunId,
 	);
-	const hasReferenceTargetColumns = runComparison.comparisonRows.some(
+	const hasReferenceTargetColumns = comparisonRows.some(
 		(row) => row.referenceTarget || row.gapToTarget,
 	);
 	const summaryTitle = hasReferenceTargetColumns
@@ -888,7 +891,7 @@ export default async function LabPage() {
 										</tr>
 									</thead>
 									<tbody>
-										{runComparison.comparisonRows.map((row) => (
+										{comparisonRows.map((row) => (
 											<tr
 												className="border-[var(--border)] border-t"
 												key={row.metric}

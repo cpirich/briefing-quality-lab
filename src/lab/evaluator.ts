@@ -135,6 +135,9 @@ const coverageTermsPerPoint = 5;
 const judgePromptVersion = "hybrid-judge-v1";
 const hybridStructuredOutputName = "hybrid_evaluator_output";
 const openAIApiKey = process.env.OPENAI_API_KEY;
+const openAIRequestTimeoutMs = Number(
+	process.env.OPENAI_REQUEST_TIMEOUT_MS ?? 90_000,
+);
 
 function roundMetric(value: number) {
 	return Math.round(value * 100) / 100;
@@ -829,7 +832,10 @@ async function openAIHybridJudge(input: HybridJudgeInput) {
 		);
 	}
 
-	const client = new OpenAI({ apiKey: openAIApiKey });
+	const client = new OpenAI({
+		apiKey: openAIApiKey,
+		timeout: openAIRequestTimeoutMs,
+	});
 	const prompt = buildHybridJudgePrompt(input);
 	const response = await client.responses.parse({
 		model: input.judgeModel,

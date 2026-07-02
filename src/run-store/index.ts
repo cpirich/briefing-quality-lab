@@ -735,6 +735,11 @@ function comparisonRecency(
 	runComparison: RunComparison,
 	manifestById: Map<string, RunManifest>,
 ) {
+	const promotedAt = Date.parse(runComparison.promotedAt ?? "");
+	if (!Number.isNaN(promotedAt)) {
+		return promotedAt;
+	}
+
 	const baselineCreatedAt = Date.parse(
 		manifestById.get(runComparison.baselineRunId)?.createdAt ?? "",
 	);
@@ -925,6 +930,24 @@ function completedGeneratedCandidatesForCaseSet(
 	);
 }
 
+function completedComparisonCandidateForCaseSet(
+	comparison: RunComparison,
+	manifestById: Map<string, RunManifest>,
+	referenceManifest: RunManifest,
+) {
+	const candidateManifest = manifestById.get(comparison.candidateRunId);
+	if (
+		!candidateManifest ||
+		comparison.candidateRunId === defaultCandidateRunId ||
+		candidateManifest.status !== "complete" ||
+		!sameCaseSet(candidateManifest, referenceManifest)
+	) {
+		return null;
+	}
+
+	return candidateManifest;
+}
+
 function newerRunFirst(left: RunManifest, right: RunManifest) {
 	const createdDelta = Date.parse(right.createdAt) - Date.parse(left.createdAt);
 	if (createdDelta !== 0) {
@@ -986,6 +1009,19 @@ function curatedTrendForComparison(
 		runManifests,
 		baselineManifest,
 	);
+	const comparisonCandidate = completedComparisonCandidateForCaseSet(
+		comparison,
+		manifestById,
+		baselineManifest,
+	);
+	if (
+		comparisonCandidate &&
+		!generatedCandidates.some(
+			(candidate) => candidate.runId === comparisonCandidate.runId,
+		)
+	) {
+		generatedCandidates.push(comparisonCandidate);
+	}
 	const latestVariant = [...generatedCandidates].sort(newerRunFirst)[0];
 	const bestVariant = [...generatedCandidates].sort(bestCandidateFirst)[0];
 	const trend = [

@@ -24,16 +24,19 @@ Do not tune on holdout cases unless the user explicitly asks for holdout validat
 1. State the current baseline, candidate, variant, hypothesis, known failure clusters, and human decision needed from `docs/briefing-loop-state.md`.
 2. Inspect the latest run artifacts: manifests, evaluator outputs, traces, and comparisons. Prefer visible cases and cite repo-relative artifact paths.
 3. Choose one bounded product hypothesis. Tie it to target failure tags and a rollback reason.
-4. Select an existing variant spec or add/update one under `data/variant-specs/`. Keep executable variant behavior in TypeScript.
+4. Select an existing variant spec or add/update one under `data/variant-specs/`. For new loop-engineering candidates, prefer ids that include the loop attempt number and readable hypothesis name, such as `openai-loop-v3-claim-planning`, so run artifact paths line up with the demo/loop-state language. Keep executable variant behavior in TypeScript.
 5. Make the smallest implementation change that could test the hypothesis.
 6. Run the smallest useful validation command with `mise exec --`, usually:
    - `mise exec -- bun run data:validate`
    - `mise exec -- bun run typecheck:native`
    - a focused eval/report command when live provider scope is approved
 7. Compare evidence against the baseline. Check quality, citation support, unsupported claims, cost, latency, guardrails, and artifact completeness.
-8. Do a verifier pass before recommending ship. The author of a change should not be the only judge of success.
-9. Update `docs/briefing-loop-state.md` with facts, recommendations, rejected approaches, and the next human decision.
-10. Stop with exactly one recommendation: `ship`, `iterate`, `reject`, or `needs human review`.
+8. When a matrix-selected candidate should become demo-facing in `/lab`, promote only a complete run with a matching case set:
+   - `mise exec -- bun run eval:promote --baseline=<baseline-run-id> --candidate-run=<candidate-run-id> --label="<candidate label>" --source-matrix=<matrix-id>`
+   - Matrix artifacts are loop workbench evidence; promoted `RunComparison` artifacts are the canonical `/lab` comparison story.
+9. Do a verifier pass before recommending ship. The author of a change should not be the only judge of success.
+10. Update `docs/briefing-loop-state.md` with facts, recommendations, rejected approaches, promoted artifacts, and the next human decision.
+11. Stop with exactly one recommendation: `ship`, `iterate`, `reject`, or `needs human review`.
 
 ## Guardrails
 

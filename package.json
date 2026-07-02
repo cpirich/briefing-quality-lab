@@ -14,6 +14,7 @@
 		"eval:baseline": "bun run scripts/run-eval.ts baseline",
 		"eval:matrix": "bun run scripts/eval-matrix.ts",
 		"eval:matrix:dry-run": "bun run scripts/eval-matrix.ts --dry-run",
+		"eval:promote": "bun run scripts/promote-eval-run.ts",
 		"eval:report": "bun run scripts/run-eval.ts report",
 		"eval:rejudge": "bun run scripts/run-eval.ts rejudge",
 		"eval:variant": "bun run scripts/run-eval.ts variant",

@@ -47,6 +47,9 @@ const sentenceBoundaryPattern = /(?<=[.!?])\s+/;
 const structuredOutputName = "briefing_genie_output";
 const openAIApiKey = process.env.OPENAI_API_KEY;
 const openAIModel = process.env.OPENAI_MODEL ?? defaultOpenAIModel;
+const openAIRequestTimeoutMs = Number(
+	process.env.OPENAI_REQUEST_TIMEOUT_MS ?? 90_000,
+);
 
 function compactWhitespace(value: string) {
 	return value.replace(/\s+/g, " ").trim();
@@ -332,7 +335,10 @@ async function generateOpenAIResponsesBriefing({
 		throw new Error("OPENAI_API_KEY is required for OpenAI generation.");
 	}
 
-	const client = new OpenAI({ apiKey: openAIApiKey });
+	const client = new OpenAI({
+		apiKey: openAIApiKey,
+		timeout: openAIRequestTimeoutMs,
+	});
 	const prompt = buildPrompt(sourcePacket, userRequest);
 	const settings = modelSettingsForVariant(variant, {
 		structuredOutputName,
