@@ -348,11 +348,14 @@ async function main() {
 		};
 	}
 
-	const [runManifests, comparisons, triageArtifacts] = await Promise.all([
-		listRunManifests(),
-		listRunComparisons(),
-		listLoopTriageArtifacts(),
-	]);
+	const [runManifests, comparisons, triageArtifacts] =
+		validation.status === "pass"
+			? await Promise.all([
+					listRunManifests(),
+					listRunComparisons(),
+					listLoopTriageArtifacts(),
+				])
+			: [[], [], []];
 	const comparison = latestComparison(comparisons, runManifests);
 	const comparisonPath = await comparisonArtifactPath(comparison);
 	const inputSignature = inputSignatureFor({ comparison, comparisonPath });
@@ -362,8 +365,18 @@ async function main() {
 				artifacts: triageArtifacts,
 				inputSignature,
 			});
-	const staleFindings = staleOrMissingArtifacts(runManifests);
-	const clusters = weakestFailureClusters(comparison);
+	const staleFindings =
+		validation.status === "pass"
+			? staleOrMissingArtifacts(runManifests)
+			: [
+					{
+						severity: "fail" as const,
+						message:
+							"Skipped run manifest scan because run-store validation failed.",
+					},
+				];
+	const clusters =
+		validation.status === "pass" ? weakestFailureClusters(comparison) : [];
 	const recommendation = recommendationFor({
 		dataValidationPassed: validation.status === "pass",
 		staleFindings,

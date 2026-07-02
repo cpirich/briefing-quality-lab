@@ -54,6 +54,13 @@ interface VariantRunArtifacts {
 	artifactPaths: string[];
 }
 
+interface VariantCaseArtifacts {
+	briefing: BriefingOutput;
+	evaluation: EvaluatorOutput;
+	trace: GenerationTrace;
+	artifactPaths: string[];
+}
+
 const repoRoot = process.cwd();
 const fixtureIdPattern = /^[a-z0-9][a-z0-9-]*$/;
 const matrixTimestamp = new Date()
@@ -222,13 +229,14 @@ function averageScore(
 }
 
 function unsupportedClaims(evaluations: EvaluatorOutput[]) {
-	return evaluations.reduce((total, evaluation) => {
-		const explicitUnsupported =
-			evaluation.claimJudgments?.filter(
+	return evaluations.reduce(
+		(total, evaluation) =>
+			total +
+			(evaluation.claimJudgments?.filter(
 				(judgment) => judgment.supportStatus === "unsupported",
-			).length ?? 0;
-		return total + Math.max(explicitUnsupported, evaluation.failureTags.length);
-	}, 0);
+			).length ?? 0),
+		0,
+	);
 }
 
 function knownEstimatedCost(traces: GenerationTrace[]) {
@@ -246,6 +254,16 @@ function knownEstimatedEvaluatorCost(evaluations: EvaluatorOutput[]) {
 	);
 }
 
+function knownEstimatedTotalCost({
+	evaluations,
+	traces,
+}: {
+	evaluations: EvaluatorOutput[];
+	traces: GenerationTrace[];
+}) {
+	return knownEstimatedCost(traces) + knownEstimatedEvaluatorCost(evaluations);
+}
+
 function hasUnknownCost(traces: GenerationTrace[]) {
 	return traces.some((trace) => trace.cost.estimatedUsd === null);
 }
@@ -254,6 +272,32 @@ function hasUnknownEvaluatorCost(evaluations: EvaluatorOutput[]) {
 	return evaluations.some(
 		(evaluation) => evaluation.evaluator?.cost.estimatedUsd === null,
 	);
+}
+
+function hasUnknownTotalCost({
+	evaluations,
+	traces,
+}: {
+	evaluations: EvaluatorOutput[];
+	traces: GenerationTrace[];
+}) {
+	return hasUnknownCost(traces) || hasUnknownEvaluatorCost(evaluations);
+}
+
+function caseEstimatedCostUsd({
+	evaluation,
+	trace,
+}: {
+	evaluation: EvaluatorOutput;
+	trace: GenerationTrace | undefined;
+}) {
+	const generationCost = trace?.cost.estimatedUsd;
+	const evaluatorCost = evaluation.evaluator?.cost.estimatedUsd;
+	if (generationCost === null || evaluatorCost === null) {
+		return null;
+	}
+
+	return roundCostUsd((generationCost ?? 0) + (evaluatorCost ?? 0));
 }
 
 function briefingWithAcceptedCitationsOnly(
@@ -492,6 +536,7 @@ function manifestForVariantRun({
 	traces,
 	artifactPaths,
 	status,
+	error,
 }: {
 	runId: string;
 	variant: GenerationVariant;
@@ -500,6 +545,7 @@ function manifestForVariantRun({
 	traces: GenerationTrace[];
 	artifactPaths: string[];
 	status: RunManifest["status"];
+	error?: string;
 }) {
 	const estimatedCostUsd = hasUnknownCost(traces)
 		? null
@@ -507,6 +553,9 @@ function manifestForVariantRun({
 	const evaluatorEstimatedCostUsd = hasUnknownEvaluatorCost(evaluations)
 		? null
 		: roundCostUsd(knownEstimatedEvaluatorCost(evaluations));
+	const totalEstimatedCostUsd = hasUnknownTotalCost({ evaluations, traces })
+		? null
+		: roundCostUsd(knownEstimatedTotalCost({ evaluations, traces }));
 
 	return RunManifestSchema.parse({
 		runId,
@@ -527,7 +576,9 @@ function manifestForVariantRun({
 			estimatedCostUsd,
 			evaluatorEstimatedCostUsd,
 			costRatio:
-				estimatedCostUsd === null ? 1 : Math.max(1, 1 + estimatedCostUsd),
+				totalEstimatedCostUsd === null
+					? 1
+					: Math.max(1, 1 + totalEstimatedCostUsd),
 			latencyRatio: 1,
 		},
 		guardrails: [
@@ -550,7 +601,96 @@ function manifestForVariantRun({
 			},
 		],
 		artifactPaths,
+		error,
 	});
+}
+
+async function withRetries<T>({
+	label,
+	operation,
+	retryCap,
+}: {
+	label: string;
+	operation: (attempt: number) => Promise<T>;
+	retryCap: number;
+}) {
+	let lastError: unknown;
+	for (let attempt = 0; attempt <= retryCap; attempt += 1) {
+		try {
+			return await operation(attempt);
+		} catch (error) {
+			lastError = error;
+			if (attempt >= retryCap) {
+				break;
+			}
+			console.warn(
+				`${label} failed on attempt ${attempt + 1}/${retryCap + 1}; retrying.`,
+			);
+		}
+	}
+
+	throw lastError;
+}
+
+async function runVariantCase({
+	casePrefix,
+	evalCase,
+	runId,
+	sourcePacket,
+	variant,
+	evaluator,
+}: {
+	casePrefix: string;
+	evalCase: EvalCase;
+	runId: string;
+	sourcePacket: SourcePacket;
+	variant: GenerationVariant;
+	evaluator: EvaluatorMode;
+}): Promise<VariantCaseArtifacts> {
+	console.log(`${casePrefix} ${variant.id}: generating ${evalCase.id}...`);
+	const result = await generateBriefing({
+		sourcePacket,
+		userRequest: evalCase.task,
+		runId,
+		variant,
+		provider: variant.provider as "local" | "openai",
+	});
+	const rawBriefing = result.briefing;
+	const persistedBriefing = BriefingOutputSchema.parse(
+		briefingWithAcceptedCitationsOnly(rawBriefing, evalCase),
+	);
+	const briefingPath = `runs/${runId}/briefings/${evalCase.id}.json`;
+	const tracePath = `runs/${runId}/traces/${evalCase.id}.json`;
+	const evaluationPath = `runs/${runId}/evaluations/${evalCase.id}.json`;
+	const trace = GenerationTraceSchema.parse({
+		...result.trace,
+		output: persistedBriefing,
+		rawOutput: rawBriefing,
+		artifactPaths: [...result.trace.artifactPaths, briefingPath, tracePath],
+	});
+	await Promise.all([
+		writeJsonArtifact(briefingPath, persistedBriefing),
+		writeJsonArtifact(tracePath, trace),
+	]);
+	const evaluation = await evaluateBriefing({
+		runId,
+		evalCase,
+		sourcePacket,
+		briefing: persistedBriefing,
+		trace,
+		mode: evaluator,
+	});
+	await writeJsonArtifact(evaluationPath, evaluation);
+	console.log(
+		`${casePrefix} ${variant.id}: overall ${evaluation.scores.overall.toFixed(2)}, citation ${evaluation.scores.citationSupport.toFixed(2)}.`,
+	);
+
+	return {
+		briefing: persistedBriefing,
+		evaluation,
+		trace,
+		artifactPaths: [briefingPath, tracePath, evaluationPath],
+	};
 }
 
 async function runVariantSlice({
@@ -559,12 +699,14 @@ async function runVariantSlice({
 	evalCases,
 	sourcePackets,
 	evaluator,
+	retryCap,
 }: {
 	variant: GenerationVariant;
 	spec: VariantSpec;
 	evalCases: EvalCase[];
 	sourcePackets: SourcePacket[];
 	evaluator: EvaluatorMode;
+	retryCap: number;
 }): Promise<VariantRunArtifacts> {
 	const runId = `matrix-${variant.id}-${matrixTimestamp}`;
 	const sourcePacketsById = sourcePacketById(sourcePackets);
@@ -586,68 +728,59 @@ async function runVariantSlice({
 		}),
 	);
 
-	for (const [caseIndex, evalCase] of evalCases.entries()) {
-		const sourcePacket = sourcePacketsById.get(evalCase.sourcePacketId);
-		if (!sourcePacket) {
-			throw new Error(
-				`Eval case ${evalCase.id} references missing source packet ${evalCase.sourcePacketId}.`,
-			);
+	let manifest: RunManifest;
+	try {
+		for (const [caseIndex, evalCase] of evalCases.entries()) {
+			const sourcePacket = sourcePacketsById.get(evalCase.sourcePacketId);
+			if (!sourcePacket) {
+				throw new Error(
+					`Eval case ${evalCase.id} references missing source packet ${evalCase.sourcePacketId}.`,
+				);
+			}
+			const casePrefix = `[${caseIndex + 1}/${evalCases.length}]`;
+			const caseArtifacts = await withRetries({
+				label: `${variant.id} ${evalCase.id}`,
+				retryCap,
+				operation: () =>
+					runVariantCase({
+						casePrefix,
+						evalCase,
+						runId,
+						sourcePacket,
+						variant,
+						evaluator,
+					}),
+			});
+			briefings.push(caseArtifacts.briefing);
+			traces.push(caseArtifacts.trace);
+			evaluations.push(caseArtifacts.evaluation);
+			artifactPaths.push(...caseArtifacts.artifactPaths);
 		}
-		const casePrefix = `[${caseIndex + 1}/${evalCases.length}]`;
-		console.log(`${casePrefix} ${variant.id}: generating ${evalCase.id}...`);
-		const result = await generateBriefing({
-			sourcePacket,
-			userRequest: evalCase.task,
+
+		manifest = manifestForVariantRun({
 			runId,
 			variant,
-			provider: variant.provider as "local" | "openai",
+			caseIds: evalCases.map((evalCase) => evalCase.id),
+			evaluations,
+			traces,
+			artifactPaths,
+			status: "complete",
 		});
-		const rawBriefing = result.briefing;
-		const persistedBriefing = BriefingOutputSchema.parse(
-			briefingWithAcceptedCitationsOnly(rawBriefing, evalCase),
-		);
-		const briefingPath = `runs/${runId}/briefings/${evalCase.id}.json`;
-		const tracePath = `runs/${runId}/traces/${evalCase.id}.json`;
-		const evaluationPath = `runs/${runId}/evaluations/${evalCase.id}.json`;
-		const trace = GenerationTraceSchema.parse({
-			...result.trace,
-			output: persistedBriefing,
-			rawOutput: rawBriefing,
-			artifactPaths: [...result.trace.artifactPaths, briefingPath, tracePath],
-		});
-		await Promise.all([
-			writeJsonArtifact(briefingPath, persistedBriefing),
-			writeJsonArtifact(tracePath, trace),
-		]);
-		briefings.push(persistedBriefing);
-		traces.push(trace);
-		artifactPaths.push(briefingPath, tracePath);
-		const evaluation = await evaluateBriefing({
+		await writeJsonArtifact(`runs/${runId}/manifest.json`, manifest);
+	} catch (error) {
+		manifest = manifestForVariantRun({
 			runId,
-			evalCase,
-			sourcePacket,
-			briefing: rawBriefing,
-			trace,
-			mode: evaluator,
+			variant,
+			caseIds: evalCases.map((evalCase) => evalCase.id),
+			evaluations,
+			traces,
+			artifactPaths,
+			status: "failed",
+			error: error instanceof Error ? error.message : String(error),
 		});
-		await writeJsonArtifact(evaluationPath, evaluation);
-		evaluations.push(evaluation);
-		artifactPaths.push(evaluationPath);
-		console.log(
-			`${casePrefix} ${variant.id}: overall ${evaluation.scores.overall.toFixed(2)}, citation ${evaluation.scores.citationSupport.toFixed(2)}.`,
-		);
+		await writeJsonArtifact(`runs/${runId}/manifest.json`, manifest);
+		throw error;
 	}
-
-	const manifest = manifestForVariantRun({
-		runId,
-		variant,
-		caseIds: evalCases.map((evalCase) => evalCase.id),
-		evaluations,
-		traces,
-		artifactPaths,
-		status: "complete",
-	});
-	await writeJsonArtifact(`runs/${runId}/manifest.json`, manifest);
 
 	return {
 		variant,
@@ -733,9 +866,9 @@ function cellForCase(run: VariantRunArtifacts, caseId: string) {
 		unsupportedClaims:
 			evaluation.claimJudgments?.filter(
 				(judgment) => judgment.supportStatus === "unsupported",
-			).length ?? evaluation.failureTags.length,
+			).length ?? 0,
 		latencyMs: trace?.latencyMs ?? null,
-		estimatedCostUsd: trace?.cost.estimatedUsd ?? null,
+		estimatedCostUsd: caseEstimatedCostUsd({ evaluation, trace }),
 		artifactPaths: evaluation.artifactPaths,
 	};
 }
@@ -769,9 +902,17 @@ function matrixRecommendation(runs: VariantRunArtifacts[]) {
 	}
 	const citationSupport = averageScore(bestRun.evaluations, "citationSupport");
 	const risk = unsupportedClaims(bestRun.evaluations);
-	const estimatedCostUsd = hasUnknownCost(bestRun.traces)
+	const estimatedCostUsd = hasUnknownTotalCost({
+		evaluations: bestRun.evaluations,
+		traces: bestRun.traces,
+	})
 		? null
-		: roundCostUsd(knownEstimatedCost(bestRun.traces));
+		: roundCostUsd(
+				knownEstimatedTotalCost({
+					evaluations: bestRun.evaluations,
+					traces: bestRun.traces,
+				}),
+			);
 	const costRatio =
 		estimatedCostUsd === null ? 1 : Math.max(1, 1 + estimatedCostUsd);
 	const latencyMs = median(bestRun.traces.map((trace) => trace.latencyMs));
@@ -948,6 +1089,7 @@ async function main() {
 				evalCases: selectedCases,
 				sourcePackets,
 				evaluator: options.evaluator,
+				retryCap: options.retryCap,
 			}),
 		);
 	}
@@ -968,9 +1110,17 @@ async function main() {
 		},
 		caseIds: selectedCases.map((evalCase) => evalCase.id),
 		variants: runs.map((run) => {
-			const estimatedCostUsd = hasUnknownCost(run.traces)
+			const estimatedCostUsd = hasUnknownTotalCost({
+				evaluations: run.evaluations,
+				traces: run.traces,
+			})
 				? null
-				: roundCostUsd(knownEstimatedCost(run.traces));
+				: roundCostUsd(
+						knownEstimatedTotalCost({
+							evaluations: run.evaluations,
+							traces: run.traces,
+						}),
+					);
 			const costRatio =
 				estimatedCostUsd === null ? 1 : Math.max(1, 1 + estimatedCostUsd);
 			const citationSupport = averageScore(run.evaluations, "citationSupport");
