@@ -1,149 +1,166 @@
 # Briefing Genie Improvement Lab
 
-Briefing Genie Improvement Lab is a small AI product eval demo. The product, **Briefing Genie**, generates short research briefings from synthetic source packets. The lab evaluates those generated briefings for quality, writes inspectable run artifacts to the local filesystem, and shows run history plus before/after quality changes in a dashboard.
+Briefing Genie Improvement Lab is a local AI-product eval demo. The product, **Briefing Genie**, generates concise strategy briefings from synthetic source packets. The lab evaluates those briefings, stores inspectable artifacts on disk, and shows whether a baseline or candidate run improved quality, citation grounding, cost, and latency.
 
-The repo currently starts from a stock T3 scaffold. That scaffold is only the starting point; the product UX should become an eval-lab dashboard, not a T3 landing page. See [docs/t3-ux-replacement-plan.md](docs/t3-ux-replacement-plan.md) for the rip-and-replace plan.
+The demo is designed around an improvement loop: inspect failures, form a bounded hypothesis, change the generator or prompt variant, run evals, compare against a baseline, and make a human shipping decision.
 
-The demo theme is that Codex helps operate an AI-product improvement loop, not merely write a feature. Codex should inspect behavior, understand eval failures, propose a product hypothesis, edit code or prompts, run evals, compare the result, and stop with a recommendation for the human.
+## Current App
+
+- `/` redirects to `/lab`.
+- `/lab` is the dense Improvement Lab dashboard for run history, score deltas, failure themes, artifacts, model metadata, case breakdowns, and before/after evidence.
+- `/genie` is the lighter Briefing Genie product surface for generating one briefing from a visible source packet.
+- tRPC exposes the local demo control surface for listing fixtures, generating briefings, starting eval runs, polling eval jobs, comparing runs, and listing artifacts.
+- Fixture-backed runs are committed under `runs/` so the lab has useful data immediately after clone.
+
+The repository is intended to be public. Keep source packets synthetic, do not commit secrets, and avoid private local filesystem paths or production data.
 
 ## Product Loop
 
-The intended loop is:
-
 ```text
 synthetic source packets
-  -> briefing generator
+  -> Briefing Genie generator
   -> Zod-validated briefing artifact
-  -> evaluator output and metrics
+  -> deterministic or hybrid evaluator
   -> filesystem-backed run store
-  -> dashboard, reports, and before/after comparisons
+  -> lab dashboard, reports, and before/after comparisons
 ```
 
-The demo should make Codex operate the eval loop: inspect failed runs, propose hypotheses, change code or prompts, run evals, compare against baseline, and stop with a product recommendation.
+Briefing Genie generation is shared by `/genie`, command-line eval flows, and lab-triggered eval jobs. Local deterministic generation works offline. OpenAI-backed generation and hybrid evaluation are optional and require `OPENAI_API_KEY`.
 
-## Product And Lab Split
+## Data And Artifacts
 
-The app has two related jobs:
+Committed fixtures live in:
 
-- Briefing Genie: generate a short briefing from a selected source packet. This path should be quick, bounded, and easy to understand.
-- Briefing Genie Improvement Lab: make quality visible. This path should show run progress, score deltas, failure clusters, citation evidence, sample outputs, and before/after comparisons clearly enough to observe during a demo.
+```text
+data/
+  source-packets/   synthetic source packets
+  eval-cases/       synthetic eval cases, including visible and holdout cases
+  variant-specs/    focused generation variants for matrix runs
+runs/
+  baseline-*/       baseline manifests, briefings, traces, and evaluations
+  candidate-*/      candidate/reference artifacts
+  comparisons/      promoted comparison artifacts consumed by /lab
+```
 
-Briefing Genie should not become a complex authoring surface. The demo value is in the lab showing whether the AI-powered product improved.
+The fixture-backed run store is validated with Zod. Current validated counts are:
 
-Both surfaces should execute from this repo and share the same schemas, run store, and dataset. They should still be visibly separate in the browser:
+- 9 source packets
+- 9 eval cases
+- 3 run manifests
+- 21 briefing outputs
+- 14 generation traces
+- 21 evaluator outputs
+- 2 run comparisons
+- 1 loop triage artifact
+- 2 variant specs
 
-- `/genie`: Briefing Genie, a lighter product surface for quickly generating one briefing.
-- `/lab`: Briefing Genie Improvement Lab, a denser visual eval surface for inspecting runs, failures, scores, and before/after evidence.
+Holdout cases remain available to local eval flows, but public lab endpoints redact holdout details and aggregate fields that would leak them.
 
-Use distinct page titles and enough visual difference in color, density, and layout that a viewer can tell which surface is on screen at a glance.
+## Local Setup
 
-The repository is intended to be public. Avoid committing private local filesystem paths, private planning-note locations, secrets, or production data. There is no hosted preview plan yet, so full-stack operation is local-only for the time being.
+Use `mise exec --` for project commands in non-interactive terminals so the pinned Bun and Node versions from `mise.toml` are active.
 
-## Dataset Strategy
+```bash
+mise exec -- bun install
+mise exec -- bun run dev
+```
 
-The dataset is the demo's truth source. It should be small, synthetic, visually legible, and structured enough for Codex to inspect.
+The dev server runs on port 3000. Open either `http://localhost:3000/lab` or `http://127.0.0.1:3000/lab`; `next.config.js` allows the `127.0.0.1` dev origin for Next.js HMR.
 
-Initial target:
+Optional live provider settings can be copied from `.env.example` into `.env.local`:
 
-- 8-12 eval cases total
-- 3-4 highlighted cases for the live demo
-- 1 featured failure cluster: plausible briefings with weak or missing citation support
-- 1-2 hidden or holdout cases to discourage tuning only to visible examples
+```bash
+OPENAI_API_KEY="sk-..."
+OPENAI_MODEL="gpt-5.2"
+OPENAI_EVAL_MODEL="gpt-5.5"
+```
 
-Each eval case should include:
+Without `OPENAI_API_KEY`, use the default local provider paths.
 
-- user request
-- source packet with 5-10 synthetic source documents
-- expected coverage points
-- known traps or ambiguities
-- acceptable citations
-- baseline model output
-- rubric scores
-- evaluator notes
-- failure tags
+## Common Commands
 
-The preferred initial domain is a synthetic developer-tooling / AI-product strategy dataset. It is close enough to the Codex session to feel relevant, but abstracted enough to avoid production data, privacy, or benchmark claims.
+```bash
+# Format/check the repo
+mise exec -- bun run check
+mise exec -- bun run check:write
 
-Dataset artifacts should be committed under `data/`, discovered from the filesystem, and validated with Zod before use. A seed command should create deterministic baseline/candidate run artifacts and sample traces so the lab can show useful states without live model calls. Once live LLM generation is available, those seeded baselines should be replaced by stored LLM-generated baseline runs and kept only as fallback demo data.
+# Fast TypeScript check
+mise exec -- bun run typecheck:native
 
-## Current Stack
+# Validate data, run fixtures, and artifact schemas
+mise exec -- bun run data:validate
 
-- Next.js App Router
-- React
-- tRPC
-- Zod
-- Tailwind CSS
-- Bun, pinned through `mise.toml`
+# Run evaluator smoke tests
+mise exec -- bun run test:evaluator
+```
 
-Near-term UI work should use shadcn/ui components as the default component foundation.
+Eval workflows:
 
-The app should stay TypeScript-only for demo reliability. Zod is the important contract layer: it keeps LLM communication, eval cases, evaluator outputs, filesystem artifacts, and dashboard data type-safe without adding another service boundary.
+```bash
+# Print the current comparison/report view from stored artifacts
+mise exec -- bun run eval:report
 
-The lab should use shadcn theming and chart components where they help the demo read quickly. Area charts are a good first candidate for score, cost, and latency trends.
+# Generate a local baseline over visible cases
+mise exec -- bun run eval:baseline --provider=local
 
-## LLM And Trace Requirements
+# Generate a local candidate against a baseline
+mise exec -- bun run eval:variant --provider=local --baseline=<baseline-run-id>
 
-Briefing Genie should support at least one current LLM API with structured output and tool calls. Use Zod for tool-call arguments, tool-call results, structured model output, evaluator output, and persisted run artifacts. Convert Zod schemas to JSON Schema when the provider requires it, and use `z.infer` for TypeScript types.
+# Include holdout cases when intentionally validating beyond the visible demo set
+mise exec -- bun run eval:baseline --provider=local --include-holdouts
 
-Briefing Genie should log rich generation traces to the backend filesystem: inputs, selected sources, prompts/messages, structured outputs, tool calls, tool results, errors, model metadata, cost, latency, and provider-exposed trace or reasoning summaries when available. Do not rely on hidden chain-of-thought.
+# Rejudge an existing run with the selected evaluator mode
+mise exec -- bun run eval:rejudge --run-id=<run-id> --evaluator=deterministic
+```
 
-Evals run from the lab side. The same Briefing Genie generation code must be callable from the `/genie` UX and programmatically from lab/eval flows so the lab can run hands-free across many cases.
+OpenAI-backed runs:
 
-Known tRPC entry points should control jobs and lab runs: list source packets, generate or start a briefing job, poll briefing job status, list eval cases, start eval runs, poll eval run status, compare runs, and list artifacts.
+```bash
+mise exec -- bun run eval:baseline --provider=openai --evaluator=hybrid
+mise exec -- bun run eval:variant --provider=openai --evaluator=hybrid --baseline=<baseline-run-id>
+```
 
-The first live-generation milestone should define an explicit baseline variant, run it across the eval corpus, and persist generated baseline briefings, traces, evaluator outputs, and manifests under `runs/baseline-*`. Candidate runs should then compare against those generated baseline artifacts instead of the hand-authored seeded baseline.
+Focused variant matrix and promotion:
 
-## Planned Repo Shape
+```bash
+# Dry-run the matrix plan first
+mise exec -- bun run eval:matrix:dry-run
+
+# Run a bounded matrix over selected variants/cases
+mise exec -- bun run eval:matrix --provider=mixed --case-limit=3 --variant-limit=4
+
+# Promote a completed candidate into a comparison artifact consumed by /lab
+mise exec -- bun run eval:promote --baseline=<baseline-run-id> --candidate-run=<candidate-run-id> --label="<candidate label>"
+```
+
+## Architecture
 
 ```text
 src/
-  app/              Next.js routes for Briefing Genie and the lab
-  server/           tRPC API surface
-  eval/             eval runner, scoring, and comparison logic
-  genie/            generation service and LLM/tool-call adapters
-  schemas/          Zod contracts for cases, briefings, evals, and runs
-  run-store/        filesystem read/write helpers for run artifacts
-data/
-  source-packets/   synthetic source packets
-  eval-cases/       synthetic eval cases
-  rubrics/          briefing quality rubrics
-runs/
-  baseline/         committed or generated baseline artifacts
-  variant-*/        experiment artifacts
+  app/              Next.js App Router pages for /lab and /genie
+  components/       local UI primitives
+  genie/            briefing generation, variants, and OpenAI pricing helpers
+  lab/              eval jobs and evaluator logic
+  run-store/        filesystem readers, comparison assembly, and validation
+  schemas/          Zod contracts for cases, briefings, traces, evals, and runs
+  server/api/       tRPC routers
+scripts/
+  run-eval.ts       baseline, variant, report, and rejudge flows
+  eval-matrix.ts    bounded variant matrix runner
+  promote-eval-run.ts
+  validate-data.ts
 ```
 
-## Local Commands
+Zod is the contract layer between probabilistic AI output, persisted JSON artifacts, and typed product code. The app should stay TypeScript-only for the main demo path.
 
-Use `mise exec --` for project commands in non-interactive terminals so the pinned Bun and Node versions are active.
+## Improvement Loop Skill
 
-```bash
-mise exec -- bun run dev
-mise exec -- bun run check
-mise exec -- bun run typecheck:native
-```
+This repo includes a Codex skill at `.codex/skills/briefing-improvement-loop/`. Use it when operating the lab loop end to end: inspect eval failures, choose or author a bounded hypothesis, run the smallest useful validation, compare artifacts, update loop state, and recommend ship, iterate, reject, or needs-human-review.
 
-Expected future demo commands:
+## Demo Principles
 
-```bash
-mise exec -- bun run demo:seed
-mise exec -- bun run data:validate
-mise exec -- bun run eval:baseline
-mise exec -- bun run eval:latest
-mise exec -- bun run eval:compare
-```
-
-## Success Criteria
-
-- The first screen shows the eval lab, not stock framework boilerplate.
-- The UI clearly separates Briefing Genie, the fast product surface, from Briefing Genie Improvement Lab, the visual eval surface.
-- `/genie` and `/lab` have distinct titles and visual treatments while sharing the same underlying TypeScript/Zod codebase.
-- Generating an individual briefing is fast enough to use live without losing the room.
-- Baseline quality, failure clusters, sample outputs, and run artifacts are visible.
-- Generation traces are file-backed and rich enough for the lab to inspect what happened.
-- Evals are run from the lab side and can trigger Briefing Genie programmatically.
-- Synthetic datasets are committed fixtures discovered from `data/`, validated with Zod, and seedable into baseline lab artifacts.
-- Seeded baseline artifacts are replaced by LLM-generated baseline run artifacts once generation is wired up.
-- Before/after comparisons include quality, cost, latency, and holdout-safety context.
-- Zod schemas define the boundary between probabilistic AI output, persisted artifacts, and typed product code.
-- The demo keeps human judgment visible: Codex can compress the loop, but the human decides whether the eval is valid and the product change is worth shipping.
-- The app remains small enough to run locally and inspect during a live Codex demo.
+- Keep Briefing Genie fast and bounded for single-briefing generation.
+- Spend UI complexity in the lab views: run progress, score deltas, failures, citations, source evidence, and artifact links.
+- Prefer dense operational surfaces over marketing pages.
+- Treat generated baselines and candidate runs as inspectable artifacts, not hidden state.
+- Keep human judgment visible: Codex can compress the loop, but the human decides whether the eval is valid and the change is worth shipping.
