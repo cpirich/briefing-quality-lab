@@ -713,10 +713,16 @@ function isGeneratedCandidateRunManifest(manifest: RunManifest | undefined) {
 		return false;
 	}
 
+	const variantLabel = manifest.variantLabel.toLowerCase();
+
 	return (
 		manifest.runId.startsWith("candidate-local-") ||
 		manifest.runId.startsWith("candidate-openai-") ||
+		(manifest.runId.startsWith("matrix-") &&
+			!variantLabel.includes("baseline")) ||
 		manifest.command.includes("eval:variant") ||
+		(manifest.command.includes("eval:matrix") &&
+			!variantLabel.includes("baseline")) ||
 		manifest.variantLabel.endsWith("generated variant")
 	);
 }
@@ -925,6 +931,24 @@ function completedGeneratedCandidatesForCaseSet(
 	);
 }
 
+function completedComparisonCandidateForCaseSet(
+	comparison: RunComparison,
+	manifestById: Map<string, RunManifest>,
+	referenceManifest: RunManifest,
+) {
+	const candidateManifest = manifestById.get(comparison.candidateRunId);
+	if (
+		!candidateManifest ||
+		comparison.candidateRunId === defaultCandidateRunId ||
+		candidateManifest.status !== "complete" ||
+		!sameCaseSet(candidateManifest, referenceManifest)
+	) {
+		return null;
+	}
+
+	return candidateManifest;
+}
+
 function newerRunFirst(left: RunManifest, right: RunManifest) {
 	const createdDelta = Date.parse(right.createdAt) - Date.parse(left.createdAt);
 	if (createdDelta !== 0) {
@@ -986,6 +1010,19 @@ function curatedTrendForComparison(
 		runManifests,
 		baselineManifest,
 	);
+	const comparisonCandidate = completedComparisonCandidateForCaseSet(
+		comparison,
+		manifestById,
+		baselineManifest,
+	);
+	if (
+		comparisonCandidate &&
+		!generatedCandidates.some(
+			(candidate) => candidate.runId === comparisonCandidate.runId,
+		)
+	) {
+		generatedCandidates.push(comparisonCandidate);
+	}
 	const latestVariant = [...generatedCandidates].sort(newerRunFirst)[0];
 	const bestVariant = [...generatedCandidates].sort(bestCandidateFirst)[0];
 	const trend = [

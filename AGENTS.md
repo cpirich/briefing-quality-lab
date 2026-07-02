@@ -11,6 +11,7 @@
 - Prefer `interface` for named object shapes in TypeScript. Use `type` for unions, intersections, mapped/conditional types, and `z.infer` aliases.
 - Keep the core app action fast: generating one briefing should feel quick and bounded. Spend the visual complexity on the lab views that show run progress, score deltas, failures, citations, and before/after evidence during a demo.
 - Use clear demo nomenclature: "Briefing Genie" is the fast briefing-generation product, and "Briefing Genie Improvement Lab" is the eval/experiment dashboard for improving that product.
+- For new loop-engineering candidate variant specs, prefer ids that include the loop attempt number and readable hypothesis name, for example `openai-loop-v3-claim-planning` or `openai-loop-v4-claim-planning-trimmed`. Avoid using a fresh `*-v1` suffix for every new hypothesis when the variant will be discussed as v3/v4/etc. in demos or loop state.
 - Keep Briefing Genie and the Improvement Lab in the same repo/app, but separate them by route, page title, and visual treatment so they are easy to distinguish in browser tabs and during demos.
 - This repo is intended to be public: do not commit private local filesystem paths, secrets, production data, or private planning-note locations.
 - Use shadcn theming and shadcn chart components for lab visuals when they help; area charts are a good first choice for run trends.
