@@ -18,12 +18,14 @@ const toneClasses: Record<BadgeTone, string> = {
 export function Badge({
 	className,
 	tone = "slate",
+	wrap = false,
 	...props
-}: ComponentProps<"span"> & { tone?: BadgeTone }) {
+}: ComponentProps<"span"> & { tone?: BadgeTone; wrap?: boolean }) {
 	return (
 		<span
 			className={cn(
-				"inline-flex items-center whitespace-nowrap rounded-md border px-2 py-0.5 font-medium text-xs",
+				"inline-flex items-center rounded-md border px-2 py-0.5 font-medium text-xs",
+				wrap ? "whitespace-normal break-words" : "whitespace-nowrap",
 				toneClasses[tone],
 				className,
 			)}

@@ -58,7 +58,7 @@ function assertSupportedStartInput(input: Required<StartEvalRunInput>) {
 }
 
 function absolutePath(relativePath: string) {
-	return path.join(repoRoot, relativePath);
+	return path.join(/* turbopackIgnore: true */ repoRoot, relativePath);
 }
 
 async function writeJsonArtifact(relativePath: string, value: unknown) {

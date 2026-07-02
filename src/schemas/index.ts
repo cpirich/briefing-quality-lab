@@ -507,6 +507,134 @@ export const RunComparisonSchema = z.object({
 	artifactPaths: z.array(artifactPathSchema).min(1),
 });
 
+export const FocusedVariantMatrixSchema = z.object({
+	id: fixtureIdSchema,
+	createdAt: z.string().datetime(),
+	baselineRunId: fixtureIdSchema,
+	provider: z.enum(["local", "openai", "mixed"]),
+	evaluator: z.enum(["deterministic", "hybrid"]),
+	bounds: z.object({
+		variantCount: z.number().int().min(1).max(4),
+		caseCount: z.number().int().min(1).max(5),
+		retryCap: z.number().int().nonnegative().max(3),
+		includeHoldouts: z.boolean(),
+		estimatedMaxCostUsd: z.number().nonnegative().nullable(),
+		liveProviderCalls: z.boolean(),
+	}),
+	caseIds: z.array(fixtureIdSchema).min(1).max(5),
+	variants: z.array(
+		z.object({
+			variantId: fixtureIdSchema,
+			label: z.string().min(1),
+			provider: z.string().min(1),
+			model: z.string().min(1),
+			promptVersion: fixtureIdSchema,
+			runId: fixtureIdSchema,
+			status: z.enum(["complete", "failed", "skipped"]),
+			metrics: z.object({
+				overall: z.number().min(0).max(1),
+				grounding: z.number().min(0).max(1),
+				coverage: z.number().min(0).max(1),
+				citationSupport: z.number().min(0).max(1),
+				unsupportedClaims: z.number().int().nonnegative(),
+				medianLatencyMs: z.number().int().nonnegative(),
+				estimatedCostUsd: z.number().nonnegative().nullable(),
+				costRatio: z.number().positive(),
+				guardrailStatus: z.enum(["pass", "warn", "fail"]),
+			}),
+			artifactPaths: z.array(artifactPathSchema).min(1),
+		}),
+	),
+	rows: z.array(
+		z.object({
+			caseId: fixtureIdSchema,
+			cells: z.array(
+				z.object({
+					variantId: fixtureIdSchema,
+					status: z.enum(["complete", "failed", "skipped"]),
+					overall: z.number().min(0).max(1).nullable(),
+					grounding: z.number().min(0).max(1).nullable(),
+					coverage: z.number().min(0).max(1).nullable(),
+					citationSupport: z.number().min(0).max(1).nullable(),
+					unsupportedClaims: z.number().int().nonnegative().nullable(),
+					latencyMs: z.number().int().nonnegative().nullable(),
+					estimatedCostUsd: z.number().nonnegative().nullable(),
+					artifactPaths: z.array(artifactPathSchema),
+				}),
+			),
+		}),
+	),
+	recommendation: z.object({
+		variantId: fixtureIdSchema.nullable(),
+		label: z.string().min(1),
+		rationale: z.string().min(1),
+		guardrailStatus: z.enum(["pass", "warn", "fail"]),
+	}),
+	artifactPaths: z.array(artifactPathSchema).min(1),
+});
+
+export const LoopTriageArtifactSchema = z.object({
+	id: fixtureIdSchema,
+	createdAt: z.string().datetime(),
+	triageVersion: z.string().min(1),
+	inputSignature: z.object({
+		triageVersion: z.string().min(1),
+		latestComparisonId: fixtureIdSchema.nullable(),
+		baselineRunId: fixtureIdSchema.nullable(),
+		candidateRunId: fixtureIdSchema.nullable(),
+		comparisonArtifactPath: artifactPathSchema.nullable(),
+	}),
+	dataValidation: z.object({
+		status: z.enum(["pass", "fail"]),
+		message: z.string().min(1),
+		counts: z.record(z.number().int().nonnegative()).optional(),
+	}),
+	latestRuns: z.array(
+		z.object({
+			runId: fixtureIdSchema,
+			status: z.enum(["seeded", "running", "complete", "failed"]),
+			createdAt: z.string().datetime(),
+			variantLabel: z.string().min(1),
+			caseCount: z.number().int().nonnegative(),
+			overall: z.number().min(0).max(1),
+			citationSupport: z.number().min(0).max(1),
+			unsupportedClaims: z.number().int().nonnegative(),
+			medianLatencyMs: z.number().int().nonnegative(),
+		}),
+	),
+	latestComparison: z
+		.object({
+			id: fixtureIdSchema,
+			baselineRunId: fixtureIdSchema,
+			candidateRunId: fixtureIdSchema,
+			recommendationLabel: z.string().min(1),
+			recommendationWarning: z.string().min(1),
+		})
+		.nullable(),
+	staleOrMissingArtifacts: z.array(
+		z.object({
+			severity: z.enum(["info", "warn", "fail"]),
+			message: z.string().min(1),
+			artifactPath: artifactPathSchema.optional(),
+		}),
+	),
+	weakestFailureClusters: z.array(
+		z.object({
+			title: z.string().min(1),
+			count: z.number().int().positive(),
+			severity: z.enum(["High", "Medium", "Low"]),
+			cases: z.array(fixtureIdSchema).min(1),
+		}),
+	),
+	recommendation: z.object({
+		label: z.enum(["ship", "iterate", "reject", "needs human review"]),
+		text: z.string().min(1),
+		nextCommand: z.string().min(1).optional(),
+	}),
+	loopStatePath: z.literal("docs/briefing-loop-state.md"),
+	artifactPaths: z.array(artifactPathSchema).min(1),
+});
+
 export const ArtifactEntrySchema = z.object({
 	label: z.string().min(1),
 	path: artifactPathSchema,
@@ -525,5 +653,7 @@ export type GenerationTrace = z.infer<typeof GenerationTraceSchema>;
 export type EvaluatorOutput = z.infer<typeof EvaluatorOutputSchema>;
 export type RunManifest = z.infer<typeof RunManifestSchema>;
 export type RunComparison = z.infer<typeof RunComparisonSchema>;
+export type FocusedVariantMatrix = z.infer<typeof FocusedVariantMatrixSchema>;
+export type LoopTriageArtifact = z.infer<typeof LoopTriageArtifactSchema>;
 export type RunModelMetadata = z.infer<typeof RunModelMetadataSchema>;
 export type ArtifactEntry = z.infer<typeof ArtifactEntrySchema>;

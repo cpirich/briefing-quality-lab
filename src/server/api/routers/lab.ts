@@ -4,6 +4,7 @@ import { getEvalRun, startEvalRun } from "~/lab/eval-runs";
 import type { CaseBreakdownEntry } from "~/run-store";
 import {
 	compareRuns,
+	getImprovementLoopSummary,
 	listArtifacts,
 	listCaseBreakdown,
 	listEvalCases,
@@ -406,6 +407,10 @@ export const labRouter = createTRPCRouter({
 
 	listInProgressRuns: publicProcedure.query(() => {
 		return listInProgressRuns();
+	}),
+
+	getImprovementLoopSummary: publicProcedure.query(() => {
+		return getImprovementLoopSummary();
 	}),
 
 	listCaseBreakdown: publicProcedure

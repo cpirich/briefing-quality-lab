@@ -1,0 +1,114 @@
+{
+	"id": "triage-20260701165550",
+	"createdAt": "2026-07-01T16:55:50.994Z",
+	"triageVersion": "lab-triage-v1",
+	"inputSignature": {
+		"triageVersion": "lab-triage-v1",
+		"latestComparisonId": "baseline-openai-20260624203921-candidate-citation-gates",
+		"baselineRunId": "baseline-openai-20260624203921",
+		"candidateRunId": "candidate-citation-gates",
+		"comparisonArtifactPath": "runs/comparisons/baseline-openai-20260624203921-candidate-citation-gates.json"
+	},
+	"dataValidation": {
+		"status": "pass",
+		"message": "Run store fixtures validate.",
+		"counts": {
+			"sourcePackets": 9,
+			"evalCases": 9,
+			"runManifests": 3,
+			"briefingOutputs": 21,
+			"generationTraces": 14,
+			"evaluatorOutputs": 21,
+			"runComparisons": 2,
+			"focusedVariantMatrices": 0,
+			"loopTriageArtifacts": 1,
+			"variantSpecs": 2,
+			"artifacts": 6
+		}
+	},
+	"latestRuns": [
+		{
+			"runId": "baseline-openai-20260624203921",
+			"status": "complete",
+			"createdAt": "2026-06-24T20:42:58.256Z",
+			"variantLabel": "openai generated baseline",
+			"caseCount": 7,
+			"overall": 0.9,
+			"citationSupport": 0.95,
+			"unsupportedClaims": 9,
+			"medianLatencyMs": 10663
+		},
+		{
+			"runId": "candidate-citation-gates",
+			"status": "complete",
+			"createdAt": "2026-06-18T17:45:00.000Z",
+			"variantLabel": "candidate-citation-gates",
+			"caseCount": 7,
+			"overall": 0.91,
+			"citationSupport": 0.96,
+			"unsupportedClaims": 6,
+			"medianLatencyMs": 8000
+		},
+		{
+			"runId": "baseline-2026-06-10",
+			"status": "complete",
+			"createdAt": "2026-06-10T15:30:00.000Z",
+			"variantLabel": "baseline",
+			"caseCount": 7,
+			"overall": 0.66,
+			"citationSupport": 0.51,
+			"unsupportedClaims": 26,
+			"medianLatencyMs": 8400
+		}
+	],
+	"latestComparison": {
+		"id": "baseline-openai-20260624203921-candidate-citation-gates",
+		"baselineRunId": "baseline-openai-20260624203921",
+		"candidateRunId": "candidate-citation-gates",
+		"recommendationLabel": "Pipeline rehearsal",
+		"recommendationWarning": "Run a generated candidate before using this as improvement evidence."
+	},
+	"staleOrMissingArtifacts": [
+		{
+			"severity": "info",
+			"message": "No running or failed run manifests found."
+		}
+	],
+	"weakestFailureClusters": [
+		{
+			"title": "Partial Claim Support",
+			"count": 3,
+			"severity": "Medium",
+			"cases": [
+				"case-adoption-friction",
+				"case-cost-latency-budget",
+				"case-incident-recovery-comms"
+			]
+		},
+		{
+			"title": "Missing Strongest Citation",
+			"count": 1,
+			"severity": "Low",
+			"cases": ["case-adoption-friction"]
+		},
+		{
+			"title": "Quantifier Too Strong",
+			"count": 1,
+			"severity": "Low",
+			"cases": ["case-adoption-friction"]
+		},
+		{
+			"title": "Citation Mismatch",
+			"count": 1,
+			"severity": "Low",
+			"cases": ["case-cost-latency-budget"]
+		}
+	],
+	"recommendation": {
+		"label": "needs human review",
+		"text": "Review the top failure cluster (Partial Claim Support) and approve a bounded matrix slice before live-provider work.",
+		"nextCommand": "mise exec -- bun run eval:matrix"
+	},
+	"loopStatePath": "docs/briefing-loop-state.md",
+	"artifactPaths": ["runs/comparisons/triage/triage-20260701165550.json"]
+}

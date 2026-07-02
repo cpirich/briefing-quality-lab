@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { Badge } from "~/components/badge";
 import { Card, CardBody, CardHeader } from "~/components/card";
 import { cn } from "~/lib/utils";
-import type { RunModelMetadata } from "~/schemas";
+import type { ImprovementLoopSummary } from "~/run-store";
+import type { RunComparison, RunModelMetadata } from "~/schemas";
 import { api } from "~/trpc/server";
 import { LabActions } from "./lab-actions";
 import { LabCaseInspector } from "./lab-case-inspector";
@@ -342,13 +343,279 @@ function inProgressRunLabel(run: {
 	return `${run.provider} ${run.role} case ${activeCaseNumber}/${run.expectedCaseCount}`;
 }
 
+function decisionTone(
+	label: ImprovementLoopSummary["latestTriageRecommendationLabel"],
+) {
+	if (label === "ship") {
+		return "green" as const;
+	}
+	if (label === "reject") {
+		return "red" as const;
+	}
+	if (label === "iterate") {
+		return "amber" as const;
+	}
+	if (label === "needs human review") {
+		return "blue" as const;
+	}
+	return "slate" as const;
+}
+
+function statusTone(value: string) {
+	const normalizedValue = value.toLowerCase();
+	if (
+		normalizedValue.includes("excluded") ||
+		normalizedValue.includes("pass")
+	) {
+		return "green" as const;
+	}
+	if (
+		normalizedValue.includes("needs") ||
+		normalizedValue.includes("warning") ||
+		normalizedValue.includes("review")
+	) {
+		return "amber" as const;
+	}
+	if (normalizedValue.includes("fail") || normalizedValue.includes("blocked")) {
+		return "red" as const;
+	}
+	return "slate" as const;
+}
+
+function metricByLabel(
+	metrics: Array<{
+		label: string;
+		value: string;
+		delta: string;
+		targetDelta?: string;
+		status: string;
+	}>,
+	label: string,
+) {
+	return metrics.find((metric) => metric.label === label);
+}
+
+function LoopMetric({
+	label,
+	status,
+	value,
+}: {
+	label: string;
+	status: string;
+	value: string;
+}) {
+	return (
+		<div className="min-w-0 rounded-md border border-[var(--border)] bg-[var(--muted)] px-3 py-2">
+			<p className="text-[var(--muted-foreground)] text-xs uppercase">
+				{label}
+			</p>
+			<p className="mt-1 truncate font-semibold text-sm">{value}</p>
+			<p className="mt-1 line-clamp-2 text-[var(--muted-foreground)] text-xs">
+				{status}
+			</p>
+		</div>
+	);
+}
+
+function artifactLinkLabel(path: string) {
+	if (path === "docs/briefing-loop-state.md") {
+		return "Loop state";
+	}
+	if (path.includes("/triage/")) {
+		return "Triage artifact";
+	}
+	if (path.includes("/comparisons/")) {
+		return "Comparison artifact";
+	}
+	if (path.endsWith("/manifest.json")) {
+		return "Run manifest";
+	}
+	return "Artifact";
+}
+
+function ImprovementLoopPanel({
+	changeLabel,
+	loopSummary,
+	runComparison,
+}: {
+	changeLabel: string;
+	loopSummary: ImprovementLoopSummary;
+	runComparison: RunComparison;
+}) {
+	const overallMetric = metricByLabel(runComparison.metrics, "Overall quality");
+	const costMetric =
+		metricByLabel(runComparison.metrics, "Estimated cost") ??
+		metricByLabel(runComparison.metrics, "Cost ratio");
+	const latencyMetric =
+		metricByLabel(runComparison.metrics, "Median latency") ??
+		metricByLabel(runComparison.metrics, "Latency ratio");
+	const scoreChange = overallMetric
+		? (overallMetric.targetDelta ?? overallMetric.delta)
+		: "n/a";
+	const scoreChangeLabel = overallMetric?.targetDelta ? "Gap" : changeLabel;
+
+	return (
+		<Card>
+			<details className="group">
+				<summary className="cursor-pointer list-none border-[var(--border)] border-b marker:hidden">
+					<span className="block px-4 py-3">
+						<h2 className="font-semibold text-base">Improvement Loop</h2>
+						<p className="text-[var(--muted-foreground)] text-sm">
+							Durable loop state, verifier posture, guardrails, and next human
+							decision.
+						</p>
+						<span className="mt-2 flex flex-wrap gap-2">
+							<Badge
+								className="max-w-full text-left"
+								tone={decisionTone(loopSummary.latestTriageRecommendationLabel)}
+								wrap
+							>
+								{loopSummary.latestTriageRecommendationLabel ??
+									"no triage recommendation"}
+							</Badge>
+							<Badge tone="blue">
+								<span className="group-open:hidden">show</span>
+								<span className="hidden group-open:inline">hide</span>
+							</Badge>
+						</span>
+					</span>
+				</summary>
+				<CardBody className="hidden space-y-4 group-open:block">
+					<div className="flex flex-wrap gap-2">
+						<Badge
+							className="max-w-full text-left"
+							tone={statusTone(loopSummary.verifierStatus)}
+							wrap
+						>
+							{loopSummary.verifierStatus}
+						</Badge>
+					</div>
+					<div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+						<div className="space-y-3">
+							<dl className="grid grid-cols-1 gap-y-1.5 text-sm sm:grid-cols-[minmax(0,0.45fr)_minmax(0,1fr)] sm:gap-x-3 sm:gap-y-2">
+								<div className="contents">
+									<dt className="text-[var(--muted-foreground)]">Baseline</dt>
+									<dd className="min-w-0 break-words font-medium">
+										{loopSummary.baselineRunId}
+									</dd>
+								</div>
+								<div className="contents">
+									<dt className="text-[var(--muted-foreground)]">Candidate</dt>
+									<dd className="min-w-0 break-words font-medium">
+										{loopSummary.candidateRunId}
+									</dd>
+								</div>
+								<div className="contents">
+									<dt className="text-[var(--muted-foreground)]">Variant</dt>
+									<dd className="min-w-0 break-words">
+										{loopSummary.activeVariant}
+									</dd>
+								</div>
+								<div className="contents">
+									<dt className="text-[var(--muted-foreground)]">Holdouts</dt>
+									<dd className="min-w-0">
+										<Badge
+											className="max-w-full text-left"
+											tone={statusTone(loopSummary.holdoutStatus)}
+											wrap
+										>
+											{loopSummary.holdoutStatus}
+										</Badge>
+									</dd>
+								</div>
+							</dl>
+							<div>
+								<p className="font-medium text-sm">Hypothesis</p>
+								<p className="mt-1 text-[var(--muted-foreground)] text-sm">
+									{loopSummary.activeHypothesis}
+								</p>
+							</div>
+						</div>
+						<div className="grid content-start gap-2 sm:grid-cols-3 lg:grid-cols-1">
+							<LoopMetric
+								label={`${scoreChangeLabel} score`}
+								status={overallMetric?.status ?? "No comparison metric"}
+								value={scoreChange}
+							/>
+							<LoopMetric
+								label="Cost guardrail"
+								status={
+									costMetric
+										? displayMetricValue(costMetric.label, costMetric.status)
+										: "No cost metric"
+								}
+								value={
+									costMetric
+										? displayMetricValue(costMetric.label, costMetric.value)
+										: "n/a"
+								}
+							/>
+							<LoopMetric
+								label="Latency guardrail"
+								status={latencyMetric?.status ?? "No latency metric"}
+								value={latencyMetric?.value ?? "n/a"}
+							/>
+						</div>
+					</div>
+
+					<div className="grid gap-3 lg:grid-cols-2">
+						<div>
+							<p className="font-medium text-sm">Target Failure Tags</p>
+							<div className="mt-2 flex flex-wrap gap-1.5">
+								{loopSummary.targetFailureTags.map((tag) => (
+									<Badge key={tag}>{tag}</Badge>
+								))}
+							</div>
+						</div>
+						<div>
+							<p className="font-medium text-sm">Artifacts</p>
+							<div className="mt-2 flex flex-wrap gap-2">
+								{loopSummary.artifactPaths.map((artifactPath) => (
+									<a
+										className="rounded-md border border-[var(--border)] px-2 py-1 text-[var(--muted-foreground)] text-xs transition-colors hover:border-[var(--primary)] hover:text-[var(--foreground)]"
+										href="#artifact-trail"
+										key={artifactPath}
+									>
+										{artifactLinkLabel(artifactPath)}
+									</a>
+								))}
+							</div>
+							<p className="mt-2 break-all font-mono text-[var(--muted-foreground)] text-xs">
+								{loopSummary.latestTriageArtifact ??
+									loopSummary.latestComparisonArtifact}
+							</p>
+						</div>
+					</div>
+
+					<div className="grid gap-3 border-[var(--border)] border-t pt-4 lg:grid-cols-2">
+						<div>
+							<p className="font-medium text-sm">Next Recommended Action</p>
+							<p className="mt-1 text-[var(--muted-foreground)] text-sm">
+								{loopSummary.latestTriageRecommendation ??
+									loopSummary.nextRecommendedExperiment}
+							</p>
+						</div>
+						<div>
+							<p className="font-medium text-sm">Human Decision Needed</p>
+							<p className="mt-1 text-[var(--muted-foreground)] text-sm">
+								{loopSummary.humanDecisionNeeded}
+							</p>
+						</div>
+					</div>
+				</CardBody>
+			</details>
+		</Card>
+	);
+}
+
 export default async function LabPage() {
-	const [runComparison, artifacts, caseBreakdown, inProgressRuns] =
+	const [runComparison, artifacts, caseBreakdown, inProgressRuns, loopSummary] =
 		await Promise.all([
 			api.lab.compareRuns(),
 			api.lab.listArtifacts(),
 			api.lab.listCaseBreakdown(),
 			api.lab.listInProgressRuns(),
+			api.lab.getImprovementLoopSummary(),
 		]);
 	const publicCaseIds = new Set(
 		caseBreakdown.map((caseBreakdownEntry) => caseBreakdownEntry.caseId),
@@ -840,20 +1107,28 @@ export default async function LabPage() {
 							</CardBody>
 						</Card>
 
-						<Card>
+						<ImprovementLoopPanel
+							changeLabel={changeLabel}
+							loopSummary={loopSummary}
+							runComparison={runComparison}
+						/>
+
+						<Card id="artifact-trail">
 							<details className="group">
-								<summary className="flex cursor-pointer list-none items-center justify-between gap-3 border-[var(--border)] border-b px-4 py-3 marker:hidden">
-									<div>
+								<summary className="cursor-pointer list-none border-[var(--border)] border-b marker:hidden">
+									<span className="block px-4 py-3">
 										<h2 className="font-semibold text-base">Artifact Trail</h2>
 										<p className="text-[var(--muted-foreground)] text-sm">
 											File-backed paths for the current comparison, including
 											local generated artifacts and seeded fallback artifacts.
 										</p>
-									</div>
-									<Badge tone="blue">
-										<span className="group-open:hidden">show</span>
-										<span className="hidden group-open:inline">hide</span>
-									</Badge>
+										<span className="mt-2 flex flex-wrap gap-2">
+											<Badge tone="blue">
+												<span className="group-open:hidden">show</span>
+												<span className="hidden group-open:inline">hide</span>
+											</Badge>
+										</span>
+									</span>
 								</summary>
 								<CardBody className="hidden group-open:block">
 									<div className="overflow-x-auto rounded-md border border-[var(--border)]">
