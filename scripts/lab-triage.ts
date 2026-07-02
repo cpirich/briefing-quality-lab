@@ -1,7 +1,8 @@
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import {
+	listLoopTriageArtifacts,
 	listRunComparisons,
 	listRunManifests,
 	validateRunStore,
@@ -20,6 +21,7 @@ const triageTimestamp = new Date()
 	.slice(0, 14);
 const loopStatePath = "docs/briefing-loop-state.md";
 const triageSectionHeading = "## Latest Automation-Friendly Triage";
+const triageVersion = "lab-triage-v1";
 
 interface TriageFinding {
 	severity: "info" | "warn" | "fail";
@@ -29,6 +31,50 @@ interface TriageFinding {
 
 function absolutePath(relativePath: string) {
 	return path.join(repoRoot, relativePath);
+}
+
+function parseArgs() {
+	const args = new Set(process.argv.slice(2));
+	if (args.has("--help")) {
+		console.log(
+			[
+				"Usage: bun run lab:triage [--force]",
+				"",
+				"By default, reuses the existing triage artifact when the latest comparison input signature has not changed.",
+				"Use --force or --new-artifact to intentionally create a fresh timestamped triage artifact.",
+			].join("\n"),
+		);
+		process.exit(0);
+	}
+
+	const unknownArgs = [...args].filter(
+		(arg) => arg !== "--force" && arg !== "--new-artifact",
+	);
+	if (unknownArgs.length > 0) {
+		throw new Error(`Unknown lab:triage arguments: ${unknownArgs.join(", ")}`);
+	}
+
+	return {
+		forceNewArtifact: args.has("--force") || args.has("--new-artifact"),
+	};
+}
+
+async function fileExists(relativePath: string) {
+	try {
+		await access(absolutePath(relativePath));
+		return true;
+	} catch (error) {
+		if (
+			error &&
+			typeof error === "object" &&
+			"code" in error &&
+			error.code === "ENOENT"
+		) {
+			return false;
+		}
+
+		throw error;
+	}
 }
 
 async function writeJsonArtifact(relativePath: string, value: unknown) {
@@ -86,6 +132,78 @@ function latestComparison(
 			(Number.isNaN(leftTime) ? 0 : leftTime)
 		);
 	})[0];
+}
+
+async function comparisonArtifactPath(
+	comparison: RunComparison | undefined,
+): Promise<string | null> {
+	if (!comparison) {
+		return null;
+	}
+
+	const candidatePaths = [
+		`runs/comparisons/${comparison.id}.json`,
+		`runs/comparisons/${comparison.baselineRunId}-${comparison.candidateRunId}.json`,
+		`runs/comparisons/${comparison.baselineRunId}__${comparison.candidateRunId}.json`,
+	];
+	for (const candidatePath of candidatePaths) {
+		if (await fileExists(candidatePath)) {
+			return candidatePath;
+		}
+	}
+
+	return candidatePaths[0] ?? null;
+}
+
+function inputSignatureFor({
+	comparison,
+	comparisonPath,
+}: {
+	comparison: RunComparison | undefined;
+	comparisonPath: string | null;
+}): LoopTriageArtifact["inputSignature"] {
+	return {
+		triageVersion,
+		latestComparisonId: comparison?.id ?? null,
+		baselineRunId: comparison?.baselineRunId ?? null,
+		candidateRunId: comparison?.candidateRunId ?? null,
+		comparisonArtifactPath: comparisonPath,
+	};
+}
+
+function sameInputSignature(
+	left: LoopTriageArtifact["inputSignature"],
+	right: LoopTriageArtifact["inputSignature"],
+) {
+	return (
+		left.triageVersion === right.triageVersion &&
+		left.latestComparisonId === right.latestComparisonId &&
+		left.baselineRunId === right.baselineRunId &&
+		left.candidateRunId === right.candidateRunId &&
+		left.comparisonArtifactPath === right.comparisonArtifactPath
+	);
+}
+
+function triageArtifactPath(artifact: LoopTriageArtifact) {
+	return (
+		artifact.artifactPaths.find((artifactPath) =>
+			artifactPath.startsWith("runs/comparisons/triage/"),
+		) ?? `runs/comparisons/triage/${artifact.id}.json`
+	);
+}
+
+function matchingTriageArtifact({
+	artifacts,
+	inputSignature,
+}: {
+	artifacts: LoopTriageArtifact[];
+	inputSignature: LoopTriageArtifact["inputSignature"];
+}) {
+	return [...artifacts]
+		.filter((artifact) =>
+			sameInputSignature(artifact.inputSignature, inputSignature),
+		)
+		.sort((left, right) => right.createdAt.localeCompare(left.createdAt))[0];
 }
 
 function staleOrMissingArtifacts(runManifests: RunManifest[]): TriageFinding[] {
@@ -211,6 +329,7 @@ function replaceTriageSection(markdown: string, section: string) {
 }
 
 async function main() {
+	const args = parseArgs();
 	let validation:
 		| { status: "pass"; message: string; counts: Record<string, number> }
 		| { status: "fail"; message: string };
@@ -229,11 +348,20 @@ async function main() {
 		};
 	}
 
-	const [runManifests, comparisons] = await Promise.all([
+	const [runManifests, comparisons, triageArtifacts] = await Promise.all([
 		listRunManifests(),
 		listRunComparisons(),
+		listLoopTriageArtifacts(),
 	]);
 	const comparison = latestComparison(comparisons, runManifests);
+	const comparisonPath = await comparisonArtifactPath(comparison);
+	const inputSignature = inputSignatureFor({ comparison, comparisonPath });
+	const existingArtifact = args.forceNewArtifact
+		? undefined
+		: matchingTriageArtifact({
+				artifacts: triageArtifacts,
+				inputSignature,
+			});
 	const staleFindings = staleOrMissingArtifacts(runManifests);
 	const clusters = weakestFailureClusters(comparison);
 	const recommendation = recommendationFor({
@@ -241,11 +369,16 @@ async function main() {
 		staleFindings,
 		clusters,
 	});
-	const triageId = `triage-${triageTimestamp}`;
-	const artifactPath = `runs/comparisons/triage/${triageId}.json`;
+	const triageId = existingArtifact?.id ?? `triage-${triageTimestamp}`;
+	const artifactPath =
+		existingArtifact === undefined
+			? `runs/comparisons/triage/${triageId}.json`
+			: triageArtifactPath(existingArtifact);
 	const artifact = LoopTriageArtifactSchema.parse({
 		id: triageId,
-		createdAt: new Date().toISOString(),
+		createdAt: existingArtifact?.createdAt ?? new Date().toISOString(),
+		triageVersion,
+		inputSignature,
 		dataValidation: validation,
 		latestRuns: latestRuns(runManifests),
 		latestComparison: comparison
@@ -271,7 +404,12 @@ async function main() {
 		replaceTriageSection(loopState, triageMarkdown({ artifactPath, artifact })),
 	);
 
-	console.log(`Wrote ${artifactPath}.`);
+	console.log(
+		`${existingArtifact === undefined ? "Wrote" : "Updated"} ${artifactPath}.`,
+	);
+	if (existingArtifact !== undefined) {
+		console.log("Reused existing triage artifact for unchanged inputs.");
+	}
 	console.log(
 		`${artifact.recommendation.label}: ${artifact.recommendation.text}`,
 	);

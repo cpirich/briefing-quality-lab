@@ -576,6 +576,14 @@ export const FocusedVariantMatrixSchema = z.object({
 export const LoopTriageArtifactSchema = z.object({
 	id: fixtureIdSchema,
 	createdAt: z.string().datetime(),
+	triageVersion: z.string().min(1),
+	inputSignature: z.object({
+		triageVersion: z.string().min(1),
+		latestComparisonId: fixtureIdSchema.nullable(),
+		baselineRunId: fixtureIdSchema.nullable(),
+		candidateRunId: fixtureIdSchema.nullable(),
+		comparisonArtifactPath: artifactPathSchema.nullable(),
+	}),
 	dataValidation: z.object({
 		status: z.enum(["pass", "fail"]),
 		message: z.string().min(1),

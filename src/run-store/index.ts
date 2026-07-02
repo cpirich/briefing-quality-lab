@@ -169,8 +169,32 @@ export interface CaseBreakdownEntry {
 	};
 }
 
+export interface ImprovementLoopSummary {
+	baselineRunId: string;
+	candidateRunId: string;
+	activeHypothesis: string;
+	activeVariant: string;
+	verifierStatus: string;
+	holdoutStatus: string;
+	latestComparisonArtifact: string;
+	latestTriageArtifact: string | null;
+	latestTriageRecommendation: string | null;
+	latestTriageRecommendationLabel:
+		| "ship"
+		| "iterate"
+		| "reject"
+		| "needs human review"
+		| null;
+	targetFailureTags: string[];
+	knownFailureClusters: string[];
+	nextRecommendedExperiment: string;
+	humanDecisionNeeded: string;
+	artifactPaths: string[];
+	updatedAt: string | null;
+}
+
 function absolutePath(relativePath: string) {
-	return path.join(repoRoot, relativePath);
+	return path.join(/* turbopackIgnore: true */ repoRoot, relativePath);
 }
 
 async function fileExists(relativePath: string) {
@@ -547,6 +571,127 @@ export async function listLoopTriageArtifacts(): Promise<LoopTriageArtifact[]> {
 		LoopTriageArtifactSchema,
 	);
 	return sortById(triageArtifacts);
+}
+
+function markdownSection(markdown: string, heading: string) {
+	const sectionStart = markdown.indexOf(`## ${heading}`);
+	if (sectionStart === -1) {
+		return "";
+	}
+	const contentStart = markdown.indexOf("\n", sectionStart);
+	if (contentStart === -1) {
+		return "";
+	}
+	const nextSectionStart = markdown.indexOf("\n## ", contentStart + 1);
+
+	return markdown
+		.slice(
+			contentStart + 1,
+			nextSectionStart === -1 ? undefined : nextSectionStart,
+		)
+		.trim();
+}
+
+function markdownBullets(section: string) {
+	return section
+		.split("\n")
+		.map((line) => line.trim())
+		.filter((line) => line.startsWith("- "))
+		.map((line) => line.slice(2).trim());
+}
+
+function fieldFromBullets(bullets: string[], label: string) {
+	const prefix = `${label}:`;
+	return (
+		bullets
+			.find((bullet) => bullet.toLowerCase().startsWith(prefix.toLowerCase()))
+			?.slice(prefix.length)
+			.trim()
+			.replaceAll("`", "") ?? "not recorded"
+	);
+}
+
+function stripInlineMarkdown(value: string) {
+	return value.replaceAll("`", "");
+}
+
+function paragraphFromSection(section: string) {
+	return stripInlineMarkdown(
+		section
+			.split("\n")
+			.map((line) => line.trim())
+			.filter((line) => line.length > 0 && !line.startsWith("- "))
+			.join(" ")
+			.trim(),
+	);
+}
+
+function latestLoopTriageArtifact(triageArtifacts: LoopTriageArtifact[]) {
+	return [...triageArtifacts].sort((left, right) =>
+		right.createdAt.localeCompare(left.createdAt),
+	)[0];
+}
+
+function uniqueArtifactPaths(paths: Array<string | null | undefined>) {
+	return [...new Set(paths.filter((path): path is string => Boolean(path)))];
+}
+
+export async function getImprovementLoopSummary(): Promise<ImprovementLoopSummary> {
+	const [markdown, triageArtifacts] = await Promise.all([
+		readFile(absolutePath("docs/briefing-loop-state.md"), "utf8"),
+		listLoopTriageArtifacts(),
+	]);
+	const currentFacts = markdownBullets(
+		markdownSection(markdown, "Current Facts"),
+	);
+	const targetFailureTags = markdownBullets(
+		markdownSection(markdown, "Target Failure Tags"),
+	).map((tag) => tag.replaceAll("`", ""));
+	const knownFailureClusters = markdownBullets(
+		markdownSection(markdown, "Known Failure Clusters"),
+	);
+	const latestTriage = latestLoopTriageArtifact(triageArtifacts);
+	const latestComparisonArtifact = fieldFromBullets(
+		currentFacts,
+		"Latest comparison artifact",
+	);
+	const latestTriageArtifact =
+		latestTriage?.artifactPaths.find((artifactPath) =>
+			artifactPath.includes("/triage/"),
+		) ?? null;
+
+	return {
+		baselineRunId: fieldFromBullets(currentFacts, "Current baseline run id"),
+		candidateRunId: fieldFromBullets(currentFacts, "Current candidate run id"),
+		activeHypothesis:
+			paragraphFromSection(
+				markdownSection(markdown, "Active Product Hypothesis"),
+			) || "not recorded",
+		activeVariant: fieldFromBullets(currentFacts, "Active variant under test"),
+		verifierStatus: fieldFromBullets(currentFacts, "Verifier status"),
+		holdoutStatus: fieldFromBullets(currentFacts, "Holdout status"),
+		latestComparisonArtifact,
+		latestTriageArtifact,
+		latestTriageRecommendation: latestTriage?.recommendation.text ?? null,
+		latestTriageRecommendationLabel: latestTriage?.recommendation.label ?? null,
+		targetFailureTags,
+		knownFailureClusters,
+		nextRecommendedExperiment:
+			paragraphFromSection(
+				markdownSection(markdown, "Next Recommended Experiment"),
+			) || "not recorded",
+		humanDecisionNeeded:
+			paragraphFromSection(
+				markdownSection(markdown, "Human Decision Needed"),
+			) || "not recorded",
+		artifactPaths: uniqueArtifactPaths([
+			"docs/briefing-loop-state.md",
+			latestComparisonArtifact,
+			latestTriageArtifact,
+			...(latestTriage?.artifactPaths ?? []),
+		]),
+		updatedAt: markdown.match(/^Last updated:\s*(.+)$/m)?.[1]?.trim() ?? null,
+	};
 }
 
 function isGeneratedRunManifest(manifest: RunManifest | undefined) {

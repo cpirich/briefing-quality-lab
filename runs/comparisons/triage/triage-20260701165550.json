@@ -1,6 +1,14 @@
 {
 	"id": "triage-20260701165550",
 	"createdAt": "2026-07-01T16:55:50.994Z",
+	"triageVersion": "lab-triage-v1",
+	"inputSignature": {
+		"triageVersion": "lab-triage-v1",
+		"latestComparisonId": "baseline-openai-20260624203921-candidate-citation-gates",
+		"baselineRunId": "baseline-openai-20260624203921",
+		"candidateRunId": "candidate-citation-gates",
+		"comparisonArtifactPath": "runs/comparisons/baseline-openai-20260624203921-candidate-citation-gates.json"
+	},
 	"dataValidation": {
 		"status": "pass",
 		"message": "Run store fixtures validate.",
@@ -13,7 +21,7 @@
 			"evaluatorOutputs": 21,
 			"runComparisons": 2,
 			"focusedVariantMatrices": 0,
-			"loopTriageArtifacts": 0,
+			"loopTriageArtifacts": 1,
 			"variantSpecs": 2,
 			"artifacts": 6
 		}

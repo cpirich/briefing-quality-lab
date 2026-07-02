@@ -170,40 +170,32 @@ function CollapsibleEvaluatorSection({
 	children: ReactNode;
 	title: string;
 }) {
-	const [isOpen, setIsOpen] = useState(false);
-	const panelId = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-
 	return (
-		<div className="rounded-md border border-[var(--border)] bg-[var(--muted)]">
-			<button
-				aria-controls={panelId}
-				aria-expanded={isOpen}
-				className="flex w-full cursor-pointer flex-wrap items-center justify-between gap-2 p-3 text-left"
-				onClick={() => setIsOpen((current) => !current)}
-				type="button"
-			>
-				<span className="flex items-center gap-2">
-					<span
-						aria-hidden="true"
-						className={cn(
-							"text-[var(--muted-foreground)] transition-transform",
-							isOpen && "rotate-90",
-						)}
-					>
-						{">"}
+		<details className="group rounded-md border border-[var(--border)] bg-[var(--muted)]">
+			<summary className="cursor-pointer list-none marker:hidden">
+				<span className="flex w-full flex-wrap items-center justify-between gap-2 p-3 text-left">
+					<span className="flex items-center gap-2">
+						<span
+							aria-hidden="true"
+							className={cn(
+								"text-[var(--muted-foreground)] transition-transform",
+								"group-open:rotate-90",
+							)}
+						>
+							{">"}
+						</span>
+						<span className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
+							{title}
+						</span>
 					</span>
-					<span className="font-medium text-[var(--muted-foreground)] text-xs uppercase">
-						{title}
-					</span>
+					<Badge tone="blue">
+						<span className="group-open:hidden">show</span>
+						<span className="hidden group-open:inline">hide</span>
+					</Badge>
 				</span>
-				<Badge tone="blue">{isOpen ? "hide" : "show"}</Badge>
-			</button>
-			{isOpen ? (
-				<div className="border-[var(--border)] border-t p-3" id={panelId}>
-					{children}
-				</div>
-			) : null}
-		</div>
+			</summary>
+			<div className="border-[var(--border)] border-t p-3">{children}</div>
+		</details>
 	);
 }
 
