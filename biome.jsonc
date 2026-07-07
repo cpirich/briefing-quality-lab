@@ -7,7 +7,7 @@
 		"clientKind": "git"
 	},
 	"files": {
-		"includes": ["**", "!.codex"]
+		"includes": ["**", "!.codex", "!runs/**/*.json"]
 	},
 	"assist": {
 		"enabled": true,

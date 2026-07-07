@@ -19,6 +19,12 @@ Read these first:
 
 Do not tune on holdout cases unless the user explicitly asks for holdout validation.
 
+## Autonomy
+
+If the user says "iterate", continue autonomously through bounded candidate creation, dry-run cost visibility, live matrix execution, verifier comparison, loop-state update, and any eligible promotion attempt until exactly one terminal recommendation is reached: `ship`, `reject`, or `needs human review`.
+
+Do not stop at `iterate` unless another live run would exceed the approved cost cap, require holdouts, require missing secrets, need unavailable tooling, or depend on a human product judgment. Make those blockers explicit and recommend `needs human review`.
+
 ## Workflow
 
 1. State the current baseline, candidate, variant, hypothesis, known failure clusters, and human decision needed from `docs/briefing-loop-state.md`.
@@ -34,6 +40,7 @@ Do not tune on holdout cases unless the user explicitly asks for holdout validat
 8. Treat promotion as the ship gate for any demo-facing variant. When a matrix-selected candidate should become demo-facing in `/lab`, promote only a complete run with a matching case set:
    - `mise exec -- bun run eval:promote --baseline=<baseline-run-id> --candidate-run=<candidate-run-id> --label="<candidate label>" --source-matrix=<matrix-id>`
    - Matrix artifacts are loop workbench evidence; promoted `RunComparison` artifacts are the canonical `/lab` comparison story.
+   - When a focused matrix selects a promising candidate from an incomplete slice, prefer a candidate-only full visible run against the stored baseline. Do not rerun baseline variants unless the baseline artifact is missing, stale, or has a mismatched case set.
    - If promotion fails only because the selected matrix run is an incomplete slice, automatically continue once: run the same winning variant as a full visible-case candidate against the same baseline, excluding holdouts, then retry promotion with `--source-matrix=<matrix-id>`.
    - Do not override the eval runner's default concurrency for that full candidate continuation unless the user explicitly asks or a documented retry/rate-limit recovery requires it.
    - Before that full candidate continuation, make the expected bounds/cost visible. Continue without asking only when `OPENAI_API_KEY` is available, holdouts remain excluded, and the estimated max cost is within the already-approved budget. Otherwise stop with `needs human review`.
