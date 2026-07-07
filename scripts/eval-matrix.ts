@@ -39,6 +39,7 @@ interface MatrixOptions {
 	variantLimit: number;
 	retryCap: number;
 	concurrency: number;
+	visibleAll: boolean;
 	caseIds: string[];
 	variantIds: string[];
 	baselineRunId?: string;
@@ -171,6 +172,7 @@ function parseOptions(): MatrixOptions {
 			min: 1,
 			max: 4,
 		}),
+		visibleAll: hasFlag("--visible-all"),
 		caseIds: optionValues("--case-id").map((caseId) =>
 			validateFixtureId(caseId, "case id"),
 		),
@@ -381,10 +383,15 @@ function selectCases(options: MatrixOptions, evalCases: EvalCase[]) {
 					}
 					return evalCase;
 				})
-			: visibleCases.filter((evalCase) => evalCase.demoHighlight);
+			: options.visibleAll
+				? visibleCases
+				: visibleCases.filter((evalCase) => evalCase.demoHighlight);
 	const fallbackCases =
 		requestedCases.length > 0 ? requestedCases : visibleCases;
-	const selectedCases = fallbackCases.slice(0, options.caseLimit);
+	const selectedCases =
+		options.visibleAll && options.caseIds.length === 0
+			? fallbackCases
+			: fallbackCases.slice(0, options.caseLimit);
 	if (selectedCases.length === 0) {
 		throw new Error("No eval cases are available for the matrix.");
 	}
@@ -1066,10 +1073,25 @@ async function main() {
 		selectedVariants.some((variant) => variant.provider === "openai");
 	const matrixId = `matrix-${matrixTimestamp}`;
 	const matrixPath = `runs/comparisons/matrices/${matrixId}.json`;
+	const caseSelectionLabel =
+		options.caseIds.length > 0
+			? "explicit case ids"
+			: options.visibleAll
+				? options.includeHoldouts
+					? "all cases"
+					: "all visible"
+				: "slice";
 
 	console.log("Focused variant matrix bounds:");
 	console.log(`- variants: ${selectedVariants.length}/${options.variantLimit}`);
-	console.log(`- cases: ${selectedCases.length}/${options.caseLimit}`);
+	console.log(
+		`- cases: ${selectedCases.length}/${
+			options.visibleAll && options.caseIds.length === 0
+				? caseSelectionLabel
+				: options.caseLimit
+		}`,
+	);
+	console.log(`- case selection: ${caseSelectionLabel}`);
 	console.log(`- retry cap: ${options.retryCap}`);
 	console.log(`- case concurrency: ${options.concurrency}`);
 	console.log(`- include holdouts: ${options.includeHoldouts ? "yes" : "no"}`);

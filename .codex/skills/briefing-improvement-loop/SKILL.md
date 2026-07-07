@@ -41,6 +41,7 @@ Do not stop at `iterate` unless another live run would exceed the approved cost 
    - `mise exec -- bun run eval:promote --baseline=<baseline-run-id> --candidate-run=<candidate-run-id> --label="<candidate label>" --source-matrix=<matrix-id>`
    - Matrix artifacts are loop workbench evidence; promoted `RunComparison` artifacts are the canonical `/lab` comparison story.
    - When a focused matrix selects a promising candidate from an incomplete slice, prefer a candidate-only full visible run against the stored baseline. Do not rerun baseline variants unless the baseline artifact is missing, stale, or has a mismatched case set.
+   - Use `--visible-all` for full visible matrix validation instead of listing every visible case id. Continue to exclude holdouts unless the user explicitly approves holdout validation.
    - If promotion fails only because the selected matrix run is an incomplete slice, automatically continue once: run the same winning variant as a full visible-case candidate against the same baseline, excluding holdouts, then retry promotion with `--source-matrix=<matrix-id>`.
    - Do not override the eval runner's default concurrency for that full candidate continuation unless the user explicitly asks or a documented retry/rate-limit recovery requires it.
    - Before that full candidate continuation, make the expected bounds/cost visible. Continue without asking only when `OPENAI_API_KEY` is available, holdouts remain excluded, and the estimated max cost is within the already-approved budget. Otherwise stop with `needs human review`.

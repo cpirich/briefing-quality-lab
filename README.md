@@ -129,6 +129,9 @@ mise exec -- bun run eval:matrix:dry-run
 # Run a bounded matrix over selected variants/cases
 mise exec -- bun run eval:matrix --provider=mixed --case-limit=3 --variant-limit=4
 
+# Run all visible non-holdout cases without listing each case id
+mise exec -- bun run eval:matrix --visible-all
+
 # Promote a completed candidate into a comparison artifact consumed by /lab
 mise exec -- bun run eval:promote --baseline=<baseline-run-id> --candidate-run=<candidate-run-id> --label="<candidate label>"
 ```
