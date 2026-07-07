@@ -48,6 +48,7 @@ interface EvalOptions {
 	mode: EvalMode;
 	provider: EvalProvider;
 	evaluator: EvaluatorMode;
+	concurrency: number;
 	includeHoldouts: boolean;
 	caseIds: string[];
 	overwriteRun: boolean;
@@ -66,6 +67,13 @@ interface RunArtifacts {
 interface RejudgedRunArtifacts extends RunArtifacts {
 	role: RunRole;
 	referenceRunId?: string;
+}
+
+interface GeneratedCaseArtifacts {
+	briefing: BriefingOutput;
+	evaluation: EvaluatorOutput;
+	trace: GenerationTrace;
+	artifactPaths: string[];
 }
 
 const repoRoot = process.cwd();
@@ -98,6 +106,30 @@ function hasFlag(name: string) {
 	return process.argv.includes(name);
 }
 
+function parseBoundedInteger({
+	name,
+	envName,
+	defaultValue,
+	min,
+	max,
+}: {
+	name: string;
+	envName?: string;
+	defaultValue: number;
+	min: number;
+	max: number;
+}) {
+	const rawValue =
+		optionValue(name) ?? (envName ? process.env[envName] : undefined);
+	const value = rawValue === undefined ? defaultValue : Number(rawValue);
+	if (!Number.isInteger(value) || value < min || value > max) {
+		const source = envName ? `${name}/${envName}` : name;
+		throw new Error(`${source} must be an integer from ${min} to ${max}.`);
+	}
+
+	return value;
+}
+
 function parseOptions(): EvalOptions {
 	const mode = (process.argv[2] ?? "report") as EvalMode;
 	if (!["baseline", "variant", "report", "rejudge"].includes(mode)) {
@@ -122,6 +154,13 @@ function parseOptions(): EvalOptions {
 		mode,
 		provider,
 		evaluator,
+		concurrency: parseBoundedInteger({
+			name: "--concurrency",
+			envName: "EVAL_CONCURRENCY",
+			defaultValue: 4,
+			min: 1,
+			max: 4,
+		}),
 		includeHoldouts: hasFlag("--include-holdouts"),
 		caseIds: optionValues("--case-id").map((caseId) =>
 			validateFixtureId(caseId, "case id"),
@@ -160,6 +199,7 @@ function commandFor({
 	commandMode = mode,
 	provider,
 	evaluator,
+	concurrency,
 	runId,
 	includeHoldouts,
 	referenceManifest,
@@ -168,6 +208,7 @@ function commandFor({
 	commandMode?: RunRole | "rejudge";
 	provider: EvalProvider;
 	evaluator: EvaluatorMode;
+	concurrency: number;
 	runId: string;
 	includeHoldouts: boolean;
 	referenceManifest?: RunManifest;
@@ -178,6 +219,9 @@ function commandFor({
 		`--evaluator=${evaluator}`,
 		`--run-id=${runId}`,
 	];
+	if (concurrency > 1) {
+		parts.push(`--concurrency=${concurrency}`);
+	}
 	if (includeHoldouts) {
 		parts.push("--include-holdouts");
 	}
@@ -582,6 +626,7 @@ function manifestFor({
 	commandMode,
 	provider,
 	evaluator,
+	concurrency = 1,
 	caseIds,
 	evaluations,
 	traces,
@@ -596,6 +641,7 @@ function manifestFor({
 	commandMode?: RunRole | "rejudge";
 	provider: EvalProvider;
 	evaluator: EvaluatorMode;
+	concurrency?: number;
 	caseIds: string[];
 	evaluations: EvaluatorOutput[];
 	traces: GenerationTrace[];
@@ -632,6 +678,7 @@ function manifestFor({
 			commandMode,
 			provider,
 			evaluator,
+			concurrency,
 			runId,
 			includeHoldouts,
 			referenceManifest,
@@ -673,6 +720,107 @@ function manifestFor({
 	});
 }
 
+async function runWithConcurrency<T>({
+	items,
+	concurrency,
+	worker,
+}: {
+	items: T[];
+	concurrency: number;
+	worker: (item: T, index: number) => Promise<void>;
+}) {
+	let nextIndex = 0;
+	let firstError: unknown;
+	const workerCount = Math.min(concurrency, items.length);
+	const workers = Array.from({ length: workerCount }, async () => {
+		while (firstError === undefined) {
+			const index = nextIndex;
+			nextIndex += 1;
+			const item = items[index];
+			if (item === undefined) {
+				return;
+			}
+
+			try {
+				await worker(item, index);
+			} catch (error) {
+				firstError ??= error;
+				return;
+			}
+		}
+	});
+
+	await Promise.all(workers);
+	if (firstError !== undefined) {
+		throw firstError;
+	}
+}
+
+async function runGeneratedCase({
+	casePrefix,
+	evalCase,
+	runId,
+	sourcePacket,
+	provider,
+	evaluator,
+}: {
+	casePrefix: string;
+	evalCase: EvalCase;
+	runId: string;
+	sourcePacket: SourcePacket;
+	provider: EvalProvider;
+	evaluator: EvaluatorMode;
+}): Promise<GeneratedCaseArtifacts> {
+	console.log(`${casePrefix} Generating ${evalCase.id}...`);
+	const result = await generateBriefing({
+		sourcePacket,
+		userRequest: evalCase.task,
+		runId,
+		provider,
+	});
+	console.log(
+		`${casePrefix} Generated ${evalCase.id} in ${(result.trace.latencyMs / 1000).toFixed(1)}s.`,
+	);
+	const rawBriefing = result.briefing;
+	const persistedBriefing = BriefingOutputSchema.parse(
+		briefingWithAcceptedCitationsOnly(result.briefing, evalCase),
+	);
+	const briefingPath = `runs/${runId}/briefings/${evalCase.id}.json`;
+	const tracePath = `runs/${runId}/traces/${evalCase.id}.json`;
+	const evaluationPath = `runs/${runId}/evaluations/${evalCase.id}.json`;
+	const trace = GenerationTraceSchema.parse({
+		...result.trace,
+		output: persistedBriefing,
+		rawOutput: rawBriefing,
+		artifactPaths: [...result.trace.artifactPaths, briefingPath, tracePath],
+	});
+	await Promise.all([
+		writeJsonArtifact(briefingPath, persistedBriefing),
+		writeJsonArtifact(tracePath, trace),
+	]);
+	const evaluation = await evaluateBriefing({
+		runId,
+		evalCase,
+		sourcePacket,
+		briefing: rawBriefing,
+		trace,
+		mode: evaluator,
+	});
+	console.log(
+		`${casePrefix} Evaluated ${evalCase.id}: overall ${evaluation.scores.overall.toFixed(2)}, citation ${evaluation.scores.citationSupport.toFixed(2)}.`,
+	);
+
+	await writeJsonArtifact(evaluationPath, evaluation);
+	console.log(`${casePrefix} Wrote artifacts for ${evalCase.id}.`);
+
+	return {
+		briefing: persistedBriefing,
+		evaluation,
+		trace,
+		artifactPaths: [briefingPath, tracePath, evaluationPath],
+	};
+}
+
 async function generateRun(options: EvalOptions & { mode: RunRole }) {
 	const [evalCases, sourcePackets] = await Promise.all([
 		listEvalCases(),
@@ -711,14 +859,48 @@ async function generateRun(options: EvalOptions & { mode: RunRole }) {
 	const runId = options.runId ?? runIdFor(options.mode, options.provider);
 	validateFixtureId(runId, "run id");
 	const artifactPaths = [`runs/${runId}/manifest.json`];
-	const briefings: BriefingOutput[] = [];
-	const traces: GenerationTrace[] = [];
-	const evaluations: EvaluatorOutput[] = [];
+	const caseArtifacts: Array<GeneratedCaseArtifacts | undefined> = [];
 	const referenceManifest = await referenceManifestForVariant(options);
 	assertVariantCaseSetMatchesBaseline({ referenceManifest, selectedEvalCases });
+	const completedBriefings = () =>
+		caseArtifacts.flatMap((artifact) => artifact?.briefing ?? []);
+	const completedTraces = () =>
+		caseArtifacts.flatMap((artifact) => artifact?.trace ?? []);
+	const completedEvaluations = () =>
+		caseArtifacts.flatMap((artifact) => artifact?.evaluation ?? []);
+	const completedArtifactPaths = () => [
+		...artifactPaths,
+		...caseArtifacts.flatMap((artifact) => artifact?.artifactPaths ?? []),
+	];
+	let manifestWrite = Promise.resolve();
+	const writeRunningManifest = () => {
+		manifestWrite = manifestWrite.then(() =>
+			writeJsonArtifact(
+				`runs/${runId}/manifest.json`,
+				manifestFor({
+					runId,
+					mode: options.mode,
+					provider: options.provider,
+					evaluator: options.evaluator,
+					concurrency: options.concurrency,
+					caseIds: selectedEvalCases.map(
+						(selectedEvalCase) => selectedEvalCase.id,
+					),
+					evaluations: completedEvaluations(),
+					traces: completedTraces(),
+					artifactPaths: completedArtifactPaths(),
+					referenceManifest,
+					includeHoldouts: options.includeHoldouts,
+					status: "running",
+				}),
+			),
+		);
+
+		return manifestWrite;
+	};
 
 	console.log(
-		`Starting ${options.provider} ${options.mode} run ${runId} with ${selectedEvalCases.length} cases.`,
+		`Starting ${options.provider} ${options.mode} run ${runId} with ${selectedEvalCases.length} cases at concurrency ${options.concurrency}.`,
 	);
 	await prepareRunOutputDirectories(runId, options.overwriteRun);
 	await writeJsonArtifact(
@@ -728,9 +910,10 @@ async function generateRun(options: EvalOptions & { mode: RunRole }) {
 			mode: options.mode,
 			provider: options.provider,
 			evaluator: options.evaluator,
+			concurrency: options.concurrency,
 			caseIds: selectedEvalCases.map((evalCase) => evalCase.id),
-			evaluations,
-			traces,
+			evaluations: completedEvaluations(),
+			traces: completedTraces(),
 			artifactPaths,
 			referenceManifest,
 			includeHoldouts: options.includeHoldouts,
@@ -739,109 +922,42 @@ async function generateRun(options: EvalOptions & { mode: RunRole }) {
 	);
 
 	try {
-		for (const [caseIndex, evalCase] of selectedEvalCases.entries()) {
-			const caseNumber = caseIndex + 1;
-			const casePrefix = `[${caseNumber}/${selectedEvalCases.length}]`;
-			const sourcePacket = sourcePacketsById.get(evalCase.sourcePacketId);
-			if (!sourcePacket) {
-				throw new Error(
-					`Eval case ${evalCase.id} references missing source packet ${evalCase.sourcePacketId}`,
-				);
-			}
+		await runWithConcurrency({
+			items: selectedEvalCases,
+			concurrency: options.concurrency,
+			worker: async (evalCase, caseIndex) => {
+				const caseNumber = caseIndex + 1;
+				const casePrefix = `[${caseNumber}/${selectedEvalCases.length}]`;
+				const sourcePacket = sourcePacketsById.get(evalCase.sourcePacketId);
+				if (!sourcePacket) {
+					throw new Error(
+						`Eval case ${evalCase.id} references missing source packet ${evalCase.sourcePacketId}`,
+					);
+				}
 
-			console.log(`${casePrefix} Generating ${evalCase.id}...`);
-			const result = await generateBriefing({
-				sourcePacket,
-				userRequest: evalCase.task,
-				runId,
-				provider: options.provider,
-			});
-			console.log(
-				`${casePrefix} Generated ${evalCase.id} in ${(result.trace.latencyMs / 1000).toFixed(1)}s.`,
-			);
-			const rawBriefing = result.briefing;
-			const persistedBriefing = BriefingOutputSchema.parse(
-				briefingWithAcceptedCitationsOnly(result.briefing, evalCase),
-			);
-			const briefingPath = `runs/${runId}/briefings/${evalCase.id}.json`;
-			const tracePath = `runs/${runId}/traces/${evalCase.id}.json`;
-			const evaluationPath = `runs/${runId}/evaluations/${evalCase.id}.json`;
-			const trace = GenerationTraceSchema.parse({
-				...result.trace,
-				output: persistedBriefing,
-				rawOutput: rawBriefing,
-				artifactPaths: [...result.trace.artifactPaths, briefingPath, tracePath],
-			});
-			await Promise.all([
-				writeJsonArtifact(briefingPath, persistedBriefing),
-				writeJsonArtifact(tracePath, trace),
-			]);
-			briefings.push(persistedBriefing);
-			traces.push(trace);
-			artifactPaths.push(briefingPath, tracePath);
-			await writeJsonArtifact(
-				`runs/${runId}/manifest.json`,
-				manifestFor({
+				caseArtifacts[caseIndex] = await runGeneratedCase({
+					casePrefix,
+					evalCase,
 					runId,
-					mode: options.mode,
+					sourcePacket,
 					provider: options.provider,
 					evaluator: options.evaluator,
-					caseIds: selectedEvalCases.map(
-						(selectedEvalCase) => selectedEvalCase.id,
-					),
-					evaluations,
-					traces,
-					artifactPaths,
-					referenceManifest,
-					includeHoldouts: options.includeHoldouts,
-					status: "running",
-				}),
-			);
-			const evaluation = await evaluateBriefing({
-				runId,
-				evalCase,
-				sourcePacket,
-				briefing: rawBriefing,
-				trace,
-				mode: options.evaluator,
-			});
-			console.log(
-				`${casePrefix} Evaluated ${evalCase.id}: overall ${evaluation.scores.overall.toFixed(2)}, citation ${evaluation.scores.citationSupport.toFixed(2)}.`,
-			);
-
-			await writeJsonArtifact(evaluationPath, evaluation);
-			evaluations.push(evaluation);
-			artifactPaths.push(evaluationPath);
-			await writeJsonArtifact(
-				`runs/${runId}/manifest.json`,
-				manifestFor({
-					runId,
-					mode: options.mode,
-					provider: options.provider,
-					evaluator: options.evaluator,
-					caseIds: selectedEvalCases.map(
-						(selectedEvalCase) => selectedEvalCase.id,
-					),
-					evaluations,
-					traces,
-					artifactPaths,
-					referenceManifest,
-					includeHoldouts: options.includeHoldouts,
-					status: "running",
-				}),
-			);
-			console.log(`${casePrefix} Wrote artifacts for ${evalCase.id}.`);
-		}
+				});
+				await writeRunningManifest();
+			},
+		});
+		await manifestWrite;
 
 		const manifest = manifestFor({
 			runId,
 			mode: options.mode,
 			provider: options.provider,
 			evaluator: options.evaluator,
+			concurrency: options.concurrency,
 			caseIds: selectedEvalCases.map((evalCase) => evalCase.id),
-			evaluations,
-			traces,
-			artifactPaths,
+			evaluations: completedEvaluations(),
+			traces: completedTraces(),
+			artifactPaths: completedArtifactPaths(),
 			referenceManifest,
 			includeHoldouts: options.includeHoldouts,
 		});
@@ -852,21 +968,23 @@ async function generateRun(options: EvalOptions & { mode: RunRole }) {
 
 		return {
 			manifest,
-			briefings,
-			evaluations,
-			traces,
+			briefings: completedBriefings(),
+			evaluations: completedEvaluations(),
+			traces: completedTraces(),
 		};
 	} catch (error) {
+		await manifestWrite;
 		const message = error instanceof Error ? error.message : String(error);
 		const failedManifest = manifestFor({
 			runId,
 			mode: options.mode,
 			provider: options.provider,
 			evaluator: options.evaluator,
+			concurrency: options.concurrency,
 			caseIds: selectedEvalCases.map((evalCase) => evalCase.id),
-			evaluations,
-			traces,
-			artifactPaths,
+			evaluations: completedEvaluations(),
+			traces: completedTraces(),
+			artifactPaths: completedArtifactPaths(),
 			referenceManifest,
 			includeHoldouts: options.includeHoldouts,
 			status: "failed",
@@ -1314,6 +1432,9 @@ function targetGapTone(delta: number) {
 }
 
 function estimatedCostUsdFor(artifacts: RunArtifacts) {
+	// Budget comparisons intentionally use generation cost only. Hybrid
+	// evaluator cost is reported separately as evaluatorEstimatedCostUsd and is
+	// not currently enforceable through eval:baseline/eval:variant budget checks.
 	const manifestCost = artifacts.manifest.aggregateMetrics.estimatedCostUsd;
 	if (manifestCost !== undefined) {
 		return manifestCost;

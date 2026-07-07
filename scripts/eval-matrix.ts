@@ -254,16 +254,6 @@ function knownEstimatedEvaluatorCost(evaluations: EvaluatorOutput[]) {
 	);
 }
 
-function knownEstimatedTotalCost({
-	evaluations,
-	traces,
-}: {
-	evaluations: EvaluatorOutput[];
-	traces: GenerationTrace[];
-}) {
-	return knownEstimatedCost(traces) + knownEstimatedEvaluatorCost(evaluations);
-}
-
 function hasUnknownCost(traces: GenerationTrace[]) {
 	return traces.some((trace) => trace.cost.estimatedUsd === null);
 }
@@ -274,30 +264,16 @@ function hasUnknownEvaluatorCost(evaluations: EvaluatorOutput[]) {
 	);
 }
 
-function hasUnknownTotalCost({
-	evaluations,
-	traces,
-}: {
-	evaluations: EvaluatorOutput[];
-	traces: GenerationTrace[];
-}) {
-	return hasUnknownCost(traces) || hasUnknownEvaluatorCost(evaluations);
-}
-
-function caseEstimatedCostUsd({
-	evaluation,
-	trace,
-}: {
-	evaluation: EvaluatorOutput;
-	trace: GenerationTrace | undefined;
-}) {
+function caseEstimatedCostUsd(trace: GenerationTrace | undefined) {
+	// Matrix budget comparisons intentionally use generation cost only.
+	// Hybrid evaluator cost is tracked separately on run manifests and is not
+	// currently enforceable through this tool's budget guardrails.
 	const generationCost = trace?.cost.estimatedUsd;
-	const evaluatorCost = evaluation.evaluator?.cost.estimatedUsd;
-	if (generationCost === null || evaluatorCost === null) {
+	if (generationCost === undefined || generationCost === null) {
 		return null;
 	}
 
-	return roundCostUsd((generationCost ?? 0) + (evaluatorCost ?? 0));
+	return roundCostUsd(generationCost);
 }
 
 function briefingWithAcceptedCitationsOnly(
@@ -411,16 +387,17 @@ function estimateMatrixCostUsd({
 	variants,
 	evalCases,
 	sourcePackets,
-	evaluator,
 }: {
 	variants: GenerationVariant[];
 	evalCases: EvalCase[];
 	sourcePackets: SourcePacket[];
-	evaluator: EvaluatorMode;
 }) {
 	const sourcePacketsById = sourcePacketById(sourcePackets);
 	let estimatedCost = 0;
 
+	// This upper-bound estimate is generation-only so it matches variant
+	// budgets. Hybrid evaluator cost is reported separately after runs complete;
+	// the matrix tool cannot restrict evaluator spend today.
 	for (const variant of variants) {
 		for (const evalCase of evalCases) {
 			const sourcePacket = sourcePacketsById.get(evalCase.sourcePacketId);
@@ -434,19 +411,6 @@ function estimateMatrixCostUsd({
 					inputTokens: promptTokens,
 					cachedInputTokens: 0,
 					outputTokens,
-				});
-				if (estimate.estimatedUsd === null) {
-					return null;
-				}
-				estimatedCost += estimate.estimatedUsd;
-			}
-			if (evaluator === "hybrid") {
-				const estimate = estimateOpenAIUsd({
-					modelName:
-						process.env.OPENAI_EVAL_MODEL ?? defaultOpenAIEvaluatorModel,
-					inputTokens: promptTokens + outputTokens,
-					cachedInputTokens: 0,
-					outputTokens: 700,
 				});
 				if (estimate.estimatedUsd === null) {
 					return null;
@@ -860,7 +824,7 @@ function cellForCase(run: VariantRunArtifacts, caseId: string) {
 				(judgment) => judgment.supportStatus === "unsupported",
 			).length ?? 0,
 		latencyMs: trace?.latencyMs ?? null,
-		estimatedCostUsd: caseEstimatedCostUsd({ evaluation, trace }),
+		estimatedCostUsd: caseEstimatedCostUsd(trace),
 		artifactPaths: evaluation.artifactPaths,
 	};
 }
@@ -894,17 +858,9 @@ function matrixRecommendation(runs: VariantRunArtifacts[]) {
 	}
 	const citationSupport = averageScore(bestRun.evaluations, "citationSupport");
 	const risk = unsupportedClaims(bestRun.evaluations);
-	const estimatedCostUsd = hasUnknownTotalCost({
-		evaluations: bestRun.evaluations,
-		traces: bestRun.traces,
-	})
+	const estimatedCostUsd = hasUnknownCost(bestRun.traces)
 		? null
-		: roundCostUsd(
-				knownEstimatedTotalCost({
-					evaluations: bestRun.evaluations,
-					traces: bestRun.traces,
-				}),
-			);
+		: roundCostUsd(knownEstimatedCost(bestRun.traces));
 	const latencyMs = median(bestRun.traces.map((trace) => trace.latencyMs));
 	const guardrailStatus = guardrailStatusFor({
 		citationSupport,
@@ -920,7 +876,7 @@ function matrixRecommendation(runs: VariantRunArtifacts[]) {
 		variantId: bestRun.variant.id,
 		label:
 			guardrailStatus === "pass" ? "promising candidate" : "needs human review",
-		rationale: `${bestRun.variant.label} ranked highest on the focused visible slice with ${risk} unsupported-claim risk units, ${citationSupport.toFixed(2)} citation support, and ${costSummary} estimated cost.`,
+		rationale: `${bestRun.variant.label} ranked highest on the focused visible slice with ${risk} unsupported-claim risk units, ${citationSupport.toFixed(2)} citation support, and ${costSummary} estimated generation cost.`,
 		guardrailStatus,
 	};
 }
@@ -1023,7 +979,6 @@ async function main() {
 		variants: selectedVariants,
 		evalCases: selectedCases,
 		sourcePackets,
-		evaluator: options.evaluator,
 	});
 	const liveProviderCalls =
 		options.evaluator === "hybrid" ||
@@ -1037,7 +992,7 @@ async function main() {
 	console.log(`- retry cap: ${options.retryCap}`);
 	console.log(`- include holdouts: ${options.includeHoldouts ? "yes" : "no"}`);
 	console.log(
-		`- estimated max cost: ${
+		`- estimated max generation cost: ${
 			estimatedMaxCostUsd === null ? "unknown" : `$${estimatedMaxCostUsd}`
 		}`,
 	);
@@ -1101,17 +1056,9 @@ async function main() {
 		},
 		caseIds: selectedCases.map((evalCase) => evalCase.id),
 		variants: runs.map((run) => {
-			const estimatedCostUsd = hasUnknownTotalCost({
-				evaluations: run.evaluations,
-				traces: run.traces,
-			})
+			const estimatedCostUsd = hasUnknownCost(run.traces)
 				? null
-				: roundCostUsd(
-						knownEstimatedTotalCost({
-							evaluations: run.evaluations,
-							traces: run.traces,
-						}),
-					);
+				: roundCostUsd(knownEstimatedCost(run.traces));
 			const citationSupport = averageScore(run.evaluations, "citationSupport");
 			const risk = unsupportedClaims(run.evaluations);
 			const medianLatencyMs = median(

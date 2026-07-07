@@ -233,7 +233,7 @@ mise exec -- bun run eval:matrix
 - Citation support delta.
 - Unsupported claims.
 - Median latency.
-- Estimated cost.
+- Estimated generation cost. Evaluator cost should be reported separately on run manifests; budget comparisons do not combine it with generation cost, and the current tools cannot enforce evaluator-spend limits.
 - Guardrail status.
 
 ### Acceptance Criteria
@@ -242,7 +242,7 @@ mise exec -- bun run eval:matrix
 - Matrix artifacts are Zod-validated.
 - The Lab can later render the matrix as rows for cases and columns for variants.
 - The matrix never tunes on holdouts by default.
-- The matrix has explicit iteration bounds: case count, variant count, retry cap, and estimated cost must be visible before a run starts.
+- The matrix has explicit iteration bounds: case count, variant count, retry cap, and estimated generation cost must be visible before a run starts.
 
 ## Phase 6: Automation-Friendly Triage
 
@@ -335,5 +335,5 @@ The important story is not that the loop removes the engineer. The story is that
 - TypeScript remains authoritative for executable variant definitions at first; JSON variant specs provide explanatory metadata for the Lab.
 - `eval:matrix` should use OpenAI/hybrid by default because the local/deterministic signal is currently too weak. Control cost through small case/variant counts, retry caps, and visible estimates rather than by defaulting to local evaluation.
 - Loop state starts as Markdown in `docs/briefing-loop-state.md`; add a Zod-validated JSON ledger only when scripts or the Lab UI need structured state.
-- Unsupported claims are the first hard ship blocker, followed by citation support, holdout regression, estimated cost, and latency.
+- Unsupported claims are the first hard ship blocker, followed by citation support, holdout regression, estimated generation cost, and latency.
 - The product should support a reliable local recorded-demo workflow as well as a live walkthrough. Automations remain a follow-on once the manually triggered loop is dependable.
