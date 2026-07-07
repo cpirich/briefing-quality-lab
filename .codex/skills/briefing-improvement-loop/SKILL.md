@@ -34,7 +34,9 @@ Do not tune on holdout cases unless the user explicitly asks for holdout validat
 8. Treat promotion as the ship gate for any demo-facing variant. When a matrix-selected candidate should become demo-facing in `/lab`, promote only a complete run with a matching case set:
    - `mise exec -- bun run eval:promote --baseline=<baseline-run-id> --candidate-run=<candidate-run-id> --label="<candidate label>" --source-matrix=<matrix-id>`
    - Matrix artifacts are loop workbench evidence; promoted `RunComparison` artifacts are the canonical `/lab` comparison story.
-   - If the candidate cannot be promoted because its case set is incomplete or mismatched, do not recommend `ship` for the variant. Recommend `iterate`, `reject`, or `needs human review` and record the promotion blocker.
+   - If promotion fails only because the selected matrix run is an incomplete slice, automatically continue once: run the same winning variant as a full visible-case candidate against the same baseline, excluding holdouts, then retry promotion with `--source-matrix=<matrix-id>`.
+   - Before that full candidate continuation, make the expected bounds/cost visible. Continue without asking only when `OPENAI_API_KEY` is available, holdouts remain excluded, and the estimated max cost is within the already-approved budget. Otherwise stop with `needs human review`.
+   - If the full candidate cannot be generated or promoted, do not recommend `ship` for the variant. Recommend `iterate`, `reject`, or `needs human review` and record the blocker.
 9. Do a verifier pass before recommending ship. The author of a change should not be the only judge of success.
 10. Update `docs/briefing-loop-state.md` with facts, recommendations, rejected approaches, promoted artifacts, and the next human decision.
 11. Stop with exactly one recommendation: `ship`, `iterate`, `reject`, or `needs human review`. Use `ship` for a variant only when the live evidence supports the claim and the canonical `/lab` comparison has been promoted or is already current.
