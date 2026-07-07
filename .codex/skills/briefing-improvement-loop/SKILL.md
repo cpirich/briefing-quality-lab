@@ -50,6 +50,16 @@ Do not stop at `iterate` unless another live run would exceed the approved cost 
 10. Update `docs/briefing-loop-state.md` with facts, recommendations, rejected approaches, promoted artifacts, and the next human decision.
 11. Stop with exactly one recommendation: `ship`, `iterate`, `reject`, or `needs human review`. Use `ship` for a variant only when the live evidence supports the claim and the canonical `/lab` comparison has been promoted or is already current.
 
+## Environment Loading
+
+Before concluding `OPENAI_API_KEY` is unavailable, check whether `.env.local` exists and whether it contains the key using a presence-only check. Do not print, inspect, or summarize secret values.
+
+When `.env.local` contains `OPENAI_API_KEY`, treat the key as available for approved live-provider gates and source `.env.local` for CLI commands that need live provider access, for example:
+
+`mise exec -- zsh -lc 'set -a; source .env.local; set +a; bun run eval:matrix ...'`
+
+Continue to exclude holdouts unless explicitly approved, and continue to report live-action bounds and estimated max generation cost before spending.
+
 ## Guardrails
 
 - Keep `/genie` fast and product-focused; put loop evidence in the Improvement Lab or filesystem artifacts.
