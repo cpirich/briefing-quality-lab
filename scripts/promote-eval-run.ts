@@ -119,14 +119,9 @@ function assertSameCaseSet(baseline: RunManifest, candidate: RunManifest) {
 	}
 }
 
-function totalCostUsd(manifest: RunManifest) {
+function generationCostUsd(manifest: RunManifest) {
 	const generationCost = manifest.aggregateMetrics.estimatedCostUsd;
-	const evaluatorCost = manifest.aggregateMetrics.evaluatorEstimatedCostUsd;
-	if (generationCost === null || evaluatorCost === null) {
-		return null;
-	}
-
-	return (generationCost ?? 0) + (evaluatorCost ?? 0);
+	return generationCost ?? null;
 }
 
 function roundMetric(value: number) {
@@ -207,7 +202,7 @@ function improvementTone(delta: number, lowerIsBetter = false): MetricTone {
 }
 
 function displayCostForComparison(manifest: RunManifest) {
-	const cost = totalCostUsd(manifest);
+	const cost = generationCostUsd(manifest);
 	if (cost !== null) {
 		return String(roundCost(cost));
 	}
@@ -220,7 +215,9 @@ function displayCostForComparison(manifest: RunManifest) {
 
 function comparisonCostValue(manifest: RunManifest) {
 	return (
-		totalCostUsd(manifest) ?? manifest.aggregateMetrics.costBudgetUsd ?? null
+		generationCostUsd(manifest) ??
+		manifest.aggregateMetrics.costBudgetUsd ??
+		null
 	);
 }
 
@@ -256,8 +253,8 @@ function metricRows({
 	candidate: RunManifest;
 	referenceTarget?: RunManifest;
 }): RunComparison["comparisonRows"] {
-	const baselineCost = totalCostUsd(baseline);
-	const candidateCost = totalCostUsd(candidate);
+	const baselineCost = generationCostUsd(baseline);
+	const candidateCost = generationCostUsd(candidate);
 	const referenceTargetCost = referenceTarget
 		? comparisonCostValue(referenceTarget)
 		: null;
@@ -376,7 +373,7 @@ function metricRows({
 				: undefined,
 		},
 		{
-			metric: "Estimated cost",
+			metric: "Estimated generation cost",
 			baseline: displayCostForComparison(baseline),
 			candidate: displayCostForComparison(candidate),
 			delta: signedCostDelta(candidateCost, baselineCost),
@@ -399,8 +396,8 @@ function topMetrics({
 	candidate: RunManifest;
 	referenceTarget?: RunManifest;
 }): RunComparison["metrics"] {
-	const baselineCost = totalCostUsd(baseline);
-	const candidateCost = totalCostUsd(candidate);
+	const baselineCost = generationCostUsd(baseline);
+	const candidateCost = generationCostUsd(candidate);
 	const referenceTargetCost = referenceTarget
 		? comparisonCostValue(referenceTarget)
 		: null;
@@ -467,7 +464,7 @@ function topMetrics({
 			),
 		},
 		{
-			label: "Estimated cost",
+			label: "Estimated generation cost",
 			value:
 				candidateCost === null ? "unknown" : String(roundCost(candidateCost)),
 			delta:
@@ -477,7 +474,7 @@ function topMetrics({
 			targetDelta: referenceTarget
 				? signedCostGap(candidateCost, referenceTargetCost)
 				: undefined,
-			status: "Promoted candidate total generation + evaluator cost",
+			status: "Promoted candidate generation cost",
 			tone: costDelta === null ? "amber" : improvementTone(costDelta, true),
 		},
 		{

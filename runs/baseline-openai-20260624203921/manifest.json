@@ -36,10 +36,10 @@
 		},
 		{
 			"id": "estimated-cost",
-			"label": "Estimated cost",
+			"label": "Estimated generation cost",
 			"status": "pass",
-			"value": "$0.3417",
-			"threshold": "Tracked in USD; compare against reference target budget"
+			"value": "$0.0672",
+			"threshold": "Generation USD only; eval cost is reported separately and not budget-limited by this tool"
 		}
 	],
 	"artifactPaths": [

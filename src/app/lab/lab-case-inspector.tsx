@@ -390,8 +390,8 @@ function EvaluatorMetadataSummary({
 					{evaluator.inputTokens} in / {evaluator.cachedInputTokens} cached /{" "}
 					{evaluator.outputTokens} out
 				</dd>
-				<dt className="text-[var(--muted-foreground)]">Judge cost</dt>
-				<dd>{formatUsd(evaluator.estimatedUsd)}</dd>
+				<dt className="text-[var(--muted-foreground)]">Eval cost</dt>
+				<dd>{formatUsd(evaluator.estimatedUsd)} judge only, not in budget</dd>
 			</dl>
 		</div>
 	);

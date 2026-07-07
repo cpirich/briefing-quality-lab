@@ -706,13 +706,14 @@ function manifestFor({
 			},
 			{
 				id: "estimated-cost",
-				label: "Estimated cost",
+				label: "Estimated generation cost",
 				status: hasUnknownCost ? "warn" : "pass",
 				value:
 					estimatedCostUsd === null
 						? "unknown"
 						: `$${estimatedCostUsd.toFixed(4)}`,
-				threshold: "Tracked in USD; compare against reference target budget",
+				threshold:
+					"Generation USD only; eval cost is reported separately and not budget-limited by this tool",
 			},
 		],
 		artifactPaths,
@@ -1519,7 +1520,7 @@ function referenceCostBudgetMetric({
 
 	if (estimatedCostUsd === null || costBudgetUsd === undefined) {
 		return {
-			label: "Estimated cost",
+			label: "Estimated generation cost",
 			value:
 				estimatedCostUsd === null
 					? "unknown"
@@ -1537,7 +1538,7 @@ function referenceCostBudgetMetric({
 	const isUnderBudget = budgetDeltaUsd <= 0;
 
 	return {
-		label: "Estimated cost",
+		label: "Estimated generation cost",
 		value: formatCostNumber(estimatedCostUsd),
 		delta: formatSignedCostNumber(budgetDeltaUsd),
 		status: `${baselineLabel} vs ${candidateLabel} budget <= ${formatCostNumber(costBudgetUsd)}`,
@@ -1561,14 +1562,14 @@ function estimatedCostMetric({
 
 	if (candidateCostUsd === null || baselineCostUsd === null) {
 		return {
-			label: "Estimated cost",
+			label: "Estimated generation cost",
 			value:
 				candidateCostUsd === null
 					? "unknown"
 					: formatCostNumber(candidateCostUsd),
 			delta: "unknown",
 			targetDelta: undefined,
-			status: "Generation trace cost",
+			status: "Generation cost only; eval cost is separate",
 			tone: "amber" as const,
 		};
 	}
@@ -1580,11 +1581,11 @@ function estimatedCostMetric({
 			: formatSignedCostNumber(candidateCostUsd - referenceCostBudgetUsd);
 
 	return {
-		label: "Estimated cost",
+		label: "Estimated generation cost",
 		value: formatCostNumber(candidateCostUsd),
 		delta: formatSignedCostNumber(deltaUsd),
 		targetDelta,
-		status: "Generation trace cost",
+		status: "Generation cost only; eval cost is separate",
 		tone: deltaUsd <= 0 ? ("green" as const) : ("amber" as const),
 	};
 }
@@ -1601,7 +1602,7 @@ function referenceCostBudgetRow({
 
 	if (estimatedCostUsd === null || costBudgetUsd === undefined) {
 		return {
-			metric: "Estimated cost",
+			metric: "Estimated generation cost",
 			baseline:
 				estimatedCostUsd === null
 					? "unknown"
@@ -1617,7 +1618,7 @@ function referenceCostBudgetRow({
 	const budgetDeltaUsd = roundCostUsd(estimatedCostUsd - costBudgetUsd);
 
 	return {
-		metric: "Estimated cost",
+		metric: "Estimated generation cost",
 		baseline: formatCostNumber(estimatedCostUsd),
 		candidate: `<= ${formatCostNumber(costBudgetUsd)}`,
 		delta: formatSignedCostNumber(budgetDeltaUsd),
@@ -1639,7 +1640,7 @@ function estimatedCostRow({
 		referenceTarget?.manifest.aggregateMetrics.costBudgetUsd;
 
 	return {
-		metric: "Estimated cost",
+		metric: "Estimated generation cost",
 		baseline:
 			baselineCostUsd === null ? "unknown" : formatCostNumber(baselineCostUsd),
 		candidate:

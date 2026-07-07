@@ -1793,10 +1793,14 @@ function runManifestFor(
 			},
 			{
 				id: isCandidate ? "cost-budget" : "estimated-cost",
-				label: isCandidate ? "Cost budget" : "Estimated cost",
+				label: isCandidate
+					? "Generation cost budget"
+					: "Estimated generation cost",
 				status: "pass",
 				value: isCandidate ? "$0.1000" : "$0.0980",
-				threshold: isCandidate ? "OpenAI corpus cost target" : "Tracked in USD",
+				threshold: isCandidate
+					? "OpenAI corpus generation cost target"
+					: "Generation USD only; eval cost is separate",
 			},
 		],
 		artifactPaths: [
@@ -1835,10 +1839,10 @@ function comparisonFor(): RunComparison {
 				tone: "blue",
 			},
 			{
-				label: "Estimated cost",
+				label: "Estimated generation cost",
 				value: "0.098",
 				delta: "-0.002",
-				status: "Baseline cost vs Reference target budget <= 0.1",
+				status: "Baseline generation cost vs Reference target budget <= 0.1",
 				tone: "green",
 			},
 			{

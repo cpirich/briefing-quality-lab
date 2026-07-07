@@ -17,6 +17,7 @@ const lowerIsBetterMetrics = new Set([
 	"Grounding risk units",
 	"Median latency",
 	"Estimated cost",
+	"Estimated generation cost",
 ]);
 
 const targetMinusCurrentGapMetrics = new Set([
@@ -123,7 +124,9 @@ function formatCostValueForDisplay(value: string) {
 }
 
 function displayMetricValue(metric: string, value: string) {
-	return metric === "Estimated cost" ? formatCostValueForDisplay(value) : value;
+	return isGenerationCostMetric(metric)
+		? formatCostValueForDisplay(value)
+		: value;
 }
 
 function metricBadgeLabel(
@@ -153,7 +156,7 @@ function metricDeltaTone(
 		return "slate";
 	}
 
-	if (changeLabel === "Gap" && metric === "Estimated cost") {
+	if (changeLabel === "Gap" && isGenerationCostMetric(metric)) {
 		const normalizedValue = value.toLowerCase();
 		const isUnderBudget =
 			normalizedValue.includes("under budget") || value.trim().startsWith("-");
@@ -394,6 +397,23 @@ function metricByLabel(
 	return metrics.find((metric) => metric.label === label);
 }
 
+function metricByLabels(
+	metrics: Array<{
+		label: string;
+		value: string;
+		delta: string;
+		targetDelta?: string;
+		status: string;
+	}>,
+	labels: string[],
+) {
+	return metrics.find((metric) => labels.includes(metric.label));
+}
+
+function isGenerationCostMetric(metric: string) {
+	return metric === "Estimated cost" || metric === "Estimated generation cost";
+}
+
 function LoopMetric({
 	label,
 	status,
@@ -442,7 +462,10 @@ function ImprovementLoopPanel({
 	runComparison: RunComparison;
 }) {
 	const overallMetric = metricByLabel(runComparison.metrics, "Overall quality");
-	const costMetric = metricByLabel(runComparison.metrics, "Estimated cost");
+	const costMetric = metricByLabels(runComparison.metrics, [
+		"Estimated generation cost",
+		"Estimated cost",
+	]);
 	const latencyMetric =
 		metricByLabel(runComparison.metrics, "Median latency") ??
 		metricByLabel(runComparison.metrics, "Latency ratio");

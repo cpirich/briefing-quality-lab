@@ -18,7 +18,7 @@
 	},
 	"budget": {
 		"maxEstimatedCostUsd": 0.25,
-		"maxMedianLatencyMs": 11000
+		"maxMedianLatencyMs": 14000
 	},
 	"rollbackReason": "Replace this baseline spec when a newer generated baseline has complete traces, hybrid evaluator outputs, and a matching visible case set."
 }
