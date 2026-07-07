@@ -1260,90 +1260,123 @@ async function rejudgeRun(options: EvalOptions): Promise<RejudgedRunArtifacts> {
 	}
 
 	console.log(
-		`Rejudging ${role} run ${runId} with ${options.evaluator} evaluator across ${selectedEvalCases.length} cases.`,
+		`Rejudging ${role} run ${runId} with ${options.evaluator} evaluator across ${selectedEvalCases.length} cases at concurrency ${options.concurrency}.`,
 	);
 
-	const evaluations: EvaluatorOutput[] = [];
-	const orderedTraces: GenerationTrace[] = [];
-	const orderedBriefings: BriefingOutput[] = [];
+	const rejudgedCaseArtifacts: Array<
+		| {
+				briefing: BriefingOutput;
+				trace: GenerationTrace;
+				evaluation: EvaluatorOutput;
+				artifactPaths: string[];
+				pendingEvaluationWrite: {
+					finalPath: string;
+					tempPath: string;
+				};
+		  }
+		| undefined
+	> = [];
+	const orderedBriefings = () =>
+		rejudgedCaseArtifacts.flatMap((artifact) => artifact?.briefing ?? []);
+	const orderedTraces = () =>
+		rejudgedCaseArtifacts.flatMap((artifact) => artifact?.trace ?? []);
+	const evaluations = () =>
+		rejudgedCaseArtifacts.flatMap((artifact) => artifact?.evaluation ?? []);
+	const completedArtifactPaths = () => [
+		...artifactPaths,
+		...rejudgedCaseArtifacts.flatMap(
+			(artifact) => artifact?.artifactPaths ?? [],
+		),
+	];
 	const artifactPaths = [`runs/${runId}/manifest.json`];
 	const tempEvaluationDir = `runs/${runId}/evaluations-rejudge-${slugTimestamp()}`;
-	const pendingEvaluationWrites: Array<{
-		finalPath: string;
-		tempPath: string;
-	}> = [];
 
 	try {
-		for (const [caseIndex, evalCase] of selectedEvalCases.entries()) {
-			const caseNumber = caseIndex + 1;
-			const casePrefix = `[${caseNumber}/${selectedEvalCases.length}]`;
-			const sourcePacket = sourcePacketsById.get(evalCase.sourcePacketId);
-			const trace = tracesByCaseId.get(evalCase.id);
-			const persistedBriefing = briefingsByCaseId.get(evalCase.id);
-			if (!sourcePacket) {
-				throw new Error(
-					`Eval case ${evalCase.id} references missing source packet ${evalCase.sourcePacketId}`,
+		await runWithConcurrency({
+			items: selectedEvalCases,
+			concurrency: options.concurrency,
+			worker: async (evalCase, caseIndex) => {
+				const caseNumber = caseIndex + 1;
+				const casePrefix = `[${caseNumber}/${selectedEvalCases.length}]`;
+				const sourcePacket = sourcePacketsById.get(evalCase.sourcePacketId);
+				const trace = tracesByCaseId.get(evalCase.id);
+				const persistedBriefing = briefingsByCaseId.get(evalCase.id);
+				if (!sourcePacket) {
+					throw new Error(
+						`Eval case ${evalCase.id} references missing source packet ${evalCase.sourcePacketId}`,
+					);
+				}
+				if (!trace) {
+					throw new Error(`Run ${runId} is missing trace for ${evalCase.id}.`);
+				}
+				if (!persistedBriefing) {
+					throw new Error(
+						`Run ${runId} is missing briefing for ${evalCase.id}.`,
+					);
+				}
+
+				if (
+					(isGeneratedBaselineRun(existingManifest) ||
+						isGeneratedCandidateRun(existingManifest)) &&
+					!trace.rawOutput
+				) {
+					throw new Error(
+						[
+							`Cannot rejudge ${runId} case ${evalCase.id} because its trace is missing rawOutput.`,
+							"Older generated traces only persisted sanitized trace.output, which can inflate citation and grounding scores.",
+							"Create a fresh baseline or variant run so rejudge can evaluate the raw generated briefing.",
+						].join(" "),
+					);
+				}
+
+				const briefing = BriefingOutputSchema.parse(
+					trace.rawOutput ?? trace.output,
 				);
-			}
-			if (!trace) {
-				throw new Error(`Run ${runId} is missing trace for ${evalCase.id}.`);
-			}
-			if (!persistedBriefing) {
-				throw new Error(`Run ${runId} is missing briefing for ${evalCase.id}.`);
-			}
-
-			if (
-				(isGeneratedBaselineRun(existingManifest) ||
-					isGeneratedCandidateRun(existingManifest)) &&
-				!trace.rawOutput
-			) {
-				throw new Error(
-					[
-						`Cannot rejudge ${runId} case ${evalCase.id} because its trace is missing rawOutput.`,
-						"Older generated traces only persisted sanitized trace.output, which can inflate citation and grounding scores.",
-						"Create a fresh baseline or variant run so rejudge can evaluate the raw generated briefing.",
-					].join(" "),
+				const briefingPath = `runs/${runId}/briefings/${evalCase.id}.json`;
+				const tracePath = `runs/${runId}/traces/${evalCase.id}.json`;
+				const evaluationPath = `runs/${runId}/evaluations/${evalCase.id}.json`;
+				const tempEvaluationPath = `${tempEvaluationDir}/${evalCase.id}.json`;
+				console.log(`${casePrefix} Rejudging ${evalCase.id}...`);
+				const evaluation = await evaluateBriefing({
+					runId,
+					evalCase,
+					sourcePacket,
+					briefing,
+					trace,
+					mode: options.evaluator,
+				});
+				await writeJsonArtifact(tempEvaluationPath, evaluation);
+				console.log(
+					`${casePrefix} Rejudged ${evalCase.id}: overall ${evaluation.scores.overall.toFixed(2)}, citation ${evaluation.scores.citationSupport.toFixed(2)}.`,
 				);
-			}
 
-			const briefing = BriefingOutputSchema.parse(
-				trace.rawOutput ?? trace.output,
-			);
-			const briefingPath = `runs/${runId}/briefings/${evalCase.id}.json`;
-			const tracePath = `runs/${runId}/traces/${evalCase.id}.json`;
-			const evaluationPath = `runs/${runId}/evaluations/${evalCase.id}.json`;
-			const tempEvaluationPath = `${tempEvaluationDir}/${evalCase.id}.json`;
-			console.log(`${casePrefix} Rejudging ${evalCase.id}...`);
-			const evaluation = await evaluateBriefing({
-				runId,
-				evalCase,
-				sourcePacket,
-				briefing,
-				trace,
-				mode: options.evaluator,
-			});
-			await writeJsonArtifact(tempEvaluationPath, evaluation);
-			pendingEvaluationWrites.push({
-				finalPath: evaluationPath,
-				tempPath: tempEvaluationPath,
-			});
-			console.log(
-				`${casePrefix} Rejudged ${evalCase.id}: overall ${evaluation.scores.overall.toFixed(2)}, citation ${evaluation.scores.citationSupport.toFixed(2)}.`,
-			);
-
-			orderedBriefings.push(persistedBriefing);
-			orderedTraces.push(trace);
-			evaluations.push(evaluation);
-			artifactPaths.push(briefingPath, tracePath, evaluationPath);
-		}
+				rejudgedCaseArtifacts[caseIndex] = {
+					briefing: persistedBriefing,
+					trace,
+					evaluation,
+					artifactPaths: [briefingPath, tracePath, evaluationPath],
+					pendingEvaluationWrite: {
+						finalPath: evaluationPath,
+						tempPath: tempEvaluationPath,
+					},
+				};
+			},
+		});
 	} catch (error) {
 		await rm(absolutePath(tempEvaluationDir), { force: true, recursive: true });
 		throw error;
 	}
 
 	await Promise.all(
-		pendingEvaluationWrites.map(({ finalPath, tempPath }) =>
-			rename(absolutePath(tempPath), absolutePath(finalPath)),
+		rejudgedCaseArtifacts.flatMap((artifact) =>
+			artifact
+				? [
+						rename(
+							absolutePath(artifact.pendingEvaluationWrite.tempPath),
+							absolutePath(artifact.pendingEvaluationWrite.finalPath),
+						),
+					]
+				: [],
 		),
 	);
 	await rm(absolutePath(tempEvaluationDir), { force: true, recursive: true });
@@ -1354,10 +1387,11 @@ async function rejudgeRun(options: EvalOptions): Promise<RejudgedRunArtifacts> {
 		commandMode: "rejudge",
 		provider,
 		evaluator: options.evaluator,
+		concurrency: options.concurrency,
 		caseIds: selectedEvalCases.map((evalCase) => evalCase.id),
-		evaluations,
-		traces: orderedTraces,
-		artifactPaths,
+		evaluations: evaluations(),
+		traces: orderedTraces(),
+		artifactPaths: completedArtifactPaths(),
 		referenceManifest,
 		includeHoldouts: selectedEvalCases.some((evalCase) => evalCase.holdout),
 	});
@@ -1375,9 +1409,9 @@ async function rejudgeRun(options: EvalOptions): Promise<RejudgedRunArtifacts> {
 		role,
 		referenceRunId: referenceManifest?.runId,
 		manifest,
-		briefings: orderedBriefings,
-		evaluations,
-		traces: orderedTraces,
+		briefings: orderedBriefings(),
+		evaluations: evaluations(),
+		traces: orderedTraces(),
 	};
 }
 

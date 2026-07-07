@@ -38,6 +38,7 @@ interface MatrixOptions {
 	caseLimit: number;
 	variantLimit: number;
 	retryCap: number;
+	concurrency: number;
 	caseIds: string[];
 	variantIds: string[];
 	baselineRunId?: string;
@@ -94,19 +95,24 @@ function hasFlag(name: string) {
 
 function parseBoundedInteger({
 	name,
+	envNames = [],
 	defaultValue,
 	min,
 	max,
 }: {
 	name: string;
+	envNames?: string[];
 	defaultValue: number;
 	min: number;
 	max: number;
 }) {
-	const rawValue = optionValue(name);
+	const rawValue =
+		optionValue(name) ??
+		envNames.map((envName) => process.env[envName]).find(Boolean);
 	const value = rawValue === undefined ? defaultValue : Number(rawValue);
 	if (!Number.isInteger(value) || value < min || value > max) {
-		throw new Error(`${name} must be an integer from ${min} to ${max}.`);
+		const source = [name, ...envNames].join("/");
+		throw new Error(`${source} must be an integer from ${min} to ${max}.`);
 	}
 
 	return value;
@@ -157,6 +163,13 @@ function parseOptions(): MatrixOptions {
 			defaultValue: 1,
 			min: 0,
 			max: 3,
+		}),
+		concurrency: parseBoundedInteger({
+			name: "--concurrency",
+			envNames: ["EVAL_MATRIX_CONCURRENCY", "EVAL_CONCURRENCY"],
+			defaultValue: 4,
+			min: 1,
+			max: 4,
 		}),
 		caseIds: optionValues("--case-id").map((caseId) =>
 			validateFixtureId(caseId, "case id"),
@@ -588,6 +601,42 @@ async function withRetries<T>({
 	throw lastError;
 }
 
+async function runWithConcurrency<T>({
+	items,
+	concurrency,
+	worker,
+}: {
+	items: T[];
+	concurrency: number;
+	worker: (item: T, index: number) => Promise<void>;
+}) {
+	let nextIndex = 0;
+	let firstError: unknown;
+	const workerCount = Math.min(concurrency, items.length);
+	const workers = Array.from({ length: workerCount }, async () => {
+		while (firstError === undefined) {
+			const index = nextIndex;
+			nextIndex += 1;
+			const item = items[index];
+			if (item === undefined) {
+				return;
+			}
+
+			try {
+				await worker(item, index);
+			} catch (error) {
+				firstError ??= error;
+				return;
+			}
+		}
+	});
+
+	await Promise.all(workers);
+	if (firstError !== undefined) {
+		throw firstError;
+	}
+}
+
 async function runVariantCase({
 	casePrefix,
 	evalCase,
@@ -656,6 +705,7 @@ async function runVariantSlice({
 	sourcePackets,
 	evaluator,
 	retryCap,
+	concurrency,
 }: {
 	variant: GenerationVariant;
 	spec: VariantSpec;
@@ -663,13 +713,41 @@ async function runVariantSlice({
 	sourcePackets: SourcePacket[];
 	evaluator: EvaluatorMode;
 	retryCap: number;
+	concurrency: number;
 }): Promise<VariantRunArtifacts> {
 	const runId = `matrix-${variant.id}-${matrixTimestamp}`;
 	const sourcePacketsById = sourcePacketById(sourcePackets);
 	const artifactPaths = [`runs/${runId}/manifest.json`];
-	const briefings: BriefingOutput[] = [];
-	const evaluations: EvaluatorOutput[] = [];
-	const traces: GenerationTrace[] = [];
+	const caseArtifacts: Array<VariantCaseArtifacts | undefined> = [];
+	const completedBriefings = () =>
+		caseArtifacts.flatMap((artifact) => artifact?.briefing ?? []);
+	const completedEvaluations = () =>
+		caseArtifacts.flatMap((artifact) => artifact?.evaluation ?? []);
+	const completedTraces = () =>
+		caseArtifacts.flatMap((artifact) => artifact?.trace ?? []);
+	const completedArtifactPaths = () => [
+		...artifactPaths,
+		...caseArtifacts.flatMap((artifact) => artifact?.artifactPaths ?? []),
+	];
+	let manifestWrite = Promise.resolve();
+	const writeRunningManifest = () => {
+		manifestWrite = manifestWrite.then(() =>
+			writeJsonArtifact(
+				`runs/${runId}/manifest.json`,
+				manifestForVariantRun({
+					runId,
+					variant,
+					caseIds: evalCases.map((evalCase) => evalCase.id),
+					evaluations: completedEvaluations(),
+					traces: completedTraces(),
+					artifactPaths: completedArtifactPaths(),
+					status: "running",
+				}),
+			),
+		);
+
+		return manifestWrite;
+	};
 
 	await writeJsonArtifact(
 		`runs/${runId}/manifest.json`,
@@ -677,8 +755,8 @@ async function runVariantSlice({
 			runId,
 			variant,
 			caseIds: evalCases.map((evalCase) => evalCase.id),
-			evaluations,
-			traces,
+			evaluations: completedEvaluations(),
+			traces: completedTraces(),
 			artifactPaths,
 			status: "running",
 		}),
@@ -686,51 +764,54 @@ async function runVariantSlice({
 
 	let manifest: RunManifest;
 	try {
-		for (const [caseIndex, evalCase] of evalCases.entries()) {
-			const sourcePacket = sourcePacketsById.get(evalCase.sourcePacketId);
-			if (!sourcePacket) {
-				throw new Error(
-					`Eval case ${evalCase.id} references missing source packet ${evalCase.sourcePacketId}.`,
-				);
-			}
-			const casePrefix = `[${caseIndex + 1}/${evalCases.length}]`;
-			const caseArtifacts = await withRetries({
-				label: `${variant.id} ${evalCase.id}`,
-				retryCap,
-				operation: () =>
-					runVariantCase({
-						casePrefix,
-						evalCase,
-						runId,
-						sourcePacket,
-						variant,
-						evaluator,
-					}),
-			});
-			briefings.push(caseArtifacts.briefing);
-			traces.push(caseArtifacts.trace);
-			evaluations.push(caseArtifacts.evaluation);
-			artifactPaths.push(...caseArtifacts.artifactPaths);
-		}
+		await runWithConcurrency({
+			items: evalCases,
+			concurrency,
+			worker: async (evalCase, caseIndex) => {
+				const sourcePacket = sourcePacketsById.get(evalCase.sourcePacketId);
+				if (!sourcePacket) {
+					throw new Error(
+						`Eval case ${evalCase.id} references missing source packet ${evalCase.sourcePacketId}.`,
+					);
+				}
+				const casePrefix = `[${caseIndex + 1}/${evalCases.length}]`;
+				caseArtifacts[caseIndex] = await withRetries({
+					label: `${variant.id} ${evalCase.id}`,
+					retryCap,
+					operation: () =>
+						runVariantCase({
+							casePrefix,
+							evalCase,
+							runId,
+							sourcePacket,
+							variant,
+							evaluator,
+						}),
+				});
+				await writeRunningManifest();
+			},
+		});
+		await manifestWrite;
 
 		manifest = manifestForVariantRun({
 			runId,
 			variant,
 			caseIds: evalCases.map((evalCase) => evalCase.id),
-			evaluations,
-			traces,
-			artifactPaths,
+			evaluations: completedEvaluations(),
+			traces: completedTraces(),
+			artifactPaths: completedArtifactPaths(),
 			status: "complete",
 		});
 		await writeJsonArtifact(`runs/${runId}/manifest.json`, manifest);
 	} catch (error) {
+		await manifestWrite;
 		manifest = manifestForVariantRun({
 			runId,
 			variant,
 			caseIds: evalCases.map((evalCase) => evalCase.id),
-			evaluations,
-			traces,
-			artifactPaths,
+			evaluations: completedEvaluations(),
+			traces: completedTraces(),
+			artifactPaths: completedArtifactPaths(),
 			status: "failed",
 			error: error instanceof Error ? error.message : String(error),
 		});
@@ -742,10 +823,10 @@ async function runVariantSlice({
 		variant,
 		spec,
 		manifest,
-		briefings,
-		evaluations,
-		traces,
-		artifactPaths,
+		briefings: completedBriefings(),
+		evaluations: completedEvaluations(),
+		traces: completedTraces(),
+		artifactPaths: completedArtifactPaths(),
 	};
 }
 
@@ -990,6 +1071,7 @@ async function main() {
 	console.log(`- variants: ${selectedVariants.length}/${options.variantLimit}`);
 	console.log(`- cases: ${selectedCases.length}/${options.caseLimit}`);
 	console.log(`- retry cap: ${options.retryCap}`);
+	console.log(`- case concurrency: ${options.concurrency}`);
 	console.log(`- include holdouts: ${options.includeHoldouts ? "yes" : "no"}`);
 	console.log(
 		`- estimated max generation cost: ${
@@ -1036,6 +1118,7 @@ async function main() {
 				sourcePackets,
 				evaluator: options.evaluator,
 				retryCap: options.retryCap,
+				concurrency: options.concurrency,
 			}),
 		);
 	}
