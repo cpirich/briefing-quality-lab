@@ -25,6 +25,7 @@ import {
 	listRunComparisons,
 	listRunManifests,
 	listSourcePackets,
+	listVariantSpecs,
 } from "~/run-store";
 import {
 	type BriefingOutput,
@@ -33,11 +34,14 @@ import {
 	type EvaluatorOutput,
 	type GenerationTrace,
 	GenerationTraceSchema,
+	type GenerationVariant,
+	GenerationVariantSchema,
 	type RunComparison,
 	RunComparisonSchema,
 	type RunManifest,
 	RunManifestSchema,
 	type SourcePacket,
+	type VariantSpec,
 } from "~/schemas";
 
 type RunRole = "baseline" | "variant";
@@ -55,6 +59,7 @@ interface EvalOptions {
 	runId?: string;
 	baselineRunId?: string;
 	candidateRunId?: string;
+	variantId?: string;
 }
 
 interface RunArtifacts {
@@ -172,6 +177,9 @@ function parseOptions(): EvalOptions {
 			optionValue("--baseline") ?? process.env.EVAL_BASELINE_RUN_ID,
 		candidateRunId:
 			optionValue("--candidate") ?? process.env.EVAL_CANDIDATE_RUN_ID,
+		variantId: optionValue("--variant-id")
+			? validateFixtureId(optionValue("--variant-id") ?? "", "variant id")
+			: undefined,
 	};
 }
 
@@ -203,6 +211,7 @@ function commandFor({
 	runId,
 	includeHoldouts,
 	referenceManifest,
+	variant,
 }: {
 	mode: RunRole;
 	commandMode?: RunRole | "rejudge";
@@ -212,6 +221,7 @@ function commandFor({
 	runId: string;
 	includeHoldouts: boolean;
 	referenceManifest?: RunManifest;
+	variant?: GenerationVariant;
 }) {
 	const parts = [
 		`bun run eval:${commandMode}`,
@@ -227,6 +237,9 @@ function commandFor({
 	}
 	if (mode === "variant" && referenceManifest) {
 		parts.push(`--baseline=${referenceManifest.runId}`);
+	}
+	if (variant) {
+		parts.push(`--variant-id=${variant.id}`);
 	}
 	if (mode === "baseline" && commandMode === "rejudge" && referenceManifest) {
 		parts.push(`--candidate=${referenceManifest.runId}`);
@@ -519,6 +532,52 @@ function assertVariantCaseSetMatchesBaseline({
 	});
 }
 
+function variantFromSpec(spec: VariantSpec): GenerationVariant {
+	if (spec.provider !== "local" && spec.provider !== "openai") {
+		throw new Error(
+			`Variant ${spec.id} uses provider ${spec.provider}; eval runner supports local and openai providers.`,
+		);
+	}
+
+	return GenerationVariantSchema.parse({
+		id: spec.id,
+		label: spec.label,
+		provider: spec.provider,
+		model: spec.model,
+		promptVersion: spec.promptVersion,
+		maxOutputTokens: spec.model === "deterministic-extractive" ? 900 : 1200,
+	});
+}
+
+async function selectedVariantFor(options: EvalOptions) {
+	if (!options.variantId) {
+		return undefined;
+	}
+	if (options.mode !== "variant") {
+		throw new Error("--variant-id is only supported for eval:variant runs.");
+	}
+
+	const specs = await listVariantSpecs();
+	const spec = specs.find(
+		(candidateSpec) => candidateSpec.id === options.variantId,
+	);
+	if (!spec) {
+		throw new Error(`No variant spec found for ${options.variantId}.`);
+	}
+	if (spec.status !== "candidate" && spec.status !== "reference") {
+		throw new Error(
+			`Variant ${spec.id} has status ${spec.status}; select an active candidate or reference variant.`,
+		);
+	}
+	if (spec.provider !== options.provider) {
+		throw new Error(
+			`Variant ${spec.id} uses provider ${spec.provider}, but eval run requested ${options.provider}.`,
+		);
+	}
+
+	return variantFromSpec(spec);
+}
+
 function roundMetric(value: number) {
 	return Math.round(value * 100) / 100;
 }
@@ -633,6 +692,7 @@ function manifestFor({
 	artifactPaths,
 	referenceManifest,
 	includeHoldouts,
+	variant,
 	status = "complete",
 	error,
 }: {
@@ -648,6 +708,7 @@ function manifestFor({
 	artifactPaths: string[];
 	referenceManifest?: RunManifest;
 	includeHoldouts: boolean;
+	variant?: GenerationVariant;
 	status?: RunManifest["status"];
 	error?: string;
 }) {
@@ -668,9 +729,10 @@ function manifestFor({
 		runId,
 		createdAt: new Date().toISOString(),
 		variantLabel:
-			mode === "baseline"
+			variant?.label ??
+			(mode === "baseline"
 				? `${provider} generated baseline`
-				: `${provider} generated variant`,
+				: `${provider} generated variant`),
 		status,
 		gitRef: "local-worktree",
 		command: commandFor({
@@ -682,6 +744,7 @@ function manifestFor({
 			runId,
 			includeHoldouts,
 			referenceManifest,
+			variant,
 		}),
 		caseIds,
 		aggregateMetrics: {
@@ -764,6 +827,7 @@ async function runGeneratedCase({
 	sourcePacket,
 	provider,
 	evaluator,
+	variant,
 }: {
 	casePrefix: string;
 	evalCase: EvalCase;
@@ -771,6 +835,7 @@ async function runGeneratedCase({
 	sourcePacket: SourcePacket;
 	provider: EvalProvider;
 	evaluator: EvaluatorMode;
+	variant?: GenerationVariant;
 }): Promise<GeneratedCaseArtifacts> {
 	console.log(`${casePrefix} Generating ${evalCase.id}...`);
 	const result = await generateBriefing({
@@ -778,6 +843,7 @@ async function runGeneratedCase({
 		userRequest: evalCase.task,
 		runId,
 		provider,
+		variant,
 	});
 	console.log(
 		`${casePrefix} Generated ${evalCase.id} in ${(result.trace.latencyMs / 1000).toFixed(1)}s.`,
@@ -861,7 +927,10 @@ async function generateRun(options: EvalOptions & { mode: RunRole }) {
 	validateFixtureId(runId, "run id");
 	const artifactPaths = [`runs/${runId}/manifest.json`];
 	const caseArtifacts: Array<GeneratedCaseArtifacts | undefined> = [];
-	const referenceManifest = await referenceManifestForVariant(options);
+	const [referenceManifest, selectedVariant] = await Promise.all([
+		referenceManifestForVariant(options),
+		selectedVariantFor(options),
+	]);
 	assertVariantCaseSetMatchesBaseline({ referenceManifest, selectedEvalCases });
 	const completedBriefings = () =>
 		caseArtifacts.flatMap((artifact) => artifact?.briefing ?? []);
@@ -892,6 +961,7 @@ async function generateRun(options: EvalOptions & { mode: RunRole }) {
 					artifactPaths: completedArtifactPaths(),
 					referenceManifest,
 					includeHoldouts: options.includeHoldouts,
+					variant: selectedVariant,
 					status: "running",
 				}),
 			),
@@ -918,6 +988,7 @@ async function generateRun(options: EvalOptions & { mode: RunRole }) {
 			artifactPaths,
 			referenceManifest,
 			includeHoldouts: options.includeHoldouts,
+			variant: selectedVariant,
 			status: "running",
 		}),
 	);
@@ -943,6 +1014,7 @@ async function generateRun(options: EvalOptions & { mode: RunRole }) {
 					sourcePacket,
 					provider: options.provider,
 					evaluator: options.evaluator,
+					variant: selectedVariant,
 				});
 				await writeRunningManifest();
 			},
@@ -961,6 +1033,7 @@ async function generateRun(options: EvalOptions & { mode: RunRole }) {
 			artifactPaths: completedArtifactPaths(),
 			referenceManifest,
 			includeHoldouts: options.includeHoldouts,
+			variant: selectedVariant,
 		});
 		await writeJsonArtifact(`runs/${runId}/manifest.json`, manifest);
 		console.log(
@@ -988,6 +1061,7 @@ async function generateRun(options: EvalOptions & { mode: RunRole }) {
 			artifactPaths: completedArtifactPaths(),
 			referenceManifest,
 			includeHoldouts: options.includeHoldouts,
+			variant: selectedVariant,
 			status: "failed",
 			error: message,
 		});
