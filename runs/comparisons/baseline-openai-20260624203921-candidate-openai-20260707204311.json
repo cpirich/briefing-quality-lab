@@ -1,0 +1,288 @@
+{
+	"id": "baseline-openai-20260624203921-candidate-openai-20260707204311",
+	"baselineRunId": "baseline-openai-20260624203921",
+	"candidateRunId": "candidate-openai-20260707204311",
+	"promotedAt": "2026-07-07T20:44:31.228Z",
+	"baselineLabel": "OpenAI baseline",
+	"candidateLabel": "OpenAI loop v5 citation pairing",
+	"runMetadata": {
+		"baseline": {
+			"provider": "openai",
+			"model": "gpt-5.2",
+			"promptVersion": "briefing-genie-v1",
+			"maxOutputTokens": 1200,
+			"structuredOutputName": "briefing_genie_output",
+			"textVerbosity": null,
+			"reasoningEffort": null,
+			"temperature": null,
+			"traceArtifactPath": "runs/baseline-openai-20260624203921/traces/case-adoption-friction.json"
+		},
+		"candidate": {
+			"provider": "openai",
+			"model": "gpt-5.2",
+			"promptVersion": "openai-loop-v5-citation-pairing",
+			"maxOutputTokens": 1200,
+			"structuredOutputName": "briefing_genie_output",
+			"textVerbosity": null,
+			"reasoningEffort": null,
+			"temperature": null,
+			"traceArtifactPath": "runs/candidate-openai-20260707204311/traces/case-adoption-friction.json"
+		}
+	},
+	"metrics": [
+		{
+			"label": "Overall quality",
+			"value": "0.95",
+			"delta": "+0.05",
+			"targetDelta": "-0.04",
+			"status": "Promoted candidate score",
+			"tone": "green"
+		},
+		{
+			"label": "Citation grounding",
+			"value": "1.00",
+			"delta": "+0.05",
+			"targetDelta": "-0.04",
+			"status": "Promoted candidate citation score",
+			"tone": "green"
+		},
+		{
+			"label": "Coverage",
+			"value": "0.99",
+			"delta": "+0.04",
+			"targetDelta": "-0.06",
+			"status": "Promoted candidate coverage score",
+			"tone": "green"
+		},
+		{
+			"label": "Estimated generation cost",
+			"value": "0.0685965",
+			"delta": "+0.00138075",
+			"targetDelta": "-0.0314035",
+			"status": "Promoted candidate generation cost",
+			"tone": "red"
+		},
+		{
+			"label": "Median latency",
+			"value": "10.0s",
+			"delta": "-0.7s",
+			"targetDelta": "+2.0s",
+			"status": "Promoted candidate median latency",
+			"tone": "green"
+		}
+	],
+	"trend": [
+		{
+			"label": "OpenAI baseline",
+			"score": 90
+		},
+		{
+			"label": "OpenAI loop v5 citation pairing",
+			"score": 95
+		}
+	],
+	"comparisonRows": [
+		{
+			"metric": "Overall score",
+			"baseline": "0.90",
+			"candidate": "0.95",
+			"referenceTarget": "0.91",
+			"delta": "+0.05",
+			"gapToTarget": "-0.04"
+		},
+		{
+			"metric": "Citation support",
+			"baseline": "0.95",
+			"candidate": "1.00",
+			"referenceTarget": "0.96",
+			"delta": "+0.05",
+			"gapToTarget": "-0.04"
+		},
+		{
+			"metric": "Coverage",
+			"baseline": "0.95",
+			"candidate": "0.99",
+			"referenceTarget": "0.93",
+			"delta": "+0.04",
+			"gapToTarget": "-0.06"
+		},
+		{
+			"metric": "Grounding risk units",
+			"baseline": "9",
+			"candidate": "7",
+			"referenceTarget": "6",
+			"delta": "-2",
+			"gapToTarget": "+1"
+		},
+		{
+			"metric": "Eval cases",
+			"baseline": "7",
+			"candidate": "7",
+			"referenceTarget": "7",
+			"delta": "+0",
+			"gapToTarget": "+0"
+		},
+		{
+			"metric": "Median latency",
+			"baseline": "10.7s",
+			"candidate": "10.0s",
+			"referenceTarget": "8.0s",
+			"delta": "-0.7s",
+			"gapToTarget": "+2.0s"
+		},
+		{
+			"metric": "Estimated generation cost",
+			"baseline": "0.06721575",
+			"candidate": "0.0685965",
+			"referenceTarget": "<= 0.1",
+			"delta": "+0.00138075",
+			"gapToTarget": "-0.0314035"
+		}
+	],
+	"failureClusters": [],
+	"failureThemeMovements": [
+		{
+			"title": "Partial Claim Support",
+			"baselineCount": 3,
+			"candidateCount": 0,
+			"delta": -3,
+			"status": "resolved",
+			"baselineCases": [
+				"case-adoption-friction",
+				"case-cost-latency-budget",
+				"case-incident-recovery-comms"
+			],
+			"candidateCases": []
+		},
+		{
+			"title": "Citation Mismatch",
+			"baselineCount": 1,
+			"candidateCount": 0,
+			"delta": -1,
+			"status": "resolved",
+			"baselineCases": [
+				"case-cost-latency-budget"
+			],
+			"candidateCases": []
+		},
+		{
+			"title": "Minor Over Specificity",
+			"baselineCount": 1,
+			"candidateCount": 0,
+			"delta": -1,
+			"status": "resolved",
+			"baselineCases": [
+				"case-cost-latency-budget"
+			],
+			"candidateCases": []
+		},
+		{
+			"title": "Missing Citation",
+			"baselineCount": 1,
+			"candidateCount": 0,
+			"delta": -1,
+			"status": "resolved",
+			"baselineCases": [
+				"case-cost-latency-budget"
+			],
+			"candidateCases": []
+		},
+		{
+			"title": "Missing Citation To Relevant Source",
+			"baselineCount": 1,
+			"candidateCount": 0,
+			"delta": -1,
+			"status": "resolved",
+			"baselineCases": [
+				"case-release-note-drift"
+			],
+			"candidateCases": []
+		},
+		{
+			"title": "Missing Strongest Citation",
+			"baselineCount": 1,
+			"candidateCount": 0,
+			"delta": -1,
+			"status": "resolved",
+			"baselineCases": [
+				"case-adoption-friction"
+			],
+			"candidateCases": []
+		},
+		{
+			"title": "Over Specific",
+			"baselineCount": 1,
+			"candidateCount": 0,
+			"delta": -1,
+			"status": "resolved",
+			"baselineCases": [
+				"case-cost-latency-budget"
+			],
+			"candidateCases": []
+		},
+		{
+			"title": "Overstated Scope",
+			"baselineCount": 1,
+			"candidateCount": 0,
+			"delta": -1,
+			"status": "resolved",
+			"baselineCases": [
+				"case-incident-recovery-comms"
+			],
+			"candidateCases": []
+		},
+		{
+			"title": "Quantifier Too Strong",
+			"baselineCount": 1,
+			"candidateCount": 0,
+			"delta": -1,
+			"status": "resolved",
+			"baselineCases": [
+				"case-adoption-friction"
+			],
+			"candidateCases": []
+		}
+	],
+	"featuredCase": {
+		"id": "case-adoption-friction",
+		"title": "Developer adoption friction briefing",
+		"sourceEvidence": "Quickstart completion is improving but setup remains a drop-off point.",
+		"baseline": "Prioritize a self-serve “Setup Recovery” improvement before adding more pilot teams: publish and productize a recovery checklist/flow that explicitly handles stale CLI installs, missing environment variables, credential/workspace mismatches, and repeated setup attempts—so a failed install has a documented path to a clean state without support pasting internal steps. This directly targets the main drop-off in setup/credentials and is an explicit pilot readiness gate blocking scheduling.",
+		"candidate": "Prioritize a public, self-serve setup recovery path (failed install + credential/CLI/environment drift checklist) and demonstrate it in the lab before scheduling the next two pilot teams; pair this with visible source-citation/attribution for generated recommendations to meet the stated pilot gates and reduce the most visible ‘brittle demo’ failure mode.",
+		"evaluatorNote": "Hybrid evaluator output: deterministic hard checks plus structured LLM judge evidence. Manual spot checks are still required before claiming product improvement."
+	},
+	"recommendation": {
+		"tone": "green",
+		"label": "Promoted candidate",
+		"text": "This candidate was promoted from loop-engineering evidence into the canonical lab comparison path.",
+		"warning": "Promotion creates display evidence for /lab; human verifier review is still required before a ship call."
+	},
+	"artifactPaths": [
+		"runs/comparisons/baseline-openai-20260624203921-candidate-openai-20260707204311.json",
+		"runs/baseline-openai-20260624203921/manifest.json",
+		"runs/candidate-openai-20260707204311/manifest.json",
+		"runs/candidate-citation-gates/manifest.json",
+		"runs/comparisons/matrices/matrix-20260707204107.json",
+		"runs/baseline-openai-20260624203921/evaluations/case-adoption-friction.json",
+		"runs/candidate-openai-20260707204311/evaluations/case-adoption-friction.json",
+		"runs/candidate-openai-20260707204311/briefings/case-adoption-friction.json",
+		"runs/baseline-openai-20260624203921/evaluations/case-code-review-queues.json",
+		"runs/candidate-openai-20260707204311/evaluations/case-code-review-queues.json",
+		"runs/candidate-openai-20260707204311/briefings/case-code-review-queues.json",
+		"runs/baseline-openai-20260624203921/evaluations/case-cost-latency-budget.json",
+		"runs/candidate-openai-20260707204311/evaluations/case-cost-latency-budget.json",
+		"runs/candidate-openai-20260707204311/briefings/case-cost-latency-budget.json",
+		"runs/baseline-openai-20260624203921/evaluations/case-eval-loop.json",
+		"runs/candidate-openai-20260707204311/evaluations/case-eval-loop.json",
+		"runs/candidate-openai-20260707204311/briefings/case-eval-loop.json",
+		"runs/baseline-openai-20260624203921/evaluations/case-human-approval-boundary.json",
+		"runs/candidate-openai-20260707204311/evaluations/case-human-approval-boundary.json",
+		"runs/candidate-openai-20260707204311/briefings/case-human-approval-boundary.json",
+		"runs/baseline-openai-20260624203921/evaluations/case-incident-recovery-comms.json",
+		"runs/candidate-openai-20260707204311/evaluations/case-incident-recovery-comms.json",
+		"runs/candidate-openai-20260707204311/briefings/case-incident-recovery-comms.json",
+		"runs/baseline-openai-20260624203921/evaluations/case-release-note-drift.json",
+		"runs/candidate-openai-20260707204311/evaluations/case-release-note-drift.json",
+		"runs/candidate-openai-20260707204311/briefings/case-release-note-drift.json"
+	]
+}

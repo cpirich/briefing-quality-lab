@@ -1,0 +1,41 @@
+{
+	"id": "case-cost-latency-budget-openai-loop-v5-citation-pairing",
+	"sourcePacketId": "packet-cost-latency",
+	"caseId": "case-cost-latency-budget",
+	"title": "Next demo run: tracing + retry behavior recommendation",
+	"summary": "Keep claim-level, summarized tracing (with full raw traces stored on disk) and use a tight retry cap (one auto-retry only for transient provider errors). This aligns with reviewer needs, supports demo responsiveness via clearer progress, and stays within finance’s conditional budget approval by avoiding silent repeat generations.",
+	"claims": [
+		{
+			"text": "Tracing: retain claim-level evidence, but present it as a short summary next to each failed claim (selected source ids, what evidence is missing, retry count, and output path), while keeping detailed/raw traces on disk rather than in the main UI.",
+			"citations": ["S3", "S6"]
+		},
+		{
+			"text": "Retries: cap demo eval runs at one automatic retry for transient provider errors; avoid silent repeated generations, and log retry changes in a manifest when they affect cost/latency.",
+			"citations": ["S5"]
+		},
+		{
+			"text": "Cost/latency tradeoff: the candidate prompt increased median token usage by 11% due to retaining more claim-level evidence, but improved latency by 6% because fewer outputs needed manual reruns (the gain came from fewer repeated attempts, not shorter single generations).",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Approval boundary: finance approves demo-quality eval runs up to the reference target cost budget if the report explains how extra tokens reduce review time; exceeding that budget requires reducing case batch size, capping retries, or summarizing traces more aggressively.",
+			"citations": ["S2"]
+		},
+		{
+			"text": "Demo responsiveness boundary: the live demo felt responsive when single briefings finished under 10 seconds and when eval progress continuously showed the current case and artifact paths, making longer full runs acceptable to stakeholders.",
+			"citations": ["S4"]
+		}
+	],
+	"openQuestions": [
+		"Is the next demo primarily a live single-briefing flow (must stay <10s) or a longer full-eval walkthrough (can run longer with continuous progress updates)?",
+		"What is the current expected cost vs the reference target cost budget for the chosen batch size, given the +11% token usage observed with deeper claim-level evidence?",
+		"What qualifies as a “transient provider error” in the implementation (so the one allowed auto-retry is narrowly scoped and consistent during review)?",
+		"Will the dashboard implement the trace-summary format (near failed claims) and continuously update artifact paths, or is it still raw payload-heavy?"
+	],
+	"recommendation": "Use summarized, claim-adjacent tracing (with raw traces stored on disk) and enforce a strict retry policy of one auto-retry only for transient provider errors, with retries and any cost/latency impact recorded in a manifest; scale batch size or trace verbosity only if projected cost risks exceeding the reference target budget.",
+	"metadata": {
+		"variant": "OpenAI loop v5 citation pairing",
+		"runId": "candidate-openai-20260707204311",
+		"model": "gpt-5.2"
+	}
+}

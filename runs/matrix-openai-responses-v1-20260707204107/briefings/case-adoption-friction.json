@@ -1,0 +1,50 @@
+{
+	"id": "case-adoption-friction-openai-responses-v1",
+	"sourcePacketId": "packet-dev-adoption",
+	"caseId": "case-adoption-friction",
+	"title": "Adoption risks & next product-quality improvement for pilot expansion",
+	"summary": "Adoption is improving at the top of funnel (quickstart completion up after docs refresh), but expansion is currently blocked by a brittle setup/credential recovery experience that forces users into support and repeated failed states. For pilot expansion, the single highest-leverage product-quality improvement is to make failed-install/setup recovery self-serve and demonstrable (public checklist + reset/retry path), since it is both the largest analytics drop-off and the most visible demo failure mode.",
+	"claims": [
+		{
+			"text": "Quickstart completion increased from 44% to 58% after the docs copy refresh, with fewer exits at the first API call step.",
+			"citations": [
+				"S1"
+			]
+		},
+		{
+			"text": "The biggest remaining drop-off occurs during local setup and credential configuration, where users bounce after environment-specific errors; improvements disproportionately helped users who already had a valid token.",
+			"citations": [
+				"S1"
+			]
+		},
+		{
+			"text": "Support tickets cluster around environment drift, stale CLI versions, missing environment variables, and credentials copied from the wrong workspace; users often need an internal checklist that is not in public docs.",
+			"citations": [
+				"S2"
+			]
+		},
+		{
+			"text": "Several tickets reopen when users restart the quickstart and reproduce the same failed state, indicating lack of a recovery path after partial setup.",
+			"citations": [
+				"S2"
+			]
+		},
+		{
+			"text": "A cross-functional onboarding triage group agrees the post-partial-setup failure mode feels like a dead end and support wants a public recovery checklist covering stale CLI, credential mismatches, and repeated setup attempts.",
+			"citations": [
+				"S5"
+			]
+		}
+	],
+	"openQuestions": [
+		"Which specific setup error(s) drive the highest bounce during local setup (by OS/shell/CI context), and can they be reproduced reliably in the lab? [ties to S1, S6]",
+		"What are the exact steps in the internal support checklist that resolve most cases, and which require product changes vs. docs-only changes? [ties to S2]",
+		"What is the minimum observable signal in-product/docs that confirms a user has recovered (vs. silently remaining in a broken state) before retrying the quickstart? [ties to S2, S4, S6]"
+	],
+	"recommendation": "Next product-quality improvement for pilot expansion: ship a self-serve “Failed install / setup recovery” path that users can complete without support—publish the recovery checklist and add clear reset/retry guidance for stale CLI versions and credential/workspace mismatches, including credential reset copy. This directly targets the largest remaining onboarding drop-off and the most visible demo brittleness, and it is explicitly a gating item before adding the next two pilot teams.",
+	"metadata": {
+		"variant": "OpenAI Responses captured baseline",
+		"runId": "matrix-openai-responses-v1-20260707204107",
+		"model": "gpt-5.2"
+	}
+}

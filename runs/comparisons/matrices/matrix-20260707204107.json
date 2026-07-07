@@ -1,0 +1,202 @@
+{
+	"id": "matrix-20260707204107",
+	"createdAt": "2026-07-07T20:42:33.800Z",
+	"baselineRunId": "baseline-openai-20260624203921",
+	"provider": "openai",
+	"evaluator": "hybrid",
+	"bounds": {
+		"variantCount": 2,
+		"caseCount": 3,
+		"retryCap": 1,
+		"includeHoldouts": false,
+		"estimatedMaxCostUsd": 0.110768,
+		"liveProviderCalls": true
+	},
+	"caseIds": [
+		"case-adoption-friction",
+		"case-cost-latency-budget",
+		"case-incident-recovery-comms"
+	],
+	"variants": [
+		{
+			"variantId": "openai-responses-v1",
+			"label": "OpenAI Responses captured baseline",
+			"provider": "openai",
+			"model": "gpt-5.2",
+			"promptVersion": "briefing-genie-v1",
+			"runId": "matrix-openai-responses-v1-20260707204107",
+			"status": "complete",
+			"metrics": {
+				"overall": 0.89,
+				"grounding": 0.81,
+				"coverage": 0.95,
+				"citationSupport": 0.94,
+				"unsupportedClaims": 0,
+				"medianLatencyMs": 10321,
+				"estimatedCostUsd": 0.0270795,
+				"guardrailStatus": "pass"
+			},
+			"artifactPaths": [
+				"runs/matrix-openai-responses-v1-20260707204107/manifest.json",
+				"runs/matrix-openai-responses-v1-20260707204107/briefings/case-adoption-friction.json",
+				"runs/matrix-openai-responses-v1-20260707204107/traces/case-adoption-friction.json",
+				"runs/matrix-openai-responses-v1-20260707204107/evaluations/case-adoption-friction.json",
+				"runs/matrix-openai-responses-v1-20260707204107/briefings/case-cost-latency-budget.json",
+				"runs/matrix-openai-responses-v1-20260707204107/traces/case-cost-latency-budget.json",
+				"runs/matrix-openai-responses-v1-20260707204107/evaluations/case-cost-latency-budget.json",
+				"runs/matrix-openai-responses-v1-20260707204107/briefings/case-incident-recovery-comms.json",
+				"runs/matrix-openai-responses-v1-20260707204107/traces/case-incident-recovery-comms.json",
+				"runs/matrix-openai-responses-v1-20260707204107/evaluations/case-incident-recovery-comms.json"
+			]
+		},
+		{
+			"variantId": "openai-loop-v5-citation-pairing",
+			"label": "OpenAI loop v5 citation pairing",
+			"provider": "openai",
+			"model": "gpt-5.2",
+			"promptVersion": "openai-loop-v5-citation-pairing",
+			"runId": "matrix-openai-loop-v5-citation-pairing-20260707204107",
+			"status": "complete",
+			"metrics": {
+				"overall": 0.92,
+				"grounding": 0.84,
+				"coverage": 0.97,
+				"citationSupport": 0.97,
+				"unsupportedClaims": 0,
+				"medianLatencyMs": 9407,
+				"estimatedCostUsd": 0.02930375,
+				"guardrailStatus": "pass"
+			},
+			"artifactPaths": [
+				"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/manifest.json",
+				"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/briefings/case-adoption-friction.json",
+				"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/traces/case-adoption-friction.json",
+				"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/evaluations/case-adoption-friction.json",
+				"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/briefings/case-cost-latency-budget.json",
+				"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/traces/case-cost-latency-budget.json",
+				"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/evaluations/case-cost-latency-budget.json",
+				"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/briefings/case-incident-recovery-comms.json",
+				"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/traces/case-incident-recovery-comms.json",
+				"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/evaluations/case-incident-recovery-comms.json"
+			]
+		}
+	],
+	"rows": [
+		{
+			"caseId": "case-adoption-friction",
+			"cells": [
+				{
+					"variantId": "openai-responses-v1",
+					"status": "complete",
+					"overall": 0.82,
+					"grounding": 0.74,
+					"coverage": 0.84,
+					"citationSupport": 0.91,
+					"unsupportedClaims": 0,
+					"latencyMs": 8546,
+					"estimatedCostUsd": 0.00917,
+					"artifactPaths": [
+						"runs/matrix-openai-responses-v1-20260707204107/evaluations/case-adoption-friction.json",
+						"runs/matrix-openai-responses-v1-20260707204107/briefings/case-adoption-friction.json"
+					]
+				},
+				{
+					"variantId": "openai-loop-v5-citation-pairing",
+					"status": "complete",
+					"overall": 0.95,
+					"grounding": 0.88,
+					"coverage": 1,
+					"citationSupport": 1,
+					"unsupportedClaims": 0,
+					"latencyMs": 10279,
+					"estimatedCostUsd": 0.01059275,
+					"artifactPaths": [
+						"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/evaluations/case-adoption-friction.json",
+						"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/briefings/case-adoption-friction.json"
+					]
+				}
+			]
+		},
+		{
+			"caseId": "case-cost-latency-budget",
+			"cells": [
+				{
+					"variantId": "openai-responses-v1",
+					"status": "complete",
+					"overall": 0.95,
+					"grounding": 0.88,
+					"coverage": 1,
+					"citationSupport": 1,
+					"unsupportedClaims": 0,
+					"latencyMs": 10456,
+					"estimatedCostUsd": 0.0092925,
+					"artifactPaths": [
+						"runs/matrix-openai-responses-v1-20260707204107/evaluations/case-cost-latency-budget.json",
+						"runs/matrix-openai-responses-v1-20260707204107/briefings/case-cost-latency-budget.json"
+					]
+				},
+				{
+					"variantId": "openai-loop-v5-citation-pairing",
+					"status": "complete",
+					"overall": 0.92,
+					"grounding": 0.85,
+					"coverage": 0.92,
+					"citationSupport": 1,
+					"unsupportedClaims": 0,
+					"latencyMs": 8481,
+					"estimatedCostUsd": 0.00888125,
+					"artifactPaths": [
+						"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/evaluations/case-cost-latency-budget.json",
+						"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/briefings/case-cost-latency-budget.json"
+					]
+				}
+			]
+		},
+		{
+			"caseId": "case-incident-recovery-comms",
+			"cells": [
+				{
+					"variantId": "openai-responses-v1",
+					"status": "complete",
+					"overall": 0.9,
+					"grounding": 0.8,
+					"coverage": 1,
+					"citationSupport": 0.91,
+					"unsupportedClaims": 0,
+					"latencyMs": 10321,
+					"estimatedCostUsd": 0.008617,
+					"artifactPaths": [
+						"runs/matrix-openai-responses-v1-20260707204107/evaluations/case-incident-recovery-comms.json",
+						"runs/matrix-openai-responses-v1-20260707204107/briefings/case-incident-recovery-comms.json"
+					]
+				},
+				{
+					"variantId": "openai-loop-v5-citation-pairing",
+					"status": "complete",
+					"overall": 0.9,
+					"grounding": 0.8,
+					"coverage": 1,
+					"citationSupport": 0.91,
+					"unsupportedClaims": 0,
+					"latencyMs": 9407,
+					"estimatedCostUsd": 0.00982975,
+					"artifactPaths": [
+						"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/evaluations/case-incident-recovery-comms.json",
+						"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/briefings/case-incident-recovery-comms.json"
+					]
+				}
+			]
+		}
+	],
+	"recommendation": {
+		"variantId": "openai-loop-v5-citation-pairing",
+		"label": "promising candidate",
+		"rationale": "OpenAI loop v5 citation pairing ranked highest on the focused visible slice with 0 unsupported-claim risk units, 0.97 citation support, and $0.02930375 estimated generation cost.",
+		"guardrailStatus": "pass"
+	},
+	"artifactPaths": [
+		"runs/comparisons/matrices/matrix-20260707204107.json",
+		"runs/matrix-openai-responses-v1-20260707204107/manifest.json",
+		"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/manifest.json"
+	]
+}

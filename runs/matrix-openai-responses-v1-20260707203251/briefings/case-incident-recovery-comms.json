@@ -1,0 +1,51 @@
+{
+	"id": "case-incident-recovery-comms-openai-responses-v1",
+	"sourcePacketId": "packet-incident-recovery",
+	"caseId": "case-incident-recovery-comms",
+	"title": "How to summarize recovery work after a setup incident",
+	"summary": "Frame recovery messaging around the highest-friction failure mode (partial installs), give users one clearly safe next action, and explicitly segment guidance by environment. Avoid claiming universal resolution until Windows recovery is validated; keep the Windows caveat prominent. Align status-page, support macros, and docs so customers are not directed to the old installer flow once the patched CLI is promoted.",
+	"claims": [
+		{
+			"text": "Lead with symptoms of partial installs and provide one safe next action, because partial installs drove the most confusion and users feared rerunning setup could corrupt state or clear credentials.",
+			"citations": [
+				"S1"
+			]
+		},
+		{
+			"text": "Do not use a blanket “resolved” statement unless the environment caveat is clearly visible; engineering has verified recovery only on macOS and Linux, while Windows recovery steps are still being validated due to an unresolved credential-cache issue.",
+			"citations": [
+				"S2"
+			]
+		},
+		{
+			"text": "Structure the summary into: who is affected, what action to take, and which environments are pending validation, with the Windows caveat in the first paragraph (not a footnote) to prevent over-broad forwarding as proof of universal recovery.",
+			"citations": [
+				"S3"
+			]
+		},
+		{
+			"text": "Reference the patched CLI’s new recovery command as the primary remediation: it checks stale credentials and cleans partial install state; however, note that docs/screenshots still reflect the old installer flow and should be updated before broad promotion.",
+			"citations": [
+				"S4"
+			]
+		},
+		{
+			"text": "Ensure customer-facing communications point to the new recovery command and credential-cleanup steps (with updated screenshots) and do not direct users to the old installer flow once the release candidate is promoted; Windows screenshots are still pending.",
+			"citations": [
+				"S5"
+			]
+		}
+	],
+	"openQuestions": [
+		"What exact wording will be used on the status page to avoid implying universal recovery while Windows validation is ongoing?",
+		"When will Windows recovery validation complete, and what are the interim Windows-specific instructions (especially for credential-cache issues)?",
+		"Is the release candidate (with the recovery command) ready for broad promotion, or should comms wait until docs and screenshots are updated?",
+		"What is the single “safe command” and the symptom-based decision tree that should be consistent across support macros and the incident briefing?"
+	],
+	"recommendation": "Use a standardized recovery summary template: (1) Impact/Who’s affected (call out partial installs), (2) Current status by OS (macOS/Linux verified; Windows pending validation, stated up front), (3) One safe recovery action (the new CLI recovery command) plus a brief ‘what it does’ (cleans partial state + stale credentials), (4) What not to do (avoid rerunning the old installer flow), and (5) Next update timing/validation milestones. Keep this segmentation consistent across the status page and support macros, and gate broad promotion on docs alignment.",
+	"metadata": {
+		"variant": "OpenAI Responses captured baseline",
+		"runId": "matrix-openai-responses-v1-20260707203251",
+		"model": "gpt-5.2"
+	}
+}

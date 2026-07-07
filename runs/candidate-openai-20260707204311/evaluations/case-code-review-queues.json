@@ -1,0 +1,200 @@
+{
+	"id": "evaluation-candidate-openai-20260707204311-case-code-review-queues",
+	"runId": "candidate-openai-20260707204311",
+	"caseId": "case-code-review-queues",
+	"evaluator": {
+		"mode": "hybrid",
+		"provider": "openai",
+		"model": "gpt-5.5",
+		"promptVersion": "hybrid-judge-v1",
+		"settings": {
+			"structuredOutputName": "hybrid_evaluator_output"
+		},
+		"latencyMs": 21352,
+		"cost": {
+			"inputTokens": 2138,
+			"cachedInputTokens": 0,
+			"outputTokens": 976,
+			"estimatedUsd": 0.03997,
+			"pricing": {
+				"model": "gpt-5.5",
+				"inputUsdPer1MTokens": 5,
+				"cachedInputUsdPer1MTokens": 0.5,
+				"outputUsdPer1MTokens": 30,
+				"currency": "USD",
+				"serviceTier": "standard",
+				"context": "short",
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-24"
+			}
+		}
+	},
+	"hardChecks": [
+		{
+			"id": "briefing-schema",
+			"label": "Briefing schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "BriefingOutput schema parses"
+		},
+		{
+			"id": "citation-source-ids",
+			"label": "Citation source ids",
+			"status": "pass",
+			"value": "6 cited ids exist",
+			"expectation": "Every cited source id exists in the source packet"
+		},
+		{
+			"id": "trace-schema",
+			"label": "Trace schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "GenerationTrace schema parses"
+		},
+		{
+			"id": "latency-metadata",
+			"label": "Latency metadata",
+			"status": "pass",
+			"value": "10012ms",
+			"threshold": "> 0ms"
+		},
+		{
+			"id": "cost-metadata",
+			"label": "Cost metadata",
+			"status": "pass",
+			"value": "0.009401",
+			"expectation": "estimatedUsd is present when pricing is configured"
+		},
+		{
+			"id": "token-metadata",
+			"label": "Token metadata",
+			"status": "pass",
+			"value": "924 in / 0 cached / 556 out",
+			"expectation": "Input, cached-input, and output token counts are coherent"
+		},
+		{
+			"id": "model-metadata",
+			"label": "Provider and model metadata",
+			"status": "pass",
+			"value": "openai gpt-5.2 openai-loop-v5-citation-pairing",
+			"expectation": "Provider, model, and prompt version are present"
+		},
+		{
+			"id": "judge-input-boundary",
+			"label": "Judge input boundary",
+			"status": "pass",
+			"value": "eval-only fields omitted",
+			"expectation": "Judge prompt omits eval-only object keys and holdout tuning fields"
+		},
+		{
+			"id": "judge-claim-coverage",
+			"label": "Judge claim coverage",
+			"status": "pass",
+			"value": "5/5 claims judged, 0 extra",
+			"expectation": "LLM judge returns exactly one judgment for every briefing claim"
+		}
+	],
+	"claimJudgments": [
+		{
+			"claimText": "Treat the long tail (e.g., 90th percentile 46 hours) as an ownership-routing bottleneck: complex and cross-service changes disproportionately wait on the same scarce senior reviewers, so improvements should prioritize better ownership-based routing over adding generic reviewer capacity.",
+			"citedSourceIds": ["S1"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S1"],
+			"missingEvidence": [],
+			"explanation": "S1 states the 90th percentile remains 46 hours, complex/shared-service changes wait for the same two senior reviewers, and the report recommends treating tail latency as an ownership-routing problem rather than only staffing.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Use automation to organize and accelerate routing (auto-assignment for routine work, clustering similar low-risk changes, surfacing missing ownership metadata), but keep approvals gated by branch protection because the helper cannot verify semantic ownership or override required reviewers.",
+			"citedSourceIds": ["S2", "S4", "S6"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S2", "S4", "S6"],
+			"missingEvidence": [],
+			"explanation": "S2 supports auto-assignment for routine changes and skepticism of bot approvals; S4 supports clustering, reviewer suggestions, surfacing missing ownership metadata, and limits on semantic ownership/branch protection; S6 says automation may organize queues but must not bypass required approvals.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Constrain “fast-track” to low-risk documentation and configuration changes only when tests are healthy, and make the label explain *why* it is low risk (ownership metadata, test health, file category) and remain challengeable before merge.",
+			"citedSourceIds": ["S2", "S6"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S2", "S6"],
+			"missingEvidence": [],
+			"explanation": "S6 supports fast-track labels for documentation/configuration changes when tests are healthy, while S2 supports explainable labels using ownership metadata, test health, and file categories, and says the label should be challengeable before merge.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Add explicit safeguards for cross-service changes: incidents occurred when cross-service changes were fast-tracked without the owning team, and policy still requires an owning-team reviewer even if predicted defect risk is low.",
+			"citedSourceIds": ["S3", "S6"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S3", "S6"],
+			"missingEvidence": [],
+			"explanation": "S3 says two incidents came from fast-tracking cross-service changes without the owning team; S6 says cross-service changes still require an owning-team reviewer even if the helper predicts low defect risk.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Make ownership uncertainty visible as a queue risk signal (missing/conflicting/stale ownership), especially for shared services where entries are often stale; avoid hiding uncertainty behind auto-assignment and instead surface it to reviewers early.",
+			"citedSourceIds": ["S5"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S5"],
+			"missingEvidence": [],
+			"explanation": "S5 says shared service changes often inherit stale ownership entries and recommends showing missing or conflicting ownership as a queue risk rather than hiding it behind auto-assignment, with uncertainty explained before faster routing.",
+			"failureTags": []
+		}
+	],
+	"recommendationJudgment": {
+		"taskAnswerStatus": "answers-task",
+		"overconfidenceStatus": "calibrated",
+		"missingImportantEvidence": [],
+		"explanation": "The recommendation is well supported by the packet: it targets queue-time reduction through ownership-first routing and helper-assisted organization, while protecting merge quality through branch protection, explainable/challengeable fast-track labels limited to low-risk docs/config with healthy tests, and owning-team review for cross-service changes.",
+		"failureTags": []
+	},
+	"scores": {
+		"overall": 0.95,
+		"grounding": 0.88,
+		"coverage": 1,
+		"citationSupport": 1
+	},
+	"failureTags": [],
+	"rubricEvidence": [
+		"Hybrid claim support score: 1.00.",
+		"Recommendation task fit: answers-task.",
+		"Overconfidence: calibrated.",
+		"Hard-check cap: 1.00."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "S1 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "S2 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "S4 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S6",
+			"supported": true,
+			"note": "S6 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "S3 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S5",
+			"supported": true,
+			"note": "S5 appears in fully supported claim-level judgments."
+		}
+	],
+	"notes": "Hybrid evaluator output: deterministic hard checks plus structured LLM judge evidence. Manual spot checks are still required before claiming product improvement.",
+	"artifactPaths": [
+		"runs/candidate-openai-20260707204311/evaluations/case-code-review-queues.json",
+		"runs/candidate-openai-20260707204311/briefings/case-code-review-queues.json"
+	]
+}

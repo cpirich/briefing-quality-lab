@@ -1,0 +1,50 @@
+{
+	"id": "case-incident-recovery-comms-openai-responses-v1",
+	"sourcePacketId": "packet-incident-recovery",
+	"caseId": "case-incident-recovery-comms",
+	"title": "How to summarize recovery work after a setup incident",
+	"summary": "Summarize recovery as a segmented, action-first update: lead with who is affected (especially partial installs), give one safe next step, and clearly separate verified macOS/Linux recovery from Windows recovery still under validation. Avoid claiming universal resolution until Windows is verified, and ensure comms point to the new recovery command—not the old installer flow.",
+	"claims": [
+		{
+			"text": "Lead the recovery message with user symptoms (especially partial installs) and provide one safe next action to reduce confusion about rerunning setup vs. corrupting state or clearing credentials.",
+			"citations": [
+				"S1"
+			]
+		},
+		{
+			"text": "Do not use unqualified language like “resolved” unless environment caveats are prominent, because engineering has only verified macOS and Linux recovery so far; Windows recovery is still being validated and has an unresolved credential-cache issue.",
+			"citations": [
+				"S2"
+			]
+		},
+		{
+			"text": "Structure the communication into: who is affected, what action to take, and which environments remain pending validation; place the Windows caveat in the first paragraph rather than a footnote.",
+			"citations": [
+				"S3"
+			]
+		},
+		{
+			"text": "Highlight the patched CLI recovery command as the primary remediation because it checks stale credentials and cleans partial install state; note it is currently in a release candidate.",
+			"citations": [
+				"S4"
+			]
+		},
+		{
+			"text": "Coordinate messaging with documentation readiness: once the release candidate is promoted, customer communication should not direct users to the old installer flow; docs need updated recovery command instructions, credential cleanup steps, and new screenshots (Windows screenshots still pending).",
+			"citations": [
+				"S5"
+			]
+		}
+	],
+	"openQuestions": [
+		"What is the current validation status for Windows recovery, and is the credential-cache issue fully resolved?",
+		"Has the release-candidate CLI been promoted to general availability, and if so, are docs (including updated screenshots) published for macOS/Linux/Windows?",
+		"What exact “one safe command” should be used in customer-facing recovery steps, and are there any prerequisites/permissions that must be stated?"
+	],
+	"recommendation": "Generate a recovery briefing that (1) explicitly identifies the highest-friction cohort (partial installs) and lists symptoms, (2) gives a single safe CLI recovery command as the default next action, (3) segments guidance by environment with macOS and Linux marked “verified” and Windows marked “validation in progress,” and (4) avoids universal “resolved” language until Windows verification completes. Ensure any links/steps point to the patched recovery flow and hold broad promotion until docs are updated to remove the old installer path.",
+	"metadata": {
+		"variant": "OpenAI Responses captured baseline",
+		"runId": "matrix-openai-responses-v1-20260707204107",
+		"model": "gpt-5.2"
+	}
+}

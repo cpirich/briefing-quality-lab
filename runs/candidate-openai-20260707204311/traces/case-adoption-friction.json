@@ -1,0 +1,142 @@
+{
+	"id": "case-adoption-friction-openai-loop-v5-citation-pairing-trace",
+	"runId": "candidate-openai-20260707204311",
+	"caseId": "case-adoption-friction",
+	"sourcePacketId": "packet-dev-adoption",
+	"input": {
+		"userRequest": "Summarize adoption risks and recommend the next product-quality improvement for pilot expansion.",
+		"sourcePacketPath": "data/source-packets/packet-dev-adoption.json"
+	},
+	"messages": [
+		{
+			"role": "system",
+			"content": "You are Briefing Genie, a concise research briefing generator. Use only the provided synthetic source packet. Cite claims with source ids exactly as shown, such as A1 or B2. Do not invent citation ids, facts, or private data. Return a concise briefing suitable for a strategy review. First identify the distinct decision dimensions requested by the user, including risks, recommendations, tradeoffs, and approval boundaries. Use up to five claims to cover the highest-value dimensions before optimizing for brevity. When a claim combines facts from more than one source, cite every source needed to support the combined sentence. Do not rely on an uncited source to support any part of a claim or recommendation. Before finalizing, audit each claim: every quoted status, environment caveat, approval gate, old-flow warning, and recommended action must be directly supported by the cited source ids. Use cautious wording for inferred priority: say a source-supported action is recommended, not primary or required, unless the source explicitly says so. Make the recommendation name the main action plus the most important caveat or dependency, with citations represented in the claims."
+		},
+		{
+			"role": "user",
+			"content": "User request: Summarize adoption risks and recommend the next product-quality improvement for pilot expansion.\n\nSource packet: Developer Adoption Review\n\nPacket summary: Product signals from docs usage, support tickets, onboarding interviews, and pilot-team notes.\n\nSources:\n\n[S1] Docs analytics\nType: analytics digest\nQuickstart completion rose from 44% to 58% after the copy refresh, and the first API call step now has fewer exits. The biggest remaining drop happens during local setup and credential configuration, where users bounce after seeing environment-specific errors.\n\nThe analytics pull covers the two weeks after the docs refresh. Completion improved most for users who already had a valid token, while new users without a configured environment still hit the same setup wall. The team noted that the success metric should not be presented as an end-to-end onboarding win until credential setup has its own recovery path.\n\n[S2] Support digest\nType: support summary\nMost new tickets mention environment drift, stale CLI versions, and unclear recovery steps after failed installs. Several teams found the right command only after support pasted an internal checklist, which is not yet reflected in public docs.\n\nSupport agents grouped the tickets into stale CLI installs, missing environment variables, and credentials copied from the wrong workspace. The internal checklist resolved most cases, but it relied on steps that public docs do not mention. Several tickets reopened when users repeated the quickstart from the top and reproduced the same failed state.\n\n[S3] Pilot interviews\nType: interview synthesis\nSenior engineers said they trust generated recommendations only when each claim points back to source snippets they can inspect. They were less concerned about prose polish than about knowing whether a recommendation came from analytics, support, or interview evidence.\n\nInterviewees said they could tolerate a terse recommendation if the evidence trail was clear. One senior engineer said a confident recommendation without source links would be treated as a draft opinion, not a decision input. The strongest trust signal was seeing analytics, support tickets, and interview evidence separated rather than blended into one generic rationale.\n\n[S4] Pilot expansion note\nType: planning note\nTwo additional teams are available for a pilot next month, but the launch owner flagged setup recovery as the visible failure that would make the demo feel brittle. The note recommends expanding only after failed-install guidance and citation checks are observable in the lab.\n\nThe launch owner wants the next pilot to feel calm in front of observers. The note lists failed install recovery, credential reset copy, and trace-backed recommendations as prerequisites. It does not cancel the pilot expansion; it says expansion should wait until the most visible recovery failure has a documented path.\n\n[S5] Onboarding triage notes\nType: triage notes\nThe onboarding triage notes summarize a working session between docs, support, and developer relations. The group agreed that the quickstart copy is clearer than before, but the failure mode after a partial setup still feels like a dead end. Support wants a public recovery checklist for stale CLI versions, credential mismatches, and repeated setup attempts. Developer relations wants the pilot expansion message to say that recovery guidance is being hardened before more teams are added.\n\n[S6] Pilot readiness checklist\nType: readiness checklist\nThe pilot readiness checklist lists three gates for adding teams: the failed-install path must have public recovery steps, generated recommendations must show source citations, and the lab must expose whether a recommendation came from analytics, support, or interviews. The owner marked two teams as ready to participate but blocked scheduling until the setup recovery path can be demonstrated without support pasting an internal checklist."
+		}
+	],
+	"model": {
+		"provider": "openai",
+		"name": "gpt-5.2",
+		"settings": {
+			"promptVersion": "openai-loop-v5-citation-pairing",
+			"maxOutputTokens": 1200,
+			"structuredOutputName": "briefing_genie_output",
+			"textVerbosity": null,
+			"reasoningEffort": null,
+			"reasoningSummary": null,
+			"temperature": null,
+			"topP": null,
+			"truncation": null,
+			"toolChoice": null,
+			"parallelToolCalls": null
+		}
+	},
+	"output": {
+		"id": "case-adoption-friction-openai-loop-v5-citation-pairing",
+		"sourcePacketId": "packet-dev-adoption",
+		"caseId": "case-adoption-friction",
+		"title": "Adoption risks & next product-quality improvement for pilot expansion",
+		"summary": "Decision dimensions: (1) adoption risks in onboarding (setup/credentials/CLI drift), (2) approval boundaries/gates for adding pilot teams, (3) tradeoff between expanding now vs. hardening recovery and evidence transparency, (4) next improvement recommendation that reduces visible failure and support dependency, (5) how to present evidence/citations to build trust.",
+		"claims": [
+			{
+				"text": "The biggest remaining onboarding drop-off occurs during local setup and credential configuration, driven by environment-specific errors; the docs team cautioned that current completion gains should not be framed as end-to-end onboarding success until credential setup has a recovery path.",
+				"citations": ["S1"]
+			},
+			{
+				"text": "Support load and repeat failures are concentrated in stale CLI versions, missing environment variables, and credentials copied from the wrong workspace; an internal recovery checklist resolves most cases, but it is not in public docs and tickets often reopen when users rerun the quickstart and reproduce the failed state.",
+				"citations": ["S2"]
+			},
+			{
+				"text": "Pilot expansion is explicitly gated: public failed-install recovery steps must exist, recommendations must show source citations, and the lab must expose whether evidence came from analytics vs. support vs. interviews; two teams are available/ready, but scheduling is blocked until setup recovery can be demonstrated without support pasting the internal checklist.",
+				"citations": ["S6", "S4"]
+			},
+			{
+				"text": "Trust risk: senior engineers accept terse recommendations only when each claim is traceable to inspectable source snippets, and they prefer evidence streams (analytics/support/interviews) separated rather than blended into a generic rationale.",
+				"citations": ["S3"]
+			},
+			{
+				"text": "Cross-functional triage agrees the quickstart copy is improved but the post-partial-setup failure mode feels like a dead end; they want a public recovery checklist for stale CLI, credential mismatches, and repeated setup attempts, and to message that recovery guidance is being hardened before adding more teams.",
+				"citations": ["S5"]
+			}
+		],
+		"openQuestions": [
+			"What are the top 3–5 recovery scenarios to cover in a single public checklist first (e.g., stale CLI, missing env vars, wrong-workspace creds), and what exact steps from the internal checklist can be safely published?",
+			"What lab signal will be used to prove the recovery path is “demonstrable without support” (e.g., scripted failure injection + successful self-serve recovery)?",
+			"What minimal UI/UX or doc pattern will expose whether a recommendation came from analytics vs. support vs. interviews, and how will citations link to inspectable snippets?",
+			"Do we need a credential reset flow (or just improved copy/steps) to meet the ‘credential reset copy’ prerequisite before pilot expansion?"
+		],
+		"recommendation": "Prioritize a public, self-serve setup recovery path (failed install + credential/CLI/environment drift checklist) and demonstrate it in the lab before scheduling the next two pilot teams; pair this with visible source-citation/attribution for generated recommendations to meet the stated pilot gates and reduce the most visible ‘brittle demo’ failure mode.",
+		"metadata": {
+			"variant": "OpenAI loop v5 citation pairing",
+			"runId": "candidate-openai-20260707204311",
+			"model": "gpt-5.2"
+		}
+	},
+	"rawOutput": {
+		"id": "case-adoption-friction-openai-loop-v5-citation-pairing",
+		"sourcePacketId": "packet-dev-adoption",
+		"caseId": "case-adoption-friction",
+		"title": "Adoption risks & next product-quality improvement for pilot expansion",
+		"summary": "Decision dimensions: (1) adoption risks in onboarding (setup/credentials/CLI drift), (2) approval boundaries/gates for adding pilot teams, (3) tradeoff between expanding now vs. hardening recovery and evidence transparency, (4) next improvement recommendation that reduces visible failure and support dependency, (5) how to present evidence/citations to build trust.",
+		"claims": [
+			{
+				"text": "The biggest remaining onboarding drop-off occurs during local setup and credential configuration, driven by environment-specific errors; the docs team cautioned that current completion gains should not be framed as end-to-end onboarding success until credential setup has a recovery path.",
+				"citations": ["S1"]
+			},
+			{
+				"text": "Support load and repeat failures are concentrated in stale CLI versions, missing environment variables, and credentials copied from the wrong workspace; an internal recovery checklist resolves most cases, but it is not in public docs and tickets often reopen when users rerun the quickstart and reproduce the failed state.",
+				"citations": ["S2"]
+			},
+			{
+				"text": "Pilot expansion is explicitly gated: public failed-install recovery steps must exist, recommendations must show source citations, and the lab must expose whether evidence came from analytics vs. support vs. interviews; two teams are available/ready, but scheduling is blocked until setup recovery can be demonstrated without support pasting the internal checklist.",
+				"citations": ["S6", "S4"]
+			},
+			{
+				"text": "Trust risk: senior engineers accept terse recommendations only when each claim is traceable to inspectable source snippets, and they prefer evidence streams (analytics/support/interviews) separated rather than blended into a generic rationale.",
+				"citations": ["S3"]
+			},
+			{
+				"text": "Cross-functional triage agrees the quickstart copy is improved but the post-partial-setup failure mode feels like a dead end; they want a public recovery checklist for stale CLI, credential mismatches, and repeated setup attempts, and to message that recovery guidance is being hardened before adding more teams.",
+				"citations": ["S5"]
+			}
+		],
+		"openQuestions": [
+			"What are the top 3–5 recovery scenarios to cover in a single public checklist first (e.g., stale CLI, missing env vars, wrong-workspace creds), and what exact steps from the internal checklist can be safely published?",
+			"What lab signal will be used to prove the recovery path is “demonstrable without support” (e.g., scripted failure injection + successful self-serve recovery)?",
+			"What minimal UI/UX or doc pattern will expose whether a recommendation came from analytics vs. support vs. interviews, and how will citations link to inspectable snippets?",
+			"Do we need a credential reset flow (or just improved copy/steps) to meet the ‘credential reset copy’ prerequisite before pilot expansion?"
+		],
+		"recommendation": "Prioritize a public, self-serve setup recovery path (failed install + credential/CLI/environment drift checklist) and demonstrate it in the lab before scheduling the next two pilot teams; pair this with visible source-citation/attribution for generated recommendations to meet the stated pilot gates and reduce the most visible ‘brittle demo’ failure mode.",
+		"metadata": {
+			"variant": "OpenAI loop v5 citation pairing",
+			"runId": "candidate-openai-20260707204311",
+			"model": "gpt-5.2"
+		}
+	},
+	"toolCalls": [],
+	"cost": {
+		"inputTokens": 1029,
+		"cachedInputTokens": 0,
+		"outputTokens": 641,
+		"estimatedUsd": 0.01077475,
+		"pricing": {
+			"model": "gpt-5.2",
+			"inputUsdPer1MTokens": 1.75,
+			"cachedInputUsdPer1MTokens": 0.175,
+			"outputUsdPer1MTokens": 14,
+			"currency": "USD",
+			"serviceTier": "standard",
+			"context": "short",
+			"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+		}
+	},
+	"latencyMs": 10805,
+	"artifactPaths": [
+		"data/source-packets/packet-dev-adoption.json",
+		"runs/candidate-openai-20260707204311/briefings/case-adoption-friction.json",
+		"runs/candidate-openai-20260707204311/traces/case-adoption-friction.json"
+	]
+}

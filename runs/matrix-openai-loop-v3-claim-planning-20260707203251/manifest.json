@@ -1,0 +1,53 @@
+{
+	"runId": "matrix-openai-loop-v3-claim-planning-20260707203251",
+	"createdAt": "2026-07-07T20:33:45.173Z",
+	"variantLabel": "OpenAI loop v3 claim planning matrix slice",
+	"status": "complete",
+	"gitRef": "local-worktree",
+	"command": "bun run eval:matrix --variant-id=openai-loop-v3-claim-planning",
+	"caseIds": [
+		"case-adoption-friction",
+		"case-cost-latency-budget",
+		"case-incident-recovery-comms"
+	],
+	"aggregateMetrics": {
+		"overall": 0.87,
+		"grounding": 0.85,
+		"coverage": 0.79,
+		"citationSupport": 1,
+		"unsupportedClaims": 0,
+		"groundingRiskUnits": 0,
+		"medianLatencyMs": 8131,
+		"estimatedCostUsd": 0.028273,
+		"evaluatorEstimatedCostUsd": 0.11462,
+		"latencyRatio": 1
+	},
+	"guardrails": [
+		{
+			"id": "citation-support",
+			"label": "Citation support",
+			"status": "pass",
+			"value": "1.00",
+			"threshold": ">= 0.72"
+		},
+		{
+			"id": "unsupported-claims",
+			"label": "Unsupported claims",
+			"status": "pass",
+			"value": "0",
+			"threshold": "0"
+		}
+	],
+	"artifactPaths": [
+		"runs/matrix-openai-loop-v3-claim-planning-20260707203251/manifest.json",
+		"runs/matrix-openai-loop-v3-claim-planning-20260707203251/briefings/case-adoption-friction.json",
+		"runs/matrix-openai-loop-v3-claim-planning-20260707203251/traces/case-adoption-friction.json",
+		"runs/matrix-openai-loop-v3-claim-planning-20260707203251/evaluations/case-adoption-friction.json",
+		"runs/matrix-openai-loop-v3-claim-planning-20260707203251/briefings/case-cost-latency-budget.json",
+		"runs/matrix-openai-loop-v3-claim-planning-20260707203251/traces/case-cost-latency-budget.json",
+		"runs/matrix-openai-loop-v3-claim-planning-20260707203251/evaluations/case-cost-latency-budget.json",
+		"runs/matrix-openai-loop-v3-claim-planning-20260707203251/briefings/case-incident-recovery-comms.json",
+		"runs/matrix-openai-loop-v3-claim-planning-20260707203251/traces/case-incident-recovery-comms.json",
+		"runs/matrix-openai-loop-v3-claim-planning-20260707203251/evaluations/case-incident-recovery-comms.json"
+	]
+}

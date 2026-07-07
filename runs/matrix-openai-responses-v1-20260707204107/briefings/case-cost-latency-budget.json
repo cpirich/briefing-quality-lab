@@ -1,0 +1,51 @@
+{
+	"id": "case-cost-latency-budget-openai-responses-v1",
+	"sourcePacketId": "packet-cost-latency",
+	"caseId": "case-cost-latency-budget",
+	"title": "Recommendation: tracing depth and retry behavior for next demo run",
+	"summary": "Keep claim-level trace retention but surface only short per-claim summaries in the UI; cap retries tightly (one automatic retry only for transient provider errors) and log any retry-related cost/latency impact in a manifest. This balances reviewer speed, finance constraints, and live-demo responsiveness.",
+	"claims": [
+		{
+			"text": "The candidate prompt increased median token usage (~+11%) while improving latency (~+6%) because fewer outputs needed manual reruns; the speedup came from fewer repeated attempts, not shorter single generations.",
+			"citations": [
+				"S1"
+			]
+		},
+		{
+			"text": "Finance will approve demo-quality runs up to the reference target cost budget if you explain how extra tokens reduce review time; exceeding the budget requires smaller batches, stricter retry caps, or more aggressive trace summarization.",
+			"citations": [
+				"S2"
+			]
+		},
+		{
+			"text": "Reviewers find long traces useful only when summarized next to the specific failed claim; raw provider payload dumps slow review because evidence is hard to locate.",
+			"citations": [
+				"S3"
+			]
+		},
+		{
+			"text": "For the live demo, single briefings felt responsive under 10 seconds; longer full runs were acceptable if progress (current case, elapsed time, artifact path) updated continuously.",
+			"citations": [
+				"S4"
+			]
+		},
+		{
+			"text": "Draft policy proposes one automatic retry for transient provider errors, requires a manifest entry when retries affect cost/latency, and rejects silent repeated generations.",
+			"citations": [
+				"S5"
+			]
+		}
+	],
+	"openQuestions": [
+		"What is the reference target cost budget number for this demo run (and expected case batch size) so we can set an explicit stop/scale-down threshold per S2?",
+		"Which provider failures count as 'transient' for the one automatic retry (e.g., 5xx, timeouts), and what timeout threshold should trigger it?",
+		"Do we need full raw provider payloads available immediately during the demo, or is 'on disk only' acceptable with dashboard links (per S6)?",
+		"What percent of cases in the demo rehearsal breached the 10-second single-briefing threshold, and under which trace settings?"
+	],
+	"recommendation": "Tracing: retain detailed traces on disk, but in the dashboard show only a compact per-claim trace summary (selected source ids, what evidence is missing, retry count, and output path) to speed reviewer navigation and keep the demo readable. Avoid raw payload dumps by default; make them a drill-down link if needed. Retries: enable at most one automatic retry for transient provider errors only; disallow silent repeated generations. Record retry count and any cost/latency deltas in a manifest. If projected run cost approaches/exceeds the reference target budget, respond by reducing batch size and/or tightening retry behavior further rather than dropping claim-level summaries.",
+	"metadata": {
+		"variant": "OpenAI Responses captured baseline",
+		"runId": "matrix-openai-responses-v1-20260707204107",
+		"model": "gpt-5.2"
+	}
+}

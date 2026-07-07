@@ -1,0 +1,41 @@
+{
+	"id": "case-code-review-queues-openai-loop-v5-citation-pairing",
+	"sourcePacketId": "packet-code-review-queues",
+	"caseId": "case-code-review-queues",
+	"title": "Reducing code review queue time without increasing low-quality merges",
+	"summary": "Focus on cutting tail latency by routing cross-service and shared-service changes to the correct owning reviewers sooner, while using fast-track labels only for truly low-risk changes (docs/config) under healthy tests and existing branch protection gates.",
+	"claims": [
+		{
+			"text": "Treat the long tail (e.g., 90th percentile 46 hours) as an ownership-routing bottleneck: complex and cross-service changes disproportionately wait on the same scarce senior reviewers, so improvements should prioritize better ownership-based routing over adding generic reviewer capacity.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Use automation to organize and accelerate routing (auto-assignment for routine work, clustering similar low-risk changes, surfacing missing ownership metadata), but keep approvals gated by branch protection because the helper cannot verify semantic ownership or override required reviewers.",
+			"citations": ["S2", "S4", "S6"]
+		},
+		{
+			"text": "Constrain “fast-track” to low-risk documentation and configuration changes only when tests are healthy, and make the label explain *why* it is low risk (ownership metadata, test health, file category) and remain challengeable before merge.",
+			"citations": ["S2", "S6"]
+		},
+		{
+			"text": "Add explicit safeguards for cross-service changes: incidents occurred when cross-service changes were fast-tracked without the owning team, and policy still requires an owning-team reviewer even if predicted defect risk is low.",
+			"citations": ["S3", "S6"]
+		},
+		{
+			"text": "Make ownership uncertainty visible as a queue risk signal (missing/conflicting/stale ownership), especially for shared services where entries are often stale; avoid hiding uncertainty behind auto-assignment and instead surface it to reviewers early.",
+			"citations": ["S5"]
+		}
+	],
+	"openQuestions": [
+		"What are the exact criteria for “tests are healthy” in your environment (e.g., flake thresholds, required suites) to operationalize fast-track labels without reviewer distrust?",
+		"How will the process determine the owning team for cross-service/runtime-impacting changes when semantic ownership is unclear (given the helper can’t verify it)?",
+		"What escalation path or SLA should apply when the only valid reviewers are the same two senior reviewers (e.g., backup owner, rotation, or service-specific reviewer pool)?",
+		"Which file categories qualify as “documentation/configuration” for fast-track, and how will exceptions (e.g., config that changes runtime behavior) be handled?"
+	],
+	"recommendation": "Implement an ownership-first queue routing approach: deploy the queue helper for reviewer suggestions/clustering and to surface ownership gaps, and introduce explainable, challengeable fast-track labels limited to docs/config under healthy tests—while explicitly preserving branch protection and requiring owning-team review for all cross-service changes.",
+	"metadata": {
+		"variant": "OpenAI loop v5 citation pairing",
+		"runId": "candidate-openai-20260707204311",
+		"model": "gpt-5.2"
+	}
+}

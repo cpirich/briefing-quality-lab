@@ -1,0 +1,51 @@
+{
+	"id": "case-incident-recovery-comms-openai-loop-v4-coverage-anchors",
+	"sourcePacketId": "packet-incident-recovery",
+	"caseId": "case-incident-recovery-comms",
+	"title": "How Briefing Genie should summarize recovery work after a setup incident",
+	"summary": "Summarize recovery in a segmented, action-first format: lead with who is affected (especially partial installs), give one safe next action, and clearly state environment validation boundaries (macOS/Linux verified; Windows pending). Avoid “resolved everywhere” language until Windows recovery is validated, and align comms with updated docs once the release candidate is promoted.",
+	"claims": [
+		{
+			"text": "Lead the recovery summary with symptoms (especially partial installs) and provide exactly one clearly safe next action to reduce confusion about rerunning setup, credential clearing, or waiting for a patched CLI.",
+			"citations": [
+				"S1"
+			]
+		},
+		{
+			"text": "Do not claim the incident is universally “resolved”: engineering has only verified recovery on macOS and Linux, while Windows recovery steps are still being validated due to an unresolved credential-cache issue.",
+			"citations": [
+				"S2"
+			]
+		},
+		{
+			"text": "Structure the message into three blocks—who is affected, what action to take, and which environments are still pending validation—and place the Windows caveat in the first paragraph to prevent customers treating it as proof of universal recovery.",
+			"citations": [
+				"S3"
+			]
+		},
+		{
+			"text": "Reference the patched CLI’s new recovery command as the primary remediation because it checks stale credentials and cleans partial-install state, but note it is currently in the release candidate (and screenshots/docs still reflect the old installer flow).",
+			"citations": [
+				"S4"
+			]
+		},
+		{
+			"text": "Ensure the briefing mirrors support’s segmentation (verified macOS, verified Linux, pending Windows) and avoids pointing users to the old installer flow once the release candidate is promoted.",
+			"citations": [
+				"S6"
+			]
+		}
+	],
+	"openQuestions": [
+		"What is the explicit approval gate for changing public language from “mitigated/partial recovery” to “resolved,” and who signs off once Windows validation completes?",
+		"When will Windows recovery validation complete, and what interim guidance should Windows users follow given the credential-cache issue?",
+		"When will docs (including Windows screenshots) be updated to the new recovery command/installer path, and is comms blocked on that docs readiness checklist?",
+		"What exact “one safe command” string should Briefing Genie emit (and does it differ by OS), to stay consistent with support macros and engineering guidance?"
+	],
+	"recommendation": "Publish an incident recovery summary that is segmented by OS and centered on a single safe recovery command for partial installs, while explicitly caveating that Windows recovery is still pending validation; only promote “resolved” messaging and point users to the new flow after Windows validation and the docs update (including screenshots) are complete.",
+	"metadata": {
+		"variant": "OpenAI loop v4 coverage anchors",
+		"runId": "matrix-openai-loop-v4-coverage-anchors-20260707203645",
+		"model": "gpt-5.2"
+	}
+}

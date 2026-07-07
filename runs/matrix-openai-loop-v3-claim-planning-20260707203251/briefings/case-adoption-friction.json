@@ -1,0 +1,50 @@
+{
+	"id": "case-adoption-friction-openai-loop-v3-claim-planning",
+	"sourcePacketId": "packet-dev-adoption",
+	"caseId": "case-adoption-friction",
+	"title": "Developer Adoption: Risks for Pilot Expansion + Next Product-Quality Improvement",
+	"summary": "Adoption risk is concentrated in setup/credential recovery and the absence of public, repeatable remediation steps; this also blocks pilot expansion readiness. The next product-quality improvement for expansion should be a public, end-to-end “failed install/setup recovery” path (including stale CLI, env vars, and credential mismatch) that can be demonstrated without support intervention.",
+	"claims": [
+		{
+			"text": "Quickstart completion increased from 44% to 58% after the docs copy refresh, but the biggest remaining drop occurs during local setup and credential configuration where users bounce after environment-specific errors.",
+			"citations": [
+				"S1"
+			]
+		},
+		{
+			"text": "Support tickets from new users most often cite environment drift, stale CLI versions, and unclear recovery steps after failed installs.",
+			"citations": [
+				"S2"
+			]
+		},
+		{
+			"text": "Support’s internal checklist resolves most of the grouped issues (stale CLI installs, missing environment variables, and credentials copied from the wrong workspace), but those steps are not yet reflected in public docs.",
+			"citations": [
+				"S2"
+			]
+		},
+		{
+			"text": "Several support tickets reopened when users restarted the quickstart and reproduced the same failed state.",
+			"citations": [
+				"S2"
+			]
+		},
+		{
+			"text": "A cross-functional onboarding triage group agreed that the quickstart copy is clearer, but that failure after a partial setup still feels like a dead end; support wants a public recovery checklist for stale CLI versions, credential mismatches, and repeated setup attempts.",
+			"citations": [
+				"S5"
+			]
+		}
+	],
+	"openQuestions": [
+		"Which specific environment-specific errors are most common at the local setup/credential configuration drop-off, and can they be mapped to a small number of deterministic recovery branches? (S1)",
+		"What is the minimum set of public recovery steps needed to replace the internal support checklist without increasing complexity in the primary quickstart flow? (S2, S5)",
+		"What lab-visible signals (instrumentation/UX) will prove that users followed the recovery path successfully without support intervention, as required for readiness? (S4, S6)"
+	],
+	"recommendation": "Prioritize one product-quality improvement: ship a public, deterministic failed-install/setup recovery path (including stale CLI remediation, environment variable checks, credential mismatch/reset steps, and guidance for repeated setup attempts) and ensure it can be demonstrated end-to-end without support pasting an internal checklist. This directly targets the largest remaining onboarding drop-off during local setup/credentials and addresses the top support-ticket drivers, aligning with the expansion gating prerequisite that setup recovery be observable in the lab.",
+	"metadata": {
+		"variant": "OpenAI loop v3 claim planning",
+		"runId": "matrix-openai-loop-v3-claim-planning-20260707203251",
+		"model": "gpt-5.2"
+	}
+}

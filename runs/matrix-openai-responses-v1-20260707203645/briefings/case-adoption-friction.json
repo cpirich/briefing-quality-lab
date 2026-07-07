@@ -1,0 +1,50 @@
+{
+	"id": "case-adoption-friction-openai-responses-v1",
+	"sourcePacketId": "packet-dev-adoption",
+	"caseId": "case-adoption-friction",
+	"title": "Adoption risks & next product-quality improvement for pilot expansion",
+	"summary": "Onboarding completion improved after the docs refresh, but adoption is still blocked by setup/credential failures that lack a public recovery path. Support is repeatedly resolving issues using an internal checklist not reflected in docs, and pilot expansion is explicitly gated on making recovery and evidence/citations observable without human intervention.",
+	"claims": [
+		{
+			"text": "Quickstart completion increased from 44% to 58% after the copy refresh, with fewer exits at the first API call step.",
+			"citations": [
+				"S1"
+			]
+		},
+		{
+			"text": "The largest remaining drop-off occurs during local setup and credential configuration due to environment-specific errors; new users without a configured environment still hit the same setup wall.",
+			"citations": [
+				"S1"
+			]
+		},
+		{
+			"text": "Support tickets are dominated by environment drift, stale CLI versions, missing environment variables, and credentials copied from the wrong workspace; users often need an internal checklist to recover.",
+			"citations": [
+				"S2"
+			]
+		},
+		{
+			"text": "Tickets often reopen because users restart the quickstart and reproduce the same failed state, indicating the product/docs do not provide a reliable recovery loop after partial setup.",
+			"citations": [
+				"S2"
+			]
+		},
+		{
+			"text": "Pilot expansion is available (two additional teams next month) but is blocked by the visible brittleness of setup recovery; expansion should wait until failed-install guidance is observable in the lab.",
+			"citations": [
+				"S4"
+			]
+		}
+	],
+	"openQuestions": [
+		"Which specific recovery steps from the internal support checklist should be productized vs documented, and what is the minimum public version that resolves most cases?",
+		"What instrumentation will confirm that users successfully recover from partial setup (not just complete the quickstart with a pre-existing token)?",
+		"What is the lab/UX mechanism to visibly show evidence provenance (analytics vs support vs interviews) and source citations during pilot demos?"
+	],
+	"recommendation": "Prioritize a “setup recovery path” as the next product-quality improvement: publish and integrate a public recovery checklist/flow that resolves the top failure modes (stale CLI installs, missing env vars, workspace credential mismatches, repeated setup attempts) and can be demonstrated end-to-end without support intervention. This directly addresses the biggest onboarding drop-off and top support drivers, and it is the explicit gate for scheduling pilot expansion.",
+	"metadata": {
+		"variant": "OpenAI Responses captured baseline",
+		"runId": "matrix-openai-responses-v1-20260707203645",
+		"model": "gpt-5.2"
+	}
+}

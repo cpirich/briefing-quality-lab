@@ -15,18 +15,40 @@
 		"counts": {
 			"sourcePackets": 9,
 			"evalCases": 9,
-			"runManifests": 3,
-			"briefingOutputs": 21,
-			"generationTraces": 14,
-			"evaluatorOutputs": 21,
+			"runManifests": 5,
+			"briefingOutputs": 27,
+			"generationTraces": 20,
+			"evaluatorOutputs": 27,
 			"runComparisons": 2,
-			"focusedVariantMatrices": 0,
+			"focusedVariantMatrices": 1,
 			"loopTriageArtifacts": 1,
-			"variantSpecs": 2,
+			"variantSpecs": 3,
 			"artifacts": 6
 		}
 	},
 	"latestRuns": [
+		{
+			"runId": "matrix-openai-loop-v3-claim-planning-20260707203251",
+			"status": "complete",
+			"createdAt": "2026-07-07T20:33:45.173Z",
+			"variantLabel": "OpenAI loop v3 claim planning matrix slice",
+			"caseCount": 3,
+			"overall": 0.87,
+			"citationSupport": 1,
+			"unsupportedClaims": 0,
+			"medianLatencyMs": 8131
+		},
+		{
+			"runId": "matrix-openai-responses-v1-20260707203251",
+			"status": "complete",
+			"createdAt": "2026-07-07T20:33:17.888Z",
+			"variantLabel": "OpenAI Responses captured baseline matrix slice",
+			"caseCount": 3,
+			"overall": 0.91,
+			"citationSupport": 0.97,
+			"unsupportedClaims": 0,
+			"medianLatencyMs": 9480
+		},
 		{
 			"runId": "baseline-openai-20260624203921",
 			"status": "complete",
@@ -89,19 +111,25 @@
 			"title": "Missing Strongest Citation",
 			"count": 1,
 			"severity": "Low",
-			"cases": ["case-adoption-friction"]
+			"cases": [
+				"case-adoption-friction"
+			]
 		},
 		{
 			"title": "Quantifier Too Strong",
 			"count": 1,
 			"severity": "Low",
-			"cases": ["case-adoption-friction"]
+			"cases": [
+				"case-adoption-friction"
+			]
 		},
 		{
 			"title": "Citation Mismatch",
 			"count": 1,
 			"severity": "Low",
-			"cases": ["case-cost-latency-budget"]
+			"cases": [
+				"case-cost-latency-budget"
+			]
 		}
 	],
 	"recommendation": {
@@ -110,5 +138,7 @@
 		"nextCommand": "mise exec -- bun run eval:matrix"
 	},
 	"loopStatePath": "docs/briefing-loop-state.md",
-	"artifactPaths": ["runs/comparisons/triage/triage-20260701165550.json"]
+	"artifactPaths": [
+		"runs/comparisons/triage/triage-20260701165550.json"
+	]
 }

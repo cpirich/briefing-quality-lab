@@ -1,0 +1,53 @@
+{
+	"runId": "matrix-openai-loop-v5-citation-pairing-20260707204107",
+	"createdAt": "2026-07-07T20:42:33.799Z",
+	"variantLabel": "OpenAI loop v5 citation pairing matrix slice",
+	"status": "complete",
+	"gitRef": "local-worktree",
+	"command": "bun run eval:matrix --variant-id=openai-loop-v5-citation-pairing",
+	"caseIds": [
+		"case-adoption-friction",
+		"case-cost-latency-budget",
+		"case-incident-recovery-comms"
+	],
+	"aggregateMetrics": {
+		"overall": 0.92,
+		"grounding": 0.84,
+		"coverage": 0.97,
+		"citationSupport": 0.97,
+		"unsupportedClaims": 0,
+		"groundingRiskUnits": 0,
+		"medianLatencyMs": 9407,
+		"estimatedCostUsd": 0.02930375,
+		"evaluatorEstimatedCostUsd": 0.12816,
+		"latencyRatio": 1
+	},
+	"guardrails": [
+		{
+			"id": "citation-support",
+			"label": "Citation support",
+			"status": "pass",
+			"value": "0.97",
+			"threshold": ">= 0.72"
+		},
+		{
+			"id": "unsupported-claims",
+			"label": "Unsupported claims",
+			"status": "pass",
+			"value": "0",
+			"threshold": "0"
+		}
+	],
+	"artifactPaths": [
+		"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/manifest.json",
+		"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/briefings/case-adoption-friction.json",
+		"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/traces/case-adoption-friction.json",
+		"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/evaluations/case-adoption-friction.json",
+		"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/briefings/case-cost-latency-budget.json",
+		"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/traces/case-cost-latency-budget.json",
+		"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/evaluations/case-cost-latency-budget.json",
+		"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/briefings/case-incident-recovery-comms.json",
+		"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/traces/case-incident-recovery-comms.json",
+		"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/evaluations/case-incident-recovery-comms.json"
+	]
+}

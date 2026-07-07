@@ -1,0 +1,160 @@
+{
+	"id": "case-cost-latency-budget-openai-loop-v5-citation-pairing-trace",
+	"runId": "matrix-openai-loop-v5-citation-pairing-20260707204107",
+	"caseId": "case-cost-latency-budget",
+	"sourcePacketId": "packet-cost-latency",
+	"input": {
+		"userRequest": "Recommend how much tracing and retry behavior to keep for the next demo run.",
+		"sourcePacketPath": "data/source-packets/packet-cost-latency.json"
+	},
+	"messages": [
+		{
+			"role": "system",
+			"content": "You are Briefing Genie, a concise research briefing generator. Use only the provided synthetic source packet. Cite claims with source ids exactly as shown, such as A1 or B2. Do not invent citation ids, facts, or private data. Return a concise briefing suitable for a strategy review. First identify the distinct decision dimensions requested by the user, including risks, recommendations, tradeoffs, and approval boundaries. Use up to five claims to cover the highest-value dimensions before optimizing for brevity. When a claim combines facts from more than one source, cite every source needed to support the combined sentence. Do not rely on an uncited source to support any part of a claim or recommendation. Before finalizing, audit each claim: every quoted status, environment caveat, approval gate, old-flow warning, and recommended action must be directly supported by the cited source ids. Use cautious wording for inferred priority: say a source-supported action is recommended, not primary or required, unless the source explicitly says so. Make the recommendation name the main action plus the most important caveat or dependency, with citations represented in the claims."
+		},
+		{
+			"role": "user",
+			"content": "User request: Recommend how much tracing and retry behavior to keep for the next demo run.\n\nSource packet: Cost And Latency Budget Packet\n\nPacket summary: Run data, finance guidance, and user feedback about trace depth, retries, and demo responsiveness.\n\nSources:\n\n[S1] Run telemetry\nType: telemetry report\nThe candidate prompt reduced unsupported claims but increased median token usage by 11%. Latency improved by 6% because fewer generations needed manual reruns, even though each retained trace is longer.\n\nTelemetry compares the candidate prompt with the baseline over the visible eval set. Token usage rose because the candidate retained more claim-level evidence, but fewer outputs needed manual reruns. The latency improvement came from fewer repeated attempts, not from shorter single generations.\n\n[S2] Finance guidance\nType: finance note\nFinance approved demo-quality eval runs up to the reference target cost budget if the report shows why extra tokens reduce review time. Anything above that budget needs a smaller case batch or stricter retry cap.\n\nFinance accepted the reference target cost budget for demo-quality runs because better traces can reduce reviewer time. The approval is conditional: if the run exceeds that budget, the team should reduce batch size, cap retries, or summarize traces more aggressively. The note does not approve unlimited trace retention.\n\n[S3] Reviewer feedback\nType: reviewer feedback\nReviewers said long traces are useful only when they are summarized next to the claim that failed. Raw provider payloads alone slowed review because people had to search for the relevant evidence.\n\nReviewers liked traces when they were attached to the failed claim and cited source. Raw payload dumps slowed them down because they had to search for the relevant turn. The requested improvement is a short trace summary near each evaluator finding.\n\n[S4] Demo rehearsal\nType: rehearsal note\nThe live demo felt responsive when single briefings finished under 10 seconds and eval progress showed the current case. Stakeholders were tolerant of longer full runs if progress and artifact paths updated continuously.\n\nThe rehearsal note separates product responsiveness from lab-run duration. A single briefing felt live-demo safe under 10 seconds. Full eval runs could take longer if the UI showed the current case, elapsed time, and artifact path so observers understood progress.\n\n[S5] Retry policy draft\nType: policy draft\nThe retry policy draft proposes a small retry cap for demo eval runs. It allows one automatic retry for transient provider errors and requires a manifest entry when retries change cost or latency. The policy rejects silent repeated generations because they make cost harder to explain during review.\n\n[S6] Trace summary mock\nType: trace mock\nThe trace summary mock shows a short explanation beside each failed claim: selected source ids, missing evidence, retry count, and final output path. Reviewers preferred that mock to raw provider payloads. The mock keeps detailed traces on disk while making the dashboard readable during a live demo."
+		}
+	],
+	"model": {
+		"provider": "openai",
+		"name": "gpt-5.2",
+		"settings": {
+			"promptVersion": "openai-loop-v5-citation-pairing",
+			"maxOutputTokens": 1200,
+			"structuredOutputName": "briefing_genie_output",
+			"textVerbosity": null,
+			"reasoningEffort": null,
+			"reasoningSummary": null,
+			"temperature": null,
+			"topP": null,
+			"truncation": null,
+			"toolChoice": null,
+			"parallelToolCalls": null
+		}
+	},
+	"output": {
+		"id": "case-cost-latency-budget-openai-loop-v5-citation-pairing",
+		"sourcePacketId": "packet-cost-latency",
+		"caseId": "case-cost-latency-budget",
+		"title": "Next demo run: tracing + retry behavior recommendation",
+		"summary": "Keep claim-level trace summaries in the dashboard (with full traces saved to disk) and use a small, explicit retry cap (1 auto-retry only for transient provider errors). This preserves reviewer usefulness and demo responsiveness while staying within finance’s conditional cost approval and avoiding “silent” cost growth.",
+		"claims": [
+			{
+				"text": "Candidate prompt runs used 11% more tokens but improved latency by 6% mainly because fewer outputs needed manual reruns; the speedup came from fewer repeated attempts, not shorter single generations.",
+				"citations": [
+					"S1"
+				]
+			},
+			{
+				"text": "Finance will approve demo-quality eval runs up to the reference target cost budget if the report explains how extra tokens reduce review time; exceeding the budget requires reducing batch size, capping retries, or summarizing traces more aggressively (no approval for unlimited trace retention).",
+				"citations": [
+					"S2"
+				]
+			},
+			{
+				"text": "Reviewers find long traces useful only when summarized next to the failed claim and cited source; raw provider payload dumps slow review because reviewers must search for relevant evidence.",
+				"citations": [
+					"S3"
+				]
+			},
+			{
+				"text": "For live demo perception, a single briefing felt responsive under 10 seconds, and stakeholders tolerated longer full runs when progress (current case, elapsed time) and artifact paths updated continuously.",
+				"citations": [
+					"S4"
+				]
+			},
+			{
+				"text": "Policy direction supports a small retry cap for demo eval runs: allow one automatic retry for transient provider errors and require a manifest entry when retries change cost/latency; it rejects silent repeated generations that make cost harder to explain.",
+				"citations": [
+					"S5"
+				]
+			}
+		],
+		"openQuestions": [
+			"Is the next demo run expected to stay at/under the reference target cost budget, or should we proactively reduce batch size or trace verbosity to ensure compliance with finance’s conditional approval? (S2)",
+			"Do we need to optimize single-briefing completion time to consistently land under ~10 seconds, or will progress + artifact-path updates be sufficient for the planned format? (S4)",
+			"Should the dashboard display the trace-summary mock fields (selected source ids, missing evidence, retry count, output path) by default, keeping raw payloads only on disk to preserve readability? (S6)"
+		],
+		"recommendation": "Use summarized, claim-adjacent tracing in the UI (keeping full detailed traces on disk) and cap retries to 1 automatic retry for transient errors with explicit manifest logging; keep costs within the reference target budget unless you reduce batch size or further compress trace summaries if over budget.",
+		"metadata": {
+			"variant": "OpenAI loop v5 citation pairing",
+			"runId": "matrix-openai-loop-v5-citation-pairing-20260707204107",
+			"model": "gpt-5.2"
+		}
+	},
+	"rawOutput": {
+		"id": "case-cost-latency-budget-openai-loop-v5-citation-pairing",
+		"sourcePacketId": "packet-cost-latency",
+		"caseId": "case-cost-latency-budget",
+		"title": "Next demo run: tracing + retry behavior recommendation",
+		"summary": "Keep claim-level trace summaries in the dashboard (with full traces saved to disk) and use a small, explicit retry cap (1 auto-retry only for transient provider errors). This preserves reviewer usefulness and demo responsiveness while staying within finance’s conditional cost approval and avoiding “silent” cost growth.",
+		"claims": [
+			{
+				"text": "Candidate prompt runs used 11% more tokens but improved latency by 6% mainly because fewer outputs needed manual reruns; the speedup came from fewer repeated attempts, not shorter single generations.",
+				"citations": [
+					"S1"
+				]
+			},
+			{
+				"text": "Finance will approve demo-quality eval runs up to the reference target cost budget if the report explains how extra tokens reduce review time; exceeding the budget requires reducing batch size, capping retries, or summarizing traces more aggressively (no approval for unlimited trace retention).",
+				"citations": [
+					"S2"
+				]
+			},
+			{
+				"text": "Reviewers find long traces useful only when summarized next to the failed claim and cited source; raw provider payload dumps slow review because reviewers must search for relevant evidence.",
+				"citations": [
+					"S3"
+				]
+			},
+			{
+				"text": "For live demo perception, a single briefing felt responsive under 10 seconds, and stakeholders tolerated longer full runs when progress (current case, elapsed time) and artifact paths updated continuously.",
+				"citations": [
+					"S4"
+				]
+			},
+			{
+				"text": "Policy direction supports a small retry cap for demo eval runs: allow one automatic retry for transient provider errors and require a manifest entry when retries change cost/latency; it rejects silent repeated generations that make cost harder to explain.",
+				"citations": [
+					"S5"
+				]
+			}
+		],
+		"openQuestions": [
+			"Is the next demo run expected to stay at/under the reference target cost budget, or should we proactively reduce batch size or trace verbosity to ensure compliance with finance’s conditional approval? (S2)",
+			"Do we need to optimize single-briefing completion time to consistently land under ~10 seconds, or will progress + artifact-path updates be sufficient for the planned format? (S4)",
+			"Should the dashboard display the trace-summary mock fields (selected source ids, missing evidence, retry count, output path) by default, keeping raw payloads only on disk to preserve readability? (S6)"
+		],
+		"recommendation": "Use summarized, claim-adjacent tracing in the UI (keeping full detailed traces on disk) and cap retries to 1 automatic retry for transient errors with explicit manifest logging; keep costs within the reference target budget unless you reduce batch size or further compress trace summaries if over budget.",
+		"metadata": {
+			"variant": "OpenAI loop v5 citation pairing",
+			"runId": "matrix-openai-loop-v5-citation-pairing-20260707204107",
+			"model": "gpt-5.2"
+		}
+	},
+	"toolCalls": [],
+	"cost": {
+		"inputTokens": 899,
+		"cachedInputTokens": 0,
+		"outputTokens": 522,
+		"estimatedUsd": 0.00888125,
+		"pricing": {
+			"model": "gpt-5.2",
+			"inputUsdPer1MTokens": 1.75,
+			"cachedInputUsdPer1MTokens": 0.175,
+			"outputUsdPer1MTokens": 14,
+			"currency": "USD",
+			"serviceTier": "standard",
+			"context": "short",
+			"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+		}
+	},
+	"latencyMs": 8481,
+	"artifactPaths": [
+		"data/source-packets/packet-cost-latency.json",
+		"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/briefings/case-cost-latency-budget.json",
+		"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/traces/case-cost-latency-budget.json"
+	]
+}

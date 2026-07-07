@@ -1,0 +1,41 @@
+{
+	"id": "case-release-note-drift-openai-loop-v5-citation-pairing",
+	"sourcePacketId": "packet-release-note-drift",
+	"caseId": "case-release-note-drift",
+	"title": "Improving generated release notes while keeping customer-facing claims accurate",
+	"summary": "Generated release notes are mostly complete but drift when pull-request (PR) descriptions become stale after QA scope changes; customers particularly rely on accurate migration/compatibility caveats, and compliance requires explicit human approval for certain sensitive categories. Improve accuracy by shifting review effort to a lightweight, QA-delta-driven queue that highlights changed/removed/sensitive claims and enforces approval boundaries.",
+	"claims": [
+		{
+			"text": "Accuracy risk is concentrated in drift after QA: an audit found generated notes covered 83% of merged changes, but 14% of entries described behavior that changed after final QA, with highest-risk errors coming from stale PR descriptions that weren’t updated after scope cuts.",
+			"citations": ["S1"]
+		},
+		{
+			"text": "Customers prefer concise notes, but inaccurate claims (especially migration warnings/compatibility caveats and removed features) cause escalations; one escalation occurred when a generated note promised an admin toggle that was removed before release.",
+			"citations": ["S2", "S5"]
+		},
+		{
+			"text": "PR text alone is not reliable post-scope-cut: the QA delta log includes late changes (two feature renames, one admin toggle removed, one migration warning added) and QA asked generated notes to compare against this log before publication.",
+			"citations": ["S5"]
+		},
+		{
+			"text": "Workflow tradeoff/constraint: engineers will tag final-release deltas during QA but will not maintain a second changelog; a lightweight review queue that highlights changed/removed/sensitive claims is recommended so reviewers focus only on drift-prone parts.",
+			"citations": ["S3"]
+		},
+		{
+			"text": "Approval boundary: any customer-facing note mentioning security, data retention, or access control requires explicit human approval; speed benefits only if these sensitive claims are easy to spot, and editors are expected to focus on changed/removed claims and compatibility warnings rather than rewriting everything.",
+			"citations": ["S4", "S6"]
+		}
+	],
+	"openQuestions": [
+		"What exact taxonomy/labels will be used for (a) changed/removed claims, (b) migration/compatibility caveats, and (c) security/retention/access-control so the queue can reliably route items to the right reviewers?",
+		"Where will the QA delta log live in the release workflow (tooling/integration point) so the generator can automatically compare and flag discrepancies before publication?",
+		"What constitutes an “explicit approval record” in practice (system of record, approver roles, retention), and does it apply only to S4 categories or also to migration/compatibility warnings per customer success risk?",
+		"What is the acceptable threshold for missing minor items vs. claim accuracy (given 83% coverage but drift risk), and how will it be measured each release?"
+	],
+	"recommendation": "Adopt a QA-delta-driven review queue that automatically highlights changed/removed/sensitive claims in generated release notes and gates any security/data-retention/access-control statements behind explicit human approval, while keeping engineer effort limited to tagging final QA deltas rather than maintaining a parallel changelog.",
+	"metadata": {
+		"variant": "OpenAI loop v5 citation pairing",
+		"runId": "candidate-openai-20260707204311",
+		"model": "gpt-5.2"
+	}
+}
