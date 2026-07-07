@@ -1,0 +1,221 @@
+{
+	"id": "evaluation-matrix-openai-loop-v5-citation-pairing-20260707204107-case-cost-latency-budget",
+	"runId": "matrix-openai-loop-v5-citation-pairing-20260707204107",
+	"caseId": "case-cost-latency-budget",
+	"evaluator": {
+		"mode": "hybrid",
+		"provider": "openai",
+		"model": "gpt-5.5",
+		"promptVersion": "hybrid-judge-v1",
+		"settings": {
+			"structuredOutputName": "hybrid_evaluator_output"
+		},
+		"latencyMs": 24602,
+		"cost": {
+			"inputTokens": 1992,
+			"cachedInputTokens": 0,
+			"outputTokens": 1000,
+			"estimatedUsd": 0.03996,
+			"pricing": {
+				"model": "gpt-5.5",
+				"inputUsdPer1MTokens": 5,
+				"cachedInputUsdPer1MTokens": 0.5,
+				"outputUsdPer1MTokens": 30,
+				"currency": "USD",
+				"serviceTier": "standard",
+				"context": "short",
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-24"
+			}
+		}
+	},
+	"hardChecks": [
+		{
+			"id": "briefing-schema",
+			"label": "Briefing schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "BriefingOutput schema parses"
+		},
+		{
+			"id": "citation-source-ids",
+			"label": "Citation source ids",
+			"status": "pass",
+			"value": "5 cited ids exist",
+			"expectation": "Every cited source id exists in the source packet"
+		},
+		{
+			"id": "trace-schema",
+			"label": "Trace schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "GenerationTrace schema parses"
+		},
+		{
+			"id": "latency-metadata",
+			"label": "Latency metadata",
+			"status": "pass",
+			"value": "8481ms",
+			"threshold": "> 0ms"
+		},
+		{
+			"id": "cost-metadata",
+			"label": "Cost metadata",
+			"status": "pass",
+			"value": "0.00888125",
+			"expectation": "estimatedUsd is present when pricing is configured"
+		},
+		{
+			"id": "token-metadata",
+			"label": "Token metadata",
+			"status": "pass",
+			"value": "899 in / 0 cached / 522 out",
+			"expectation": "Input, cached-input, and output token counts are coherent"
+		},
+		{
+			"id": "model-metadata",
+			"label": "Provider and model metadata",
+			"status": "pass",
+			"value": "openai gpt-5.2 openai-loop-v5-citation-pairing",
+			"expectation": "Provider, model, and prompt version are present"
+		},
+		{
+			"id": "judge-input-boundary",
+			"label": "Judge input boundary",
+			"status": "pass",
+			"value": "eval-only fields omitted",
+			"expectation": "Judge prompt omits eval-only object keys and holdout tuning fields"
+		},
+		{
+			"id": "judge-claim-coverage",
+			"label": "Judge claim coverage",
+			"status": "pass",
+			"value": "5/5 claims judged, 0 extra",
+			"expectation": "LLM judge returns exactly one judgment for every briefing claim"
+		}
+	],
+	"claimJudgments": [
+		{
+			"claimText": "Candidate prompt runs used 11% more tokens but improved latency by 6% mainly because fewer outputs needed manual reruns; the speedup came from fewer repeated attempts, not shorter single generations.",
+			"citedSourceIds": [
+				"S1"
+			],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": [
+				"S1"
+			],
+			"missingEvidence": [],
+			"explanation": "S1 states token usage rose 11%, latency improved 6%, and the latency gain came from fewer manual reruns/repeated attempts rather than shorter single generations.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Finance will approve demo-quality eval runs up to the reference target cost budget if the report explains how extra tokens reduce review time; exceeding the budget requires reducing batch size, capping retries, or summarizing traces more aggressively (no approval for unlimited trace retention).",
+			"citedSourceIds": [
+				"S2"
+			],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": [
+				"S2"
+			],
+			"missingEvidence": [],
+			"explanation": "S2 directly says finance approved demo-quality runs up to the reference target budget if extra tokens are justified by reduced review time, and that over-budget runs require reducing batch size, capping retries, or more aggressive trace summarization; it also explicitly does not approve unlimited trace retention.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Reviewers find long traces useful only when summarized next to the failed claim and cited source; raw provider payload dumps slow review because reviewers must search for relevant evidence.",
+			"citedSourceIds": [
+				"S3"
+			],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": [
+				"S3"
+			],
+			"missingEvidence": [],
+			"explanation": "S3 says long traces are useful only when summarized next to the failed claim, reviewers liked traces attached to the failed claim and cited source, and raw payload dumps slowed review because reviewers had to search.",
+			"failureTags": []
+		},
+		{
+			"claimText": "For live demo perception, a single briefing felt responsive under 10 seconds, and stakeholders tolerated longer full runs when progress (current case, elapsed time) and artifact paths updated continuously.",
+			"citedSourceIds": [
+				"S4"
+			],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": [
+				"S4"
+			],
+			"missingEvidence": [],
+			"explanation": "S4 states single briefings felt demo-safe under 10 seconds and full eval runs could take longer if current case, elapsed time, and artifact path were shown.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Policy direction supports a small retry cap for demo eval runs: allow one automatic retry for transient provider errors and require a manifest entry when retries change cost/latency; it rejects silent repeated generations that make cost harder to explain.",
+			"citedSourceIds": [
+				"S5"
+			],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": [
+				"S5"
+			],
+			"missingEvidence": [],
+			"explanation": "S5 directly proposes a small retry cap, allows one automatic retry for transient provider errors, requires manifest entries when retries change cost or latency, and rejects silent repeated generations.",
+			"failureTags": []
+		}
+	],
+	"recommendationJudgment": {
+		"taskAnswerStatus": "answers-task",
+		"overconfidenceStatus": "calibrated",
+		"missingImportantEvidence": [
+			"The recommendation’s advice to keep full detailed traces on disk and use dashboard trace summaries is supported by S6, but S6 is not included in the main citedSourceIds/claims despite being important evidence."
+		],
+		"explanation": "The recommendation is well supported: keep claim-adjacent summarized traces because reviewers prefer them over raw payloads (S3/S6), retain full traces on disk for detail without hurting dashboard readability (S6), cap retries at one transient-error retry with manifest logging (S5), and stay within finance’s conditional budget guidance (S2). It also reflects demo responsiveness constraints from S4. The main weakness is citation coverage: S6 is used in an open question and supports a central recommendation, but it is omitted from the main cited source list.",
+		"failureTags": [
+			"minor-citation-omission"
+		]
+	},
+	"scores": {
+		"overall": 0.92,
+		"grounding": 0.85,
+		"coverage": 0.92,
+		"citationSupport": 1
+	},
+	"failureTags": [
+		"minor-citation-omission"
+	],
+	"rubricEvidence": [
+		"Hybrid claim support score: 1.00.",
+		"Recommendation task fit: answers-task.",
+		"Overconfidence: calibrated.",
+		"Hard-check cap: 1.00."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "S1 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "S2 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "S3 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "S4 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S5",
+			"supported": true,
+			"note": "S5 appears in fully supported claim-level judgments."
+		}
+	],
+	"notes": "Hybrid evaluator output: deterministic hard checks plus structured LLM judge evidence. Manual spot checks are still required before claiming product improvement.",
+	"artifactPaths": [
+		"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/evaluations/case-cost-latency-budget.json",
+		"runs/matrix-openai-loop-v5-citation-pairing-20260707204107/briefings/case-cost-latency-budget.json"
+	]
+}

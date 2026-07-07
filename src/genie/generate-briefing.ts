@@ -194,6 +194,7 @@ function traceFromBriefing({
 	variant,
 	settings,
 	prompt,
+	systemInstructions = "You are Briefing Genie. Return a short briefing with source citations.",
 	startedAt,
 	inputTokens,
 	cachedInputTokens,
@@ -208,6 +209,7 @@ function traceFromBriefing({
 	variant: GenerationVariant;
 	settings: GenerationModelSettings;
 	prompt: string;
+	systemInstructions?: string;
 	startedAt: number;
 	inputTokens: number;
 	cachedInputTokens?: number;
@@ -227,8 +229,7 @@ function traceFromBriefing({
 		messages: [
 			{
 				role: "system",
-				content:
-					"You are Briefing Genie. Return a short briefing with source citations.",
+				content: systemInstructions,
 			},
 			{
 				role: "user",
@@ -318,6 +319,52 @@ function generateLocalBriefing({
 	};
 }
 
+function openAIInstructionsForVariant(variant: GenerationVariant) {
+	const baseInstructions = [
+		"You are Briefing Genie, a concise research briefing generator.",
+		"Use only the provided synthetic source packet.",
+		"Cite claims with source ids exactly as shown, such as A1 or B2.",
+		"Do not invent citation ids, facts, or private data.",
+		"Return a concise briefing suitable for a strategy review.",
+	];
+
+	if (variant.promptVersion === "openai-loop-v3-claim-planning") {
+		return [
+			...baseInstructions,
+			"Before writing each claim, verify that its full sentence is directly supported by its citations.",
+			"Prefer the strongest direct citation for the decision point over a merely related citation.",
+			"If a detail is only partially supported, narrow the claim or move the uncertainty to open questions.",
+			"Avoid broad quantifiers, causal claims, and rollout recommendations unless the cited source directly supports them.",
+		].join(" ");
+	}
+
+	if (variant.promptVersion === "openai-loop-v4-coverage-anchors") {
+		return [
+			...baseInstructions,
+			"First identify the distinct decision dimensions requested by the user, including risks, recommendations, tradeoffs, and approval boundaries.",
+			"Use up to five claims to cover the highest-value dimensions before optimizing for brevity.",
+			"When the packet contains multiple important risk types, include at least one claim for each type instead of collapsing to a single theme.",
+			"Pair each claim with the strongest direct citation and narrow only the unsupported part, not the whole coverage area.",
+			"Make the recommendation name the primary action plus the most important caveat or dependency from the sources.",
+		].join(" ");
+	}
+
+	if (variant.promptVersion === "openai-loop-v5-citation-pairing") {
+		return [
+			...baseInstructions,
+			"First identify the distinct decision dimensions requested by the user, including risks, recommendations, tradeoffs, and approval boundaries.",
+			"Use up to five claims to cover the highest-value dimensions before optimizing for brevity.",
+			"When a claim combines facts from more than one source, cite every source needed to support the combined sentence.",
+			"Do not rely on an uncited source to support any part of a claim or recommendation.",
+			"Before finalizing, audit each claim: every quoted status, environment caveat, approval gate, old-flow warning, and recommended action must be directly supported by the cited source ids.",
+			"Use cautious wording for inferred priority: say a source-supported action is recommended, not primary or required, unless the source explicitly says so.",
+			"Make the recommendation name the main action plus the most important caveat or dependency, with citations represented in the claims.",
+		].join(" ");
+	}
+
+	return baseInstructions.join(" ");
+}
+
 async function generateOpenAIResponsesBriefing({
 	sourcePacket,
 	userRequest,
@@ -343,15 +390,10 @@ async function generateOpenAIResponsesBriefing({
 	const settings = modelSettingsForVariant(variant, {
 		structuredOutputName,
 	});
+	const instructions = openAIInstructionsForVariant(variant);
 	const response = await client.responses.parse({
 		model: variant.model,
-		instructions: [
-			"You are Briefing Genie, a concise research briefing generator.",
-			"Use only the provided synthetic source packet.",
-			"Cite claims with source ids exactly as shown, such as A1 or B2.",
-			"Do not invent citation ids, facts, or private data.",
-			"Return a concise briefing suitable for a strategy review.",
-		].join(" "),
+		instructions,
 		input: prompt,
 		text: {
 			format: zodTextFormat(
@@ -394,6 +436,7 @@ async function generateOpenAIResponsesBriefing({
 		variant,
 		settings,
 		prompt,
+		systemInstructions: instructions,
 		startedAt,
 		inputTokens,
 		cachedInputTokens,

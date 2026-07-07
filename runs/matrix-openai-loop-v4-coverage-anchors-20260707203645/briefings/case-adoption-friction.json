@@ -1,0 +1,51 @@
+{
+	"id": "case-adoption-friction-openai-loop-v4-coverage-anchors",
+	"sourcePacketId": "packet-dev-adoption",
+	"caseId": "case-adoption-friction",
+	"title": "Adoption risks + next product-quality improvement for pilot expansion",
+	"summary": "Adoption is improving at the docs level, but pilot expansion is currently gated by a brittle setup/credential recovery experience and insufficient evidence transparency in generated recommendations. The next product-quality improvement should focus on making failed-install/setup recovery self-serve and demonstrable without support intervention; in parallel, ensure recommendations expose source-backed citations and provenance in the lab before adding more teams.",
+	"claims": [
+		{
+			"text": "Primary adoption risk: users still drop during local setup and credential configuration due to environment-specific errors, so the improved quickstart completion should not be treated as end-to-end onboarding success until credential setup has a recovery path.",
+			"citations": [
+				"S1"
+			]
+		},
+		{
+			"text": "Operational/support risk: many new tickets are driven by environment drift, stale CLI versions, and unclear recovery steps; an internal checklist resolves most cases but isn’t in public docs, leading to repeated failed states and reopened tickets.",
+			"citations": [
+				"S2"
+			]
+		},
+		{
+			"text": "Pilot/launch risk: the most visible failure in a demo is setup recovery; expansion is recommended only after failed-install guidance and citation checks are observable in the lab, so the experience feels calm in front of observers.",
+			"citations": [
+				"S4"
+			]
+		},
+		{
+			"text": "Trust/decision-use risk: senior engineers only trust generated recommendations when each claim links back to inspectable source snippets and when provenance (analytics vs support vs interviews) is clearly separated, not blended.",
+			"citations": [
+				"S3"
+			]
+		},
+		{
+			"text": "Approval boundary (gates to add teams): scheduling is blocked until the failed-install path has public recovery steps and can be demonstrated without support pasting an internal checklist; additional gates require source citations and provenance visibility in the lab.",
+			"citations": [
+				"S6"
+			]
+		}
+	],
+	"openQuestions": [
+		"What is the minimum “public recovery path” definition the owner will accept (e.g., checklist + automated detection + reset flows), and what constitutes a successful lab demo without support intervention?",
+		"Which top failure modes should the recovery checklist cover first (stale CLI, missing env vars, wrong-workspace credentials, repeated setup attempts), and can we instrument them to measure recovery success?",
+		"What UI/UX mechanism will expose recommendation provenance and source citations in the lab (links, snippets, or both), and what level of granularity do pilot teams expect?",
+		"Can we align the pilot expansion messaging to explicitly set expectations that recovery guidance is being hardened, as requested by DevRel, without delaying momentum? (If so, what wording/positioning is acceptable?)"
+	],
+	"recommendation": "Prioritize a self-serve setup/failed-install recovery path (public checklist + clear credential reset/retry guidance) that can be demonstrated end-to-end in the lab without support pasting an internal checklist, and treat pilot expansion as dependent on that gate; in the same readiness pass, ensure generated recommendations visibly include source citations and provenance separation in the lab.",
+	"metadata": {
+		"variant": "OpenAI loop v4 coverage anchors",
+		"runId": "matrix-openai-loop-v4-coverage-anchors-20260707203645",
+		"model": "gpt-5.2"
+	}
+}

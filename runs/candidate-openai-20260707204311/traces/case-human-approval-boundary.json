@@ -1,0 +1,142 @@
+{
+	"id": "case-human-approval-boundary-openai-loop-v5-citation-pairing-trace",
+	"runId": "candidate-openai-20260707204311",
+	"caseId": "case-human-approval-boundary",
+	"sourcePacketId": "packet-human-approval",
+	"input": {
+		"userRequest": "Recommend which Briefing Genie actions can be automated and which should require human approval.",
+		"sourcePacketPath": "data/source-packets/packet-human-approval.json"
+	},
+	"messages": [
+		{
+			"role": "system",
+			"content": "You are Briefing Genie, a concise research briefing generator. Use only the provided synthetic source packet. Cite claims with source ids exactly as shown, such as A1 or B2. Do not invent citation ids, facts, or private data. Return a concise briefing suitable for a strategy review. First identify the distinct decision dimensions requested by the user, including risks, recommendations, tradeoffs, and approval boundaries. Use up to five claims to cover the highest-value dimensions before optimizing for brevity. When a claim combines facts from more than one source, cite every source needed to support the combined sentence. Do not rely on an uncited source to support any part of a claim or recommendation. Before finalizing, audit each claim: every quoted status, environment caveat, approval gate, old-flow warning, and recommended action must be directly supported by the cited source ids. Use cautious wording for inferred priority: say a source-supported action is recommended, not primary or required, unless the source explicitly says so. Make the recommendation name the main action plus the most important caveat or dependency, with citations represented in the claims."
+		},
+		{
+			"role": "user",
+			"content": "User request: Recommend which Briefing Genie actions can be automated and which should require human approval.\n\nSource packet: Human Approval Boundary Packet\n\nPacket summary: Notes about when AI-generated operational recommendations can act automatically versus require review.\n\nSources:\n\n[S1] Governance workshop\nType: workshop notes\nParticipants approved automatic drafting, summarization, and artifact linking when outputs are clearly marked as generated. They rejected automatic policy changes, customer commitments, and release blocking without a human approver.\n\nWorkshop participants drew a boundary between preparation and authority. Drafting, summarizing, and linking artifacts were acceptable because a human could inspect them before action. Policy changes, customer commitments, and release blocking were rejected because they change obligations or stop work without accountable approval.\n\n[S2] Operations incident note\nType: incident review\nA prior automation posted a recommendation as if it were an approved decision, causing two teams to pause rollout work unnecessarily. The incident review asks for explicit status labels: draft, recommendation, approved action, and blocked.\n\nThe incident note describes an automation that posted a recommendation in a channel where readers assumed it was an approved decision. Two teams paused rollout work before anyone confirmed the recommendation. The incident owner asked for status labels that distinguish draft analysis from approved action.\n\n[S3] Product analytics\nType: analytics digest\nUsers are most likely to accept generated briefings when the interface separates evidence, recommendation, and action controls. Acceptance drops when the recommendation and execution button appear in the same visual cluster.\n\nAnalytics showed higher acceptance when evidence, recommendation, and action controls were visually separated. Sessions with a combined recommendation-and-action cluster produced more cancellations and clarification clicks. The product team interpreted that as a sign that users need time to inspect evidence before acting.\n\n[S4] Legal review\nType: legal review\nAny automated message that could be interpreted as a customer commitment needs an accountable human reviewer. Legal approved internal draft summaries as long as they cannot be confused with final commitments.\n\nLegal approved generated internal drafts because they remain advisory. The same review rejected automated customer-facing commitments without an accountable reviewer. The legal note asks the product to make it impossible to confuse generated summaries with final commitments.\n\n[S5] Action taxonomy draft\nType: taxonomy draft\nThe action taxonomy draft divides Genie behavior into generated drafts, recommendations, approved actions, and blocked actions. Drafting and artifact linking are listed as safe defaults. Release blocks, customer commitments, policy changes, and external messages require an approver recorded in the artifact trail.\n\n[S6] Interface review notes\nType: interface review\nThe interface review notes warn against placing an execution button directly beside an AI recommendation. Reviewers want the evidence panel, recommendation panel, and action controls separated so users understand what is generated and what has been approved. The note recommends a visible status label before any action can be taken."
+		}
+	],
+	"model": {
+		"provider": "openai",
+		"name": "gpt-5.2",
+		"settings": {
+			"promptVersion": "openai-loop-v5-citation-pairing",
+			"maxOutputTokens": 1200,
+			"structuredOutputName": "briefing_genie_output",
+			"textVerbosity": null,
+			"reasoningEffort": null,
+			"reasoningSummary": null,
+			"temperature": null,
+			"topP": null,
+			"truncation": null,
+			"toolChoice": null,
+			"parallelToolCalls": null
+		}
+	},
+	"output": {
+		"id": "case-human-approval-boundary-openai-loop-v5-citation-pairing",
+		"sourcePacketId": "packet-human-approval",
+		"caseId": "case-human-approval-boundary",
+		"title": "Automation vs Human Approval Boundaries for Briefing Genie Actions",
+		"summary": "Automate “preparation” tasks that produce clearly labeled drafts users can inspect. Require human approval (with an accountable approver recorded) for actions that create obligations, affect customers, or stop work (e.g., release blocking). Reinforce this boundary in the UI with explicit status labels and separation between evidence, recommendation, and execution controls.",
+		"claims": [
+			{
+				"text": "Automate drafting, summarization, and artifact linking as safe defaults, provided outputs are clearly marked as AI-generated/drafts so a human can inspect before acting.",
+				"citations": ["S1", "S5", "S4"]
+			},
+			{
+				"text": "Require human approval for any action that changes obligations or operations: policy changes, customer commitments, release blocking, external/customer-facing messages; record the approver in the artifact trail.",
+				"citations": ["S1", "S5", "S4"]
+			},
+			{
+				"text": "Introduce and enforce explicit status labels (e.g., draft, recommendation, approved action, blocked) because a prior automation caused teams to treat a recommendation as an approved decision and pause rollout work unnecessarily.",
+				"citations": ["S2", "S5"]
+			},
+			{
+				"text": "UI should separate evidence, recommendation, and action controls, and avoid placing an execution button directly beside an AI recommendation; this layout correlates with higher user acceptance and reduces cancellations/clarification clicks.",
+				"citations": ["S3", "S6"]
+			},
+			{
+				"text": "Make it difficult to confuse generated summaries/recommendations with final commitments by ensuring drafts remain advisory and clearly distinct from approved actions.",
+				"citations": ["S4", "S2"]
+			}
+		],
+		"openQuestions": [
+			"Which specific external channels count as “external messages” in this product context (e.g., customer email, support ticket replies, public status page), and should any be allowed with templated, human-approved text only?",
+			"What is the minimum approver identity/role and audit trail detail required for “approved actions” (e.g., named individual vs on-call role) and where should it be stored?",
+			"Should any operational actions (e.g., notifying an internal on-call rotation) be permitted automatically if explicitly labeled as a draft/recommendation and non-blocking?",
+			"What default status should Genie assign when posting into shared channels to prevent misinterpretation (draft vs recommendation)?"
+		],
+		"recommendation": "Automate preparation outputs (drafts/summaries/artifact links) with prominent generated-status labeling, and require recorded human approval for policy changes, customer commitments/external messages, and release-blocking actions—implemented with strict status labels and UI separation between evidence, recommendation, and execution controls.",
+		"metadata": {
+			"variant": "OpenAI loop v5 citation pairing",
+			"runId": "candidate-openai-20260707204311",
+			"model": "gpt-5.2"
+		}
+	},
+	"rawOutput": {
+		"id": "case-human-approval-boundary-openai-loop-v5-citation-pairing",
+		"sourcePacketId": "packet-human-approval",
+		"caseId": "case-human-approval-boundary",
+		"title": "Automation vs Human Approval Boundaries for Briefing Genie Actions",
+		"summary": "Automate “preparation” tasks that produce clearly labeled drafts users can inspect. Require human approval (with an accountable approver recorded) for actions that create obligations, affect customers, or stop work (e.g., release blocking). Reinforce this boundary in the UI with explicit status labels and separation between evidence, recommendation, and execution controls.",
+		"claims": [
+			{
+				"text": "Automate drafting, summarization, and artifact linking as safe defaults, provided outputs are clearly marked as AI-generated/drafts so a human can inspect before acting.",
+				"citations": ["S1", "S5", "S4"]
+			},
+			{
+				"text": "Require human approval for any action that changes obligations or operations: policy changes, customer commitments, release blocking, external/customer-facing messages; record the approver in the artifact trail.",
+				"citations": ["S1", "S5", "S4"]
+			},
+			{
+				"text": "Introduce and enforce explicit status labels (e.g., draft, recommendation, approved action, blocked) because a prior automation caused teams to treat a recommendation as an approved decision and pause rollout work unnecessarily.",
+				"citations": ["S2", "S5"]
+			},
+			{
+				"text": "UI should separate evidence, recommendation, and action controls, and avoid placing an execution button directly beside an AI recommendation; this layout correlates with higher user acceptance and reduces cancellations/clarification clicks.",
+				"citations": ["S3", "S6"]
+			},
+			{
+				"text": "Make it difficult to confuse generated summaries/recommendations with final commitments by ensuring drafts remain advisory and clearly distinct from approved actions.",
+				"citations": ["S4", "S2"]
+			}
+		],
+		"openQuestions": [
+			"Which specific external channels count as “external messages” in this product context (e.g., customer email, support ticket replies, public status page), and should any be allowed with templated, human-approved text only?",
+			"What is the minimum approver identity/role and audit trail detail required for “approved actions” (e.g., named individual vs on-call role) and where should it be stored?",
+			"Should any operational actions (e.g., notifying an internal on-call rotation) be permitted automatically if explicitly labeled as a draft/recommendation and non-blocking?",
+			"What default status should Genie assign when posting into shared channels to prevent misinterpretation (draft vs recommendation)?"
+		],
+		"recommendation": "Automate preparation outputs (drafts/summaries/artifact links) with prominent generated-status labeling, and require recorded human approval for policy changes, customer commitments/external messages, and release-blocking actions—implemented with strict status labels and UI separation between evidence, recommendation, and execution controls.",
+		"metadata": {
+			"variant": "OpenAI loop v5 citation pairing",
+			"runId": "candidate-openai-20260707204311",
+			"model": "gpt-5.2"
+		}
+	},
+	"toolCalls": [],
+	"cost": {
+		"inputTokens": 885,
+		"cachedInputTokens": 0,
+		"outputTokens": 539,
+		"estimatedUsd": 0.00909475,
+		"pricing": {
+			"model": "gpt-5.2",
+			"inputUsdPer1MTokens": 1.75,
+			"cachedInputUsdPer1MTokens": 0.175,
+			"outputUsdPer1MTokens": 14,
+			"currency": "USD",
+			"serviceTier": "standard",
+			"context": "short",
+			"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+		}
+	},
+	"latencyMs": 9289,
+	"artifactPaths": [
+		"data/source-packets/packet-human-approval.json",
+		"runs/candidate-openai-20260707204311/briefings/case-human-approval-boundary.json",
+		"runs/candidate-openai-20260707204311/traces/case-human-approval-boundary.json"
+	]
+}

@@ -1,0 +1,53 @@
+{
+	"id": "case-adoption-friction-openai-loop-v5-citation-pairing",
+	"sourcePacketId": "packet-dev-adoption",
+	"caseId": "case-adoption-friction",
+	"title": "Adoption risks & next product-quality improvement for pilot expansion",
+	"summary": "Decision dimensions to review: (1) adoption risks in onboarding/setup, (2) product-quality improvement that reduces visible failure in demos, (3) pilot expansion tradeoff (speed vs readiness), and (4) approval boundaries/gates for adding teams (readiness checklist + launch owner constraints).",
+	"claims": [
+		{
+			"text": "Top adoption risk is setup/credential recovery: the biggest remaining drop in the quickstart happens during local setup and credential configuration, driven by environment-specific errors; support tickets echo this with environment drift, stale CLI versions, missing environment variables, and wrong-workspace credentials, often lacking clear recovery steps.",
+			"citations": [
+				"S1",
+				"S2"
+			]
+		},
+		{
+			"text": "Current onboarding improvements are real but incomplete: quickstart completion rose from 44%→58% after the docs copy refresh, with gains concentrated among users who already had a valid token; sources caution this should not be presented as an end-to-end onboarding win until credential/setup recovery has its own path.",
+			"citations": [
+				"S1"
+			]
+		},
+		{
+			"text": "Operational/demo risk for expansion: the launch owner flagged setup recovery as the most visible failure that makes the demo feel brittle and recommends expanding only after failed-install guidance is observable; the readiness checklist blocks scheduling until setup recovery can be demonstrated without support pasting an internal checklist.",
+			"citations": [
+				"S4",
+				"S6"
+			]
+		},
+		{
+			"text": "Documentation/support gap is causing repeat failures: an internal support checklist resolves most cases, but it is not in public docs; some tickets reopen when users restart the quickstart and reproduce the same failed state, and triage participants want a public recovery checklist for stale CLI, credential mismatches, and repeated attempts.",
+			"citations": [
+				"S2",
+				"S5"
+			]
+		},
+		{
+			"text": "Trust/decision risk in recommendations: pilot engineers want generated recommendations to include inspectable source snippets and to clearly indicate whether evidence came from analytics, support, or interviews; the pilot gating criteria require source citations and lab visibility into evidence origin.",
+			"citations": [
+				"S3",
+				"S6"
+			]
+		}
+	],
+	"openQuestions": [
+		"What specific recovery flows will be published and validated first (stale CLI remediation, credential reset, environment variable checks), and what is the acceptance test to prove they work from a partially failed state without support intervention? (S2, S5, S6)",
+		"What does “citation checks are observable in the lab” concretely mean (UI affordance, links to snippets, or audit log), and who signs off that it meets the pilot gate? (S4, S6)"
+	],
+	"recommendation": "Next product-quality improvement: ship and validate a public, end-to-end setup recovery path (failed install + credential reset + stale CLI/env drift checklist) that works from partially failed states without support, and only then schedule pilot expansion; in parallel, ensure generated recommendations show source citations and the lab clearly labels whether evidence came from analytics/support/interviews to meet pilot gates and trust expectations. (S2, S4, S5, S6, S3)",
+	"metadata": {
+		"variant": "OpenAI loop v5 citation pairing",
+		"runId": "matrix-openai-loop-v5-citation-pairing-20260707204107",
+		"model": "gpt-5.2"
+	}
+}

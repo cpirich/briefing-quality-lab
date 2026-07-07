@@ -1,0 +1,30 @@
+{
+	"id": "openai-loop-v5-citation-pairing",
+	"label": "OpenAI loop v5 citation pairing",
+	"status": "candidate",
+	"provider": "openai",
+	"model": "gpt-5.2",
+	"promptVersion": "openai-loop-v5-citation-pairing",
+	"hypothesis": "A citation-pairing audit layered on coverage anchors will preserve adoption-risk coverage while reducing incident-communication citation mismatch and overstated inference failures.",
+	"targetFailureTags": [
+		"citation-mismatch",
+		"partial-claim-support",
+		"judge-uncited-supporting-evidence",
+		"overstated-inference",
+		"missing-important-evidence"
+	],
+	"expectedMetricMovement": {
+		"overall": "flat-or-up",
+		"grounding": "up",
+		"coverage": "flat-or-up",
+		"citationSupport": "up",
+		"unsupportedClaims": "flat-or-down",
+		"latency": "flat-or-up",
+		"cost": "flat-or-up"
+	},
+	"budget": {
+		"maxEstimatedCostUsd": 0.25,
+		"maxMedianLatencyMs": 16000
+	},
+	"rollbackReason": "Reject if live generated evidence still shows incident-communication citation mismatch or partial support, loses adoption-friction coverage, exceeds the generation cost cap, or cannot be promoted with a complete matching visible case set."
+}

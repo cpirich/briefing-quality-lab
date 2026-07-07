@@ -1,0 +1,200 @@
+{
+	"id": "evaluation-candidate-openai-20260707204311-case-eval-loop",
+	"runId": "candidate-openai-20260707204311",
+	"caseId": "case-eval-loop",
+	"evaluator": {
+		"mode": "hybrid",
+		"provider": "openai",
+		"model": "gpt-5.5",
+		"promptVersion": "hybrid-judge-v1",
+		"settings": {
+			"structuredOutputName": "hybrid_evaluator_output"
+		},
+		"latencyMs": 15477,
+		"cost": {
+			"inputTokens": 2209,
+			"cachedInputTokens": 0,
+			"outputTokens": 1052,
+			"estimatedUsd": 0.042605,
+			"pricing": {
+				"model": "gpt-5.5",
+				"inputUsdPer1MTokens": 5,
+				"cachedInputUsdPer1MTokens": 0.5,
+				"outputUsdPer1MTokens": 30,
+				"currency": "USD",
+				"serviceTier": "standard",
+				"context": "short",
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-24"
+			}
+		}
+	},
+	"hardChecks": [
+		{
+			"id": "briefing-schema",
+			"label": "Briefing schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "BriefingOutput schema parses"
+		},
+		{
+			"id": "citation-source-ids",
+			"label": "Citation source ids",
+			"status": "pass",
+			"value": "6 cited ids exist",
+			"expectation": "Every cited source id exists in the source packet"
+		},
+		{
+			"id": "trace-schema",
+			"label": "Trace schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "GenerationTrace schema parses"
+		},
+		{
+			"id": "latency-metadata",
+			"label": "Latency metadata",
+			"status": "pass",
+			"value": "9393ms",
+			"threshold": "> 0ms"
+		},
+		{
+			"id": "cost-metadata",
+			"label": "Cost metadata",
+			"status": "pass",
+			"value": "0.01003625",
+			"expectation": "estimatedUsd is present when pricing is configured"
+		},
+		{
+			"id": "token-metadata",
+			"label": "Token metadata",
+			"status": "pass",
+			"value": "951 in / 0 cached / 598 out",
+			"expectation": "Input, cached-input, and output token counts are coherent"
+		},
+		{
+			"id": "model-metadata",
+			"label": "Provider and model metadata",
+			"status": "pass",
+			"value": "openai gpt-5.2 openai-loop-v5-citation-pairing",
+			"expectation": "Provider, model, and prompt version are present"
+		},
+		{
+			"id": "judge-input-boundary",
+			"label": "Judge input boundary",
+			"status": "pass",
+			"value": "eval-only fields omitted",
+			"expectation": "Judge prompt omits eval-only object keys and holdout tuning fields"
+		},
+		{
+			"id": "judge-claim-coverage",
+			"label": "Judge claim coverage",
+			"status": "pass",
+			"value": "5/5 claims judged, 0 extra",
+			"expectation": "LLM judge returns exactly one judgment for every briefing claim"
+		}
+	],
+	"claimJudgments": [
+		{
+			"claimText": "Reviewers report that broad automated runs increased scored cases but reduced usability: failures were harder to cluster into repeated patterns vs one-offs, slowing review and making prompt changes less actionable; smaller reviewed batches made repeated citation issues easier to group and act on.",
+			"citedSourceIds": ["S1", "S5"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S1", "S5"],
+			"missingEvidence": [],
+			"explanation": "S1 directly says the broad run increased cases scored but made it hard to distinguish repeated patterns from one-off mistakes, while the smaller batch made repeated citation issues easier to group and yielded more actionable prompt changes. S5 supports slower review and preference for fewer cases with clearer evidence/failure clustering.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Coverage can improve even as grounding regresses, so citation support should be an explicit shipping gate: candidates can look better in aggregate yet be blocked if unsupported claims reach customer-facing recommendations.",
+			"citedSourceIds": ["S2"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S2"],
+			"missingEvidence": [],
+			"explanation": "S2 explicitly states that coverage can improve while grounding regresses, citation support needs a shipping gate, and a candidate can look better in aggregate but be blocked if unsupported claims reach customer-facing recommendations.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Long traces are useful for diagnosing why a claim failed, but the last dry run saw a 1.34x cost increase due to unchecked retries; finance accepted trace retention only if retries are capped and the run manifest includes retry count, estimated cost, and a short explanation of what the trace helped resolve.",
+			"citedSourceIds": ["S3"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S3"],
+			"missingEvidence": [],
+			"explanation": "S3 supports all parts: long traces helped diagnose claim failures, unchecked retries caused a 1.34x cost increase, and finance accepted detailed trace retention when retries are capped and the manifest shows retry count, estimated cost, and what the trace resolved.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Holdout cases should be visible in dashboards only as summaries/aggregate scores, while their labels/expected answers should stay out of prompt-iteration workflows to reduce risk of memorizing visible examples and to catch overfitting to demo cases.",
+			"citedSourceIds": ["S4"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S4"],
+			"missingEvidence": [],
+			"explanation": "S4 directly states holdouts should appear in dashboards as summaries and aggregate scores, labels/expected answers should not appear in prompt-editing workflows, and the goal is to avoid memorization/overfitting to visible demo cases.",
+			"failureTags": []
+		},
+		{
+			"claimText": "A proposed path to expansion is to run one more visible batch before live orchestration, keeping citation support as a shipping gate, including retry counts in the manifest, and reporting holdout only in aggregate; expansion is framed as acceptable only if the next candidate improves grounding without exceeding the cost guardrail.",
+			"citedSourceIds": ["S6"],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": ["S6"],
+			"missingEvidence": [],
+			"explanation": "S6 explicitly recommends one more visible batch before live orchestration, citation support as a shipping gate, retry counts in the manifest, aggregate holdout reporting, and expansion only if grounding improves without exceeding the cost guardrail.",
+			"failureTags": []
+		}
+	],
+	"recommendationJudgment": {
+		"taskAnswerStatus": "answers-task",
+		"overconfidenceStatus": "calibrated",
+		"missingImportantEvidence": [],
+		"explanation": "The recommendation directly addresses whether to expand automated evals and balances coverage, citation support/grounding, trace utility, and cost. It is cautious and conditional, aligning with S1/S5 on smaller clustered batches, S2 on grounding gates, S3 on trace value with retry/cost controls, S4 on holdout handling, and S6 on the proposed expansion path. Open questions appropriately flag unspecified thresholds and batch size rather than inventing them.",
+		"failureTags": []
+	},
+	"scores": {
+		"overall": 0.95,
+		"grounding": 0.88,
+		"coverage": 1,
+		"citationSupport": 1
+	},
+	"failureTags": [],
+	"rubricEvidence": [
+		"Hybrid claim support score: 1.00.",
+		"Recommendation task fit: answers-task.",
+		"Overconfidence: calibrated.",
+		"Hard-check cap: 1.00."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "S1 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S5",
+			"supported": true,
+			"note": "S5 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "S2 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S3",
+			"supported": true,
+			"note": "S3 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S4",
+			"supported": true,
+			"note": "S4 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S6",
+			"supported": true,
+			"note": "S6 appears in fully supported claim-level judgments."
+		}
+	],
+	"notes": "Hybrid evaluator output: deterministic hard checks plus structured LLM judge evidence. Manual spot checks are still required before claiming product improvement.",
+	"artifactPaths": [
+		"runs/candidate-openai-20260707204311/evaluations/case-eval-loop.json",
+		"runs/candidate-openai-20260707204311/briefings/case-eval-loop.json"
+	]
+}

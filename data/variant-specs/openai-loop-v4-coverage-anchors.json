@@ -1,0 +1,30 @@
+{
+	"id": "openai-loop-v4-coverage-anchors",
+	"label": "OpenAI loop v4 coverage anchors",
+	"status": "rejected",
+	"provider": "openai",
+	"model": "gpt-5.2",
+	"promptVersion": "openai-loop-v4-coverage-anchors",
+	"hypothesis": "A coverage-first instruction that anchors each requested decision dimension to direct citations will recover important adoption-risk evidence while preserving citation support on the partial-support slice.",
+	"targetFailureTags": [
+		"coverage-gap",
+		"missing-important-evidence",
+		"partial-claim-support",
+		"missing-strongest-citation",
+		"citation-mismatch"
+	],
+	"expectedMetricMovement": {
+		"overall": "flat-or-up",
+		"grounding": "flat-or-up",
+		"coverage": "up",
+		"citationSupport": "flat-or-up",
+		"unsupportedClaims": "flat-or-down",
+		"latency": "flat-or-up",
+		"cost": "flat-or-up"
+	},
+	"budget": {
+		"maxEstimatedCostUsd": 0.25,
+		"maxMedianLatencyMs": 16000
+	},
+	"rollbackReason": "Reject if live generated evidence misses the adoption-risk coverage anchor, introduces unsupported claims, loses to the OpenAI baseline branch on the focused visible slice, or cannot be promoted with a complete matching visible case set."
+}

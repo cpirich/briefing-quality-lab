@@ -1,0 +1,51 @@
+{
+	"id": "case-cost-latency-budget-openai-responses-v1",
+	"sourcePacketId": "packet-cost-latency",
+	"caseId": "case-cost-latency-budget",
+	"title": "Recommendation: tracing + retries for next demo run",
+	"summary": "Keep claim-level trace summaries in the UI and retain full raw traces on disk, but avoid dumping raw provider payloads into the dashboard. Use a tight retry cap: allow exactly one automatic retry only for transient provider errors, and log any retry that changes cost/latency. This balances reviewer speed, finance constraints, and live-demo responsiveness.",
+	"claims": [
+		{
+			"text": "Candidate prompt increased median token usage by 11% while improving latency by 6% because fewer outputs needed manual reruns (not because single generations were shorter).",
+			"citations": [
+				"S1"
+			]
+		},
+		{
+			"text": "Finance will approve demo-quality runs up to the reference target cost budget if the report shows why extra tokens reduce reviewer time; exceeding the budget requires smaller batch size, stricter retry caps, or more aggressive trace summarization.",
+			"citations": [
+				"S2"
+			]
+		},
+		{
+			"text": "Reviewers find long traces useful only when summarized next to the failing claim; raw provider payload dumps slow review because evidence is hard to find.",
+			"citations": [
+				"S3"
+			]
+		},
+		{
+			"text": "Live demo felt responsive when a single briefing finished under ~10 seconds; stakeholders tolerated longer full runs if progress/artifact paths updated continuously.",
+			"citations": [
+				"S4"
+			]
+		},
+		{
+			"text": "Draft retry policy proposes one automatic retry for transient provider errors, requires a manifest entry when retries change cost/latency, and rejects silent repeated generations.",
+			"citations": [
+				"S5"
+			]
+		}
+	],
+	"openQuestions": [
+		"What is the current baseline retry count and how often are retries invoked for transient provider errors vs quality-related reruns?",
+		"Does the next demo run need full-batch eval, or can we reduce batch size to stay within the reference target cost budget if trace depth increases?",
+		"Can the dashboard show per-case progress (current case, elapsed time, artifact path) continuously during the run to maintain perceived responsiveness?",
+		"Will the UI implement the trace summary format (selected source ids, missing evidence, retry count, output path) beside each failed claim for this demo? (Mock exists.)"
+	],
+	"recommendation": "Tracing: Keep claim-level evidence and evaluator-facing summaries in the dashboard; avoid raw payload dumps. Store full detailed traces on disk and surface only (a) selected source ids, (b) what evidence is missing, (c) retry count, and (d) final output path beside each failed claim, per the preferred mock. Retries: Set retry cap to 1 automatic retry only for transient provider errors; no silent repeated generations. Require a manifest/log entry whenever a retry occurs and when it changes cost/latency. If cost threatens to exceed the reference target budget, first reduce batch size or further compress/summarize traces rather than increasing retries.",
+	"metadata": {
+		"variant": "OpenAI Responses captured baseline",
+		"runId": "matrix-openai-responses-v1-20260707203251",
+		"model": "gpt-5.2"
+	}
+}

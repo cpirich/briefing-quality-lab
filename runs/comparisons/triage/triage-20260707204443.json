@@ -1,0 +1,109 @@
+{
+	"id": "triage-20260707204443",
+	"createdAt": "2026-07-07T20:44:43.879Z",
+	"triageVersion": "lab-triage-v1",
+	"inputSignature": {
+		"triageVersion": "lab-triage-v1",
+		"latestComparisonId": "baseline-openai-20260624203921-candidate-openai-20260707204311",
+		"baselineRunId": "baseline-openai-20260624203921",
+		"candidateRunId": "candidate-openai-20260707204311",
+		"comparisonArtifactPath": "runs/comparisons/baseline-openai-20260624203921-candidate-openai-20260707204311.json"
+	},
+	"dataValidation": {
+		"status": "pass",
+		"message": "Run store fixtures validate.",
+		"counts": {
+			"sourcePackets": 9,
+			"evalCases": 9,
+			"runManifests": 10,
+			"briefingOutputs": 46,
+			"generationTraces": 39,
+			"evaluatorOutputs": 46,
+			"runComparisons": 3,
+			"focusedVariantMatrices": 3,
+			"loopTriageArtifacts": 1,
+			"variantSpecs": 5,
+			"artifacts": 26
+		}
+	},
+	"latestRuns": [
+		{
+			"runId": "candidate-openai-20260707204311",
+			"status": "complete",
+			"createdAt": "2026-07-07T20:44:13.140Z",
+			"variantLabel": "OpenAI loop v5 citation pairing",
+			"caseCount": 7,
+			"overall": 0.95,
+			"citationSupport": 1,
+			"unsupportedClaims": 7,
+			"medianLatencyMs": 10012
+		},
+		{
+			"runId": "matrix-openai-loop-v5-citation-pairing-20260707204107",
+			"status": "complete",
+			"createdAt": "2026-07-07T20:42:33.799Z",
+			"variantLabel": "OpenAI loop v5 citation pairing matrix slice",
+			"caseCount": 3,
+			"overall": 0.92,
+			"citationSupport": 0.97,
+			"unsupportedClaims": 0,
+			"medianLatencyMs": 9407
+		},
+		{
+			"runId": "matrix-openai-responses-v1-20260707204107",
+			"status": "complete",
+			"createdAt": "2026-07-07T20:41:39.443Z",
+			"variantLabel": "OpenAI Responses captured baseline matrix slice",
+			"caseCount": 3,
+			"overall": 0.89,
+			"citationSupport": 0.94,
+			"unsupportedClaims": 0,
+			"medianLatencyMs": 10321
+		},
+		{
+			"runId": "matrix-openai-loop-v4-coverage-anchors-20260707203645",
+			"status": "complete",
+			"createdAt": "2026-07-07T20:38:01.913Z",
+			"variantLabel": "OpenAI loop v4 coverage anchors matrix slice",
+			"caseCount": 3,
+			"overall": 0.89,
+			"citationSupport": 0.94,
+			"unsupportedClaims": 0,
+			"medianLatencyMs": 8268
+		},
+		{
+			"runId": "matrix-openai-responses-v1-20260707203645",
+			"status": "complete",
+			"createdAt": "2026-07-07T20:37:21.831Z",
+			"variantLabel": "OpenAI Responses captured baseline matrix slice",
+			"caseCount": 3,
+			"overall": 0.93,
+			"citationSupport": 0.97,
+			"unsupportedClaims": 0,
+			"medianLatencyMs": 10489
+		}
+	],
+	"latestComparison": {
+		"id": "baseline-openai-20260624203921-candidate-openai-20260707204311",
+		"baselineRunId": "baseline-openai-20260624203921",
+		"candidateRunId": "candidate-openai-20260707204311",
+		"recommendationLabel": "Promoted candidate",
+		"recommendationWarning": "Promotion creates display evidence for /lab; human verifier review is still required before a ship call."
+	},
+	"staleOrMissingArtifacts": [
+		{
+			"severity": "info",
+			"message": "No running or failed run manifests found."
+		}
+	],
+	"weakestFailureClusters": [],
+	"recommendation": {
+		"label": "needs human review",
+		"text": "Artifacts are valid, but no failure cluster is strong enough for an automatic ship recommendation.",
+		"nextCommand": "mise exec -- bun run eval:matrix"
+	},
+	"loopStatePath": "docs/briefing-loop-state.md",
+	"artifactPaths": [
+		"runs/comparisons/triage/triage-20260707204443.json"
+	]
+}

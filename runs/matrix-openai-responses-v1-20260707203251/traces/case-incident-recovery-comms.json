@@ -1,0 +1,162 @@
+{
+	"id": "case-incident-recovery-comms-openai-responses-v1-trace",
+	"runId": "matrix-openai-responses-v1-20260707203251",
+	"caseId": "case-incident-recovery-comms",
+	"sourcePacketId": "packet-incident-recovery",
+	"input": {
+		"userRequest": "Recommend how Briefing Genie should summarize recovery work after a setup incident.",
+		"sourcePacketPath": "data/source-packets/packet-incident-recovery.json"
+	},
+	"messages": [
+		{
+			"role": "system",
+			"content": "You are Briefing Genie, a concise research briefing generator. Use only the provided synthetic source packet. Cite claims with source ids exactly as shown, such as A1 or B2. Do not invent citation ids, facts, or private data. Return a concise briefing suitable for a strategy review."
+		},
+		{
+			"role": "user",
+			"content": "User request: Recommend how Briefing Genie should summarize recovery work after a setup incident.\n\nSource packet: Incident Recovery Communication Packet\n\nPacket summary: Support, status-page, and customer-success notes about communicating recovery after failed installs.\n\nSources:\n\n[S1] Support incident recap\nType: support recap\nA failed installer release caused 31 setup tickets in two days. The highest-friction users had partial installs: they could not tell whether to rerun setup, clear credentials, or wait for a patched CLI.\n\nThe support recap lists partial installs as the biggest source of confusion. Users were unsure whether rerunning setup would corrupt local state or clear credentials. Agents asked for a recovery message that starts with symptoms and then gives one safe next action.\n\n[S2] Status page draft\nType: status draft\nThe draft status update says the issue is resolved, but engineering has only verified recovery on macOS and Linux. Windows recovery steps are still being validated by the tooling team.\n\nThe status draft was written before Windows recovery validation finished. Engineering confirmed macOS and Linux, but the Windows path still had an unresolved credential-cache issue. The draft's word 'resolved' was flagged as too broad unless the environment caveat stayed visible.\n\n[S3] Customer success guidance\nType: customer guidance\nCustomer success wants a concise message that separates who is affected, what action they should take, and which environments are still pending validation. They specifically asked not to claim universal resolution until Windows is verified.\n\nCustomer success asked for a message that separates affected users, recommended action, and pending validation. They wanted the Windows caveat in the first paragraph rather than a footnote. Their concern was that customers would forward the status update internally as proof of universal recovery.\n\n[S4] Engineering fix note\nType: engineering note\nThe patched CLI adds a recovery command that checks stale credentials and cleans partial install state. The command is available in the release candidate, but docs screenshots still show the old installer flow.\n\nThe engineering note says the recovery command handles stale credentials and partial install cleanup. The command is available in the release candidate, while screenshots and public docs still show the old installer path. Engineering asked docs to update before broad promotion.\n\n[S5] Docs update checklist\nType: docs checklist\nThe docs update checklist requires the new recovery command, credential cleanup instructions, and screenshots for the patched installer path. The docs owner marked Windows screenshots as pending. The checklist says customer communication should not point users to the old installer flow once the release candidate is promoted.\n\n[S6] Support macro draft\nType: support macro\nThe support macro draft separates users into verified macOS, verified Linux, and pending Windows recovery paths. It gives partial-install users one safe command and tells Windows users that validation is still in progress. Support asked for the same segmentation to appear in any generated incident briefing."
+		}
+	],
+	"model": {
+		"provider": "openai",
+		"name": "gpt-5.2",
+		"settings": {
+			"promptVersion": "briefing-genie-v1",
+			"maxOutputTokens": 1200,
+			"structuredOutputName": "briefing_genie_output",
+			"textVerbosity": null,
+			"reasoningEffort": null,
+			"reasoningSummary": null,
+			"temperature": null,
+			"topP": null,
+			"truncation": null,
+			"toolChoice": null,
+			"parallelToolCalls": null
+		}
+	},
+	"output": {
+		"id": "case-incident-recovery-comms-openai-responses-v1",
+		"sourcePacketId": "packet-incident-recovery",
+		"caseId": "case-incident-recovery-comms",
+		"title": "How to summarize recovery work after a setup incident",
+		"summary": "Frame recovery messaging around the highest-friction failure mode (partial installs), give users one clearly safe next action, and explicitly segment guidance by environment. Avoid claiming universal resolution until Windows recovery is validated; keep the Windows caveat prominent. Align status-page, support macros, and docs so customers are not directed to the old installer flow once the patched CLI is promoted.",
+		"claims": [
+			{
+				"text": "Lead with symptoms of partial installs and provide one safe next action, because partial installs drove the most confusion and users feared rerunning setup could corrupt state or clear credentials.",
+				"citations": [
+					"S1"
+				]
+			},
+			{
+				"text": "Do not use a blanket “resolved” statement unless the environment caveat is clearly visible; engineering has verified recovery only on macOS and Linux, while Windows recovery steps are still being validated due to an unresolved credential-cache issue.",
+				"citations": [
+					"S2"
+				]
+			},
+			{
+				"text": "Structure the summary into: who is affected, what action to take, and which environments are pending validation, with the Windows caveat in the first paragraph (not a footnote) to prevent over-broad forwarding as proof of universal recovery.",
+				"citations": [
+					"S3"
+				]
+			},
+			{
+				"text": "Reference the patched CLI’s new recovery command as the primary remediation: it checks stale credentials and cleans partial install state; however, note that docs/screenshots still reflect the old installer flow and should be updated before broad promotion.",
+				"citations": [
+					"S4"
+				]
+			},
+			{
+				"text": "Ensure customer-facing communications point to the new recovery command and credential-cleanup steps (with updated screenshots) and do not direct users to the old installer flow once the release candidate is promoted; Windows screenshots are still pending.",
+				"citations": [
+					"S5"
+				]
+			}
+		],
+		"openQuestions": [
+			"What exact wording will be used on the status page to avoid implying universal recovery while Windows validation is ongoing?",
+			"When will Windows recovery validation complete, and what are the interim Windows-specific instructions (especially for credential-cache issues)?",
+			"Is the release candidate (with the recovery command) ready for broad promotion, or should comms wait until docs and screenshots are updated?",
+			"What is the single “safe command” and the symptom-based decision tree that should be consistent across support macros and the incident briefing?"
+		],
+		"recommendation": "Use a standardized recovery summary template: (1) Impact/Who’s affected (call out partial installs), (2) Current status by OS (macOS/Linux verified; Windows pending validation, stated up front), (3) One safe recovery action (the new CLI recovery command) plus a brief ‘what it does’ (cleans partial state + stale credentials), (4) What not to do (avoid rerunning the old installer flow), and (5) Next update timing/validation milestones. Keep this segmentation consistent across the status page and support macros, and gate broad promotion on docs alignment.",
+		"metadata": {
+			"variant": "OpenAI Responses captured baseline",
+			"runId": "matrix-openai-responses-v1-20260707203251",
+			"model": "gpt-5.2"
+		}
+	},
+	"rawOutput": {
+		"id": "case-incident-recovery-comms-openai-responses-v1",
+		"sourcePacketId": "packet-incident-recovery",
+		"caseId": "case-incident-recovery-comms",
+		"title": "How to summarize recovery work after a setup incident",
+		"summary": "Frame recovery messaging around the highest-friction failure mode (partial installs), give users one clearly safe next action, and explicitly segment guidance by environment. Avoid claiming universal resolution until Windows recovery is validated; keep the Windows caveat prominent. Align status-page, support macros, and docs so customers are not directed to the old installer flow once the patched CLI is promoted.",
+		"claims": [
+			{
+				"text": "Lead with symptoms of partial installs and provide one safe next action, because partial installs drove the most confusion and users feared rerunning setup could corrupt state or clear credentials.",
+				"citations": [
+					"S1"
+				]
+			},
+			{
+				"text": "Do not use a blanket “resolved” statement unless the environment caveat is clearly visible; engineering has verified recovery only on macOS and Linux, while Windows recovery steps are still being validated due to an unresolved credential-cache issue.",
+				"citations": [
+					"S2"
+				]
+			},
+			{
+				"text": "Structure the summary into: who is affected, what action to take, and which environments are pending validation, with the Windows caveat in the first paragraph (not a footnote) to prevent over-broad forwarding as proof of universal recovery.",
+				"citations": [
+					"S3"
+				]
+			},
+			{
+				"text": "Reference the patched CLI’s new recovery command as the primary remediation: it checks stale credentials and cleans partial install state; however, note that docs/screenshots still reflect the old installer flow and should be updated before broad promotion.",
+				"citations": [
+					"S4"
+				]
+			},
+			{
+				"text": "Ensure customer-facing communications point to the new recovery command and credential-cleanup steps (with updated screenshots) and do not direct users to the old installer flow once the release candidate is promoted; Windows screenshots are still pending.",
+				"citations": [
+					"S5"
+				]
+			}
+		],
+		"openQuestions": [
+			"What exact wording will be used on the status page to avoid implying universal recovery while Windows validation is ongoing?",
+			"When will Windows recovery validation complete, and what are the interim Windows-specific instructions (especially for credential-cache issues)?",
+			"Is the release candidate (with the recovery command) ready for broad promotion, or should comms wait until docs and screenshots are updated?",
+			"What is the single “safe command” and the symptom-based decision tree that should be consistent across support macros and the incident briefing?"
+		],
+		"recommendation": "Use a standardized recovery summary template: (1) Impact/Who’s affected (call out partial installs), (2) Current status by OS (macOS/Linux verified; Windows pending validation, stated up front), (3) One safe recovery action (the new CLI recovery command) plus a brief ‘what it does’ (cleans partial state + stale credentials), (4) What not to do (avoid rerunning the old installer flow), and (5) Next update timing/validation milestones. Keep this segmentation consistent across the status page and support macros, and gate broad promotion on docs alignment.",
+		"metadata": {
+			"variant": "OpenAI Responses captured baseline",
+			"runId": "matrix-openai-responses-v1-20260707203251",
+			"model": "gpt-5.2"
+		}
+	},
+	"toolCalls": [],
+	"cost": {
+		"inputTokens": 724,
+		"cachedInputTokens": 0,
+		"outputTokens": 587,
+		"estimatedUsd": 0.009485,
+		"pricing": {
+			"model": "gpt-5.2",
+			"inputUsdPer1MTokens": 1.75,
+			"cachedInputUsdPer1MTokens": 0.175,
+			"outputUsdPer1MTokens": 14,
+			"currency": "USD",
+			"serviceTier": "standard",
+			"context": "short",
+			"source": "OpenAI API pricing, standard short-context rates, 2026-06-23"
+		}
+	},
+	"latencyMs": 9480,
+	"artifactPaths": [
+		"data/source-packets/packet-incident-recovery.json",
+		"runs/matrix-openai-responses-v1-20260707203251/briefings/case-incident-recovery-comms.json",
+		"runs/matrix-openai-responses-v1-20260707203251/traces/case-incident-recovery-comms.json"
+	]
+}

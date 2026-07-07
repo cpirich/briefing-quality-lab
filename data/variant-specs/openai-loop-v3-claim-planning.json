@@ -1,0 +1,29 @@
+{
+	"id": "openai-loop-v3-claim-planning",
+	"label": "OpenAI loop v3 claim planning",
+	"status": "rejected",
+	"provider": "openai",
+	"model": "gpt-5.2",
+	"promptVersion": "openai-loop-v3-claim-planning",
+	"hypothesis": "Adding explicit claim-planning and strongest-citation instructions will reduce partial claim support and citation mismatch findings without materially reducing visible-case overall quality.",
+	"targetFailureTags": [
+		"partial-claim-support",
+		"missing-strongest-citation",
+		"citation-mismatch",
+		"unsupported-claim"
+	],
+	"expectedMetricMovement": {
+		"overall": "flat-or-up",
+		"grounding": "up",
+		"coverage": "flat-or-down",
+		"citationSupport": "up",
+		"unsupportedClaims": "down",
+		"latency": "flat-or-up",
+		"cost": "flat-or-up"
+	},
+	"budget": {
+		"maxEstimatedCostUsd": 0.25,
+		"maxMedianLatencyMs": 16000
+	},
+	"rollbackReason": "Reject if live generated evidence does not beat the stored OpenAI baseline on the partial-support cluster, introduces new unsupported claims, exceeds the generation cost cap, or cannot be promoted with a complete matching visible case set."
+}

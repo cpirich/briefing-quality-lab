@@ -1,0 +1,50 @@
+{
+	"id": "case-adoption-friction-openai-responses-v1",
+	"sourcePacketId": "packet-dev-adoption",
+	"caseId": "case-adoption-friction",
+	"title": "Adoption risks + next product-quality improvement for pilot expansion",
+	"summary": "Onboarding completion improved after the docs refresh, but adoption is still constrained by setup/credential failure states and unclear recovery. Pilot expansion is explicitly gated on making failed-install recovery self-serve and on improving trust signals in generated recommendations via traceable citations and labeled evidence sources.",
+	"claims": [
+		{
+			"text": "Quickstart completion increased from 44% to 58% after the docs copy refresh, and exits decreased at the first API-call step, but the largest remaining drop occurs during local setup and credential configuration due to environment-specific errors.",
+			"citations": [
+				"S1"
+			]
+		},
+		{
+			"text": "Completion gains were strongest for users who already had a valid token; new users without a configured environment still hit the same setup wall, and the team cautioned against treating the metric as end-to-end onboarding success until credential setup has a recovery path.",
+			"citations": [
+				"S1"
+			]
+		},
+		{
+			"text": "Support tickets from new users most often involve environment drift, stale CLI versions, missing environment variables, and credentials copied from the wrong workspace; users frequently lack clear recovery steps after failed installs.",
+			"citations": [
+				"S2"
+			]
+		},
+		{
+			"text": "An internal support checklist resolves most setup cases, but key steps are not in public docs, and tickets sometimes reopen when users restart the quickstart and reproduce the same broken state.",
+			"citations": [
+				"S2"
+			]
+		},
+		{
+			"text": "Pilot interviewees trust recommendations only when each claim links back to inspectable source snippets; they prefer evidence separated by origin (analytics vs support vs interviews) over blended rationales.",
+			"citations": [
+				"S3"
+			]
+		}
+	],
+	"openQuestions": [
+		"Which specific setup error clusters (by OS/shell/CI vs local) account for the highest bounce during credential configuration, and can we prioritize the top 2–3 with targeted recovery flows? (S1)",
+		"What is the minimal public-facing recovery checklist that matches the internal support checklist, and which steps are currently “support-only” knowledge? (S2)",
+		"What should the product’s observable “citation checks” and evidence-origin labeling look like in the lab to meet pilot prerequisites? (S4,S6)"
+	],
+	"recommendation": "Prioritize a self-serve setup recovery path as the next product-quality improvement before expanding the pilot: publish and integrate a public recovery checklist covering stale CLI version detection/upgrade, environment variable verification, workspace credential mismatch, and safe reset/retry from a partial install (including explicit ‘what state am I in’ diagnostics). This directly targets the biggest onboarding drop (local setup/credentials) and the top support drivers, and it is the explicit gate for scheduling additional pilot teams without relying on support pasting an internal checklist. In parallel (but second), implement trace-backed recommendations that display source citations and label whether evidence came from analytics/support/interviews to satisfy stated trust and readiness gates. (S1,S2,S4,S5,S6,S3)",
+	"metadata": {
+		"variant": "OpenAI Responses captured baseline",
+		"runId": "matrix-openai-responses-v1-20260707203251",
+		"model": "gpt-5.2"
+	}
+}

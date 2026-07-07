@@ -1,0 +1,69 @@
+{
+	"runId": "candidate-openai-20260707204311",
+	"createdAt": "2026-07-07T20:44:13.140Z",
+	"variantLabel": "OpenAI loop v5 citation pairing",
+	"status": "complete",
+	"gitRef": "local-worktree",
+	"command": "bun run eval:variant --provider=openai --evaluator=hybrid --run-id=candidate-openai-20260707204311 --concurrency=4 --baseline=baseline-openai-20260624203921 --variant-id=openai-loop-v5-citation-pairing",
+	"caseIds": [
+		"case-adoption-friction",
+		"case-code-review-queues",
+		"case-cost-latency-budget",
+		"case-eval-loop",
+		"case-human-approval-boundary",
+		"case-incident-recovery-comms",
+		"case-release-note-drift"
+	],
+	"aggregateMetrics": {
+		"overall": 0.95,
+		"grounding": 0.88,
+		"coverage": 0.99,
+		"citationSupport": 1,
+		"unsupportedClaims": 7,
+		"groundingRiskUnits": 7,
+		"medianLatencyMs": 10012,
+		"estimatedCostUsd": 0.0685965,
+		"evaluatorEstimatedCostUsd": 0.289175,
+		"latencyRatio": 0.94
+	},
+	"guardrails": [
+		{
+			"id": "citation-support",
+			"label": "Citation support",
+			"status": "pass",
+			"value": "1.00",
+			"threshold": ">= 0.72"
+		},
+		{
+			"id": "estimated-cost",
+			"label": "Estimated generation cost",
+			"status": "pass",
+			"value": "$0.0686",
+			"threshold": "Generation USD only; eval cost is reported separately and not budget-limited by this tool"
+		}
+	],
+	"artifactPaths": [
+		"runs/candidate-openai-20260707204311/manifest.json",
+		"runs/candidate-openai-20260707204311/briefings/case-adoption-friction.json",
+		"runs/candidate-openai-20260707204311/traces/case-adoption-friction.json",
+		"runs/candidate-openai-20260707204311/evaluations/case-adoption-friction.json",
+		"runs/candidate-openai-20260707204311/briefings/case-code-review-queues.json",
+		"runs/candidate-openai-20260707204311/traces/case-code-review-queues.json",
+		"runs/candidate-openai-20260707204311/evaluations/case-code-review-queues.json",
+		"runs/candidate-openai-20260707204311/briefings/case-cost-latency-budget.json",
+		"runs/candidate-openai-20260707204311/traces/case-cost-latency-budget.json",
+		"runs/candidate-openai-20260707204311/evaluations/case-cost-latency-budget.json",
+		"runs/candidate-openai-20260707204311/briefings/case-eval-loop.json",
+		"runs/candidate-openai-20260707204311/traces/case-eval-loop.json",
+		"runs/candidate-openai-20260707204311/evaluations/case-eval-loop.json",
+		"runs/candidate-openai-20260707204311/briefings/case-human-approval-boundary.json",
+		"runs/candidate-openai-20260707204311/traces/case-human-approval-boundary.json",
+		"runs/candidate-openai-20260707204311/evaluations/case-human-approval-boundary.json",
+		"runs/candidate-openai-20260707204311/briefings/case-incident-recovery-comms.json",
+		"runs/candidate-openai-20260707204311/traces/case-incident-recovery-comms.json",
+		"runs/candidate-openai-20260707204311/evaluations/case-incident-recovery-comms.json",
+		"runs/candidate-openai-20260707204311/briefings/case-release-note-drift.json",
+		"runs/candidate-openai-20260707204311/traces/case-release-note-drift.json",
+		"runs/candidate-openai-20260707204311/evaluations/case-release-note-drift.json"
+	]
+}

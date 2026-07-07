@@ -1,0 +1,213 @@
+{
+	"id": "evaluation-matrix-openai-loop-v3-claim-planning-20260707203251-case-adoption-friction",
+	"runId": "matrix-openai-loop-v3-claim-planning-20260707203251",
+	"caseId": "case-adoption-friction",
+	"evaluator": {
+		"mode": "hybrid",
+		"provider": "openai",
+		"model": "gpt-5.5",
+		"promptVersion": "hybrid-judge-v1",
+		"settings": {
+			"structuredOutputName": "hybrid_evaluator_output"
+		},
+		"latencyMs": 19151,
+		"cost": {
+			"inputTokens": 2231,
+			"cachedInputTokens": 0,
+			"outputTokens": 905,
+			"estimatedUsd": 0.038305,
+			"pricing": {
+				"model": "gpt-5.5",
+				"inputUsdPer1MTokens": 5,
+				"cachedInputUsdPer1MTokens": 0.5,
+				"outputUsdPer1MTokens": 30,
+				"currency": "USD",
+				"serviceTier": "standard",
+				"context": "short",
+				"source": "OpenAI API pricing, standard short-context rates, 2026-06-24"
+			}
+		}
+	},
+	"hardChecks": [
+		{
+			"id": "briefing-schema",
+			"label": "Briefing schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "BriefingOutput schema parses"
+		},
+		{
+			"id": "citation-source-ids",
+			"label": "Citation source ids",
+			"status": "pass",
+			"value": "3 cited ids exist",
+			"expectation": "Every cited source id exists in the source packet"
+		},
+		{
+			"id": "trace-schema",
+			"label": "Trace schema",
+			"status": "pass",
+			"value": "valid",
+			"expectation": "GenerationTrace schema parses"
+		},
+		{
+			"id": "latency-metadata",
+			"label": "Latency metadata",
+			"status": "pass",
+			"value": "8131ms",
+			"threshold": "> 0ms"
+		},
+		{
+			"id": "cost-metadata",
+			"label": "Cost metadata",
+			"status": "pass",
+			"value": "0.0089705",
+			"expectation": "estimatedUsd is present when pricing is configured"
+		},
+		{
+			"id": "token-metadata",
+			"label": "Token metadata",
+			"status": "pass",
+			"value": "934 in / 0 cached / 524 out",
+			"expectation": "Input, cached-input, and output token counts are coherent"
+		},
+		{
+			"id": "model-metadata",
+			"label": "Provider and model metadata",
+			"status": "pass",
+			"value": "openai gpt-5.2 openai-loop-v3-claim-planning",
+			"expectation": "Provider, model, and prompt version are present"
+		},
+		{
+			"id": "judge-input-boundary",
+			"label": "Judge input boundary",
+			"status": "pass",
+			"value": "eval-only fields omitted",
+			"expectation": "Judge prompt omits eval-only object keys and holdout tuning fields"
+		},
+		{
+			"id": "judge-claim-coverage",
+			"label": "Judge claim coverage",
+			"status": "pass",
+			"value": "5/5 claims judged, 0 extra",
+			"expectation": "LLM judge returns exactly one judgment for every briefing claim"
+		}
+	],
+	"claimJudgments": [
+		{
+			"claimText": "Quickstart completion increased from 44% to 58% after the docs copy refresh, but the biggest remaining drop occurs during local setup and credential configuration where users bounce after environment-specific errors.",
+			"citedSourceIds": [
+				"S1"
+			],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": [
+				"S1"
+			],
+			"missingEvidence": [],
+			"explanation": "S1 states the completion increase from 44% to 58% and identifies local setup/credential configuration with environment-specific errors as the biggest remaining drop-off.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Support tickets from new users most often cite environment drift, stale CLI versions, and unclear recovery steps after failed installs.",
+			"citedSourceIds": [
+				"S2"
+			],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": [
+				"S2"
+			],
+			"missingEvidence": [],
+			"explanation": "S2 says most new tickets mention environment drift, stale CLI versions, and unclear recovery steps after failed installs.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Support’s internal checklist resolves most of the grouped issues (stale CLI installs, missing environment variables, and credentials copied from the wrong workspace), but those steps are not yet reflected in public docs.",
+			"citedSourceIds": [
+				"S2"
+			],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": [
+				"S2"
+			],
+			"missingEvidence": [],
+			"explanation": "S2 identifies the grouped issues and says the internal checklist resolved most cases while relying on steps not mentioned in public docs.",
+			"failureTags": []
+		},
+		{
+			"claimText": "Several support tickets reopened when users restarted the quickstart and reproduced the same failed state.",
+			"citedSourceIds": [
+				"S2"
+			],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": [
+				"S2"
+			],
+			"missingEvidence": [],
+			"explanation": "S2 directly states that several tickets reopened when users repeated the quickstart and reproduced the same failed state.",
+			"failureTags": []
+		},
+		{
+			"claimText": "A cross-functional onboarding triage group agreed that the quickstart copy is clearer, but that failure after a partial setup still feels like a dead end; support wants a public recovery checklist for stale CLI versions, credential mismatches, and repeated setup attempts.",
+			"citedSourceIds": [
+				"S5"
+			],
+			"supportStatus": "supported",
+			"supportingEvidenceIds": [
+				"S5"
+			],
+			"missingEvidence": [],
+			"explanation": "S5 describes a docs/support/developer-relations working session, says the group agreed the quickstart is clearer but partial-setup failure feels like a dead end, and says support wants a public recovery checklist for the listed issues.",
+			"failureTags": []
+		}
+	],
+	"recommendationJudgment": {
+		"taskAnswerStatus": "partially-answers-task",
+		"overconfidenceStatus": "calibrated",
+		"missingImportantEvidence": [
+			"S3: Senior engineers' adoption/trust risk around generated recommendations needing inspectable source snippets and separated evidence types.",
+			"S4 and S6: Pilot expansion is gated not only on setup recovery but also on citation checks/source-backed recommendations being observable in the lab."
+		],
+		"explanation": "The briefing strongly supports the main recommended product-quality improvement: public failed-install/setup recovery, backed by S1, S2, S4, S5, and S6. However, the adoption-risk summary under-covers a second important pilot-expansion risk in the packet: trust in generated recommendations depends on source citations and visible evidence provenance. Because the user asked for adoption risks plural, omitting that risk makes the answer incomplete, though the chosen next improvement is well supported as the most visible setup-related blocker.",
+		"failureTags": [
+			"missing-important-evidence"
+		]
+	},
+	"scores": {
+		"overall": 0.73,
+		"grounding": 0.82,
+		"coverage": 0.44,
+		"citationSupport": 1
+	},
+	"failureTags": [
+		"coverage-gap",
+		"missing-important-evidence"
+	],
+	"rubricEvidence": [
+		"Hybrid claim support score: 1.00.",
+		"Recommendation task fit: partially-answers-task.",
+		"Overconfidence: calibrated.",
+		"Hard-check cap: 1.00."
+	],
+	"citationSupport": [
+		{
+			"citation": "S1",
+			"supported": true,
+			"note": "S1 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S2",
+			"supported": true,
+			"note": "S2 appears in fully supported claim-level judgments."
+		},
+		{
+			"citation": "S5",
+			"supported": true,
+			"note": "S5 appears in fully supported claim-level judgments."
+		}
+	],
+	"notes": "Hybrid evaluator output: deterministic hard checks plus structured LLM judge evidence. Manual spot checks are still required before claiming product improvement.",
+	"artifactPaths": [
+		"runs/matrix-openai-loop-v3-claim-planning-20260707203251/evaluations/case-adoption-friction.json",
+		"runs/matrix-openai-loop-v3-claim-planning-20260707203251/briefings/case-adoption-friction.json"
+	]
+}
