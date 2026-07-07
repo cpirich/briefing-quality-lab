@@ -69,7 +69,7 @@ Each generated baseline run should write the six artifact groups needed for a cr
 
 5. Aggregate metrics
    - Stored in the run manifest.
-   - Include overall, grounding, coverage, citation support, unsupported claim count, median latency, cost ratio, and latency ratio.
+   - Include overall, grounding, coverage, citation support, unsupported claim count, median latency, estimated cost, and latency ratio.
 
 6. Comparison/report artifacts
    - Generate only when a candidate run exists or when comparing against the reference target fixture intentionally.

@@ -3,7 +3,7 @@
 	"sourcePacketId": "packet-cost-latency",
 	"caseId": "case-cost-latency-budget",
 	"title": "Recommendation: tracing + retries for next demo run",
-	"summary": "Keep claim-level trace summaries in the UI and preserve full raw traces on disk, while enforcing a tight retry cap (1 auto retry for transient errors). This stays within the demo responsiveness target and keeps costs explainable under Finance’s 1.15x ceiling, while still reducing manual reruns.",
+	"summary": "Keep claim-level trace summaries in the UI and preserve full raw traces on disk, while enforcing a tight retry cap (1 auto retry for transient errors). This stays within the demo responsiveness target and keeps costs explainable under Finance’s reference target cost budget, while still reducing manual reruns.",
 	"claims": [
 		{
 			"text": "Use claim-level trace summaries (source ids + what evidence is missing) next to each evaluator finding; avoid raw payload dumps in the dashboard.",
@@ -27,11 +27,11 @@
 		}
 	],
 	"openQuestions": [
-		"Does the planned demo batch size, combined with the ~11% token increase, stay within Finance’s 1.15x cost ratio ceiling?",
+		"Does the planned demo batch size, combined with the ~11% token increase, stay within Finance’s reference target cost budget ceiling?",
 		"Which provider errors qualify as “transient” for the one allowed auto-retry, and how will they be detected/classified in the manifest?",
 		"Do we need any additional trace summarization (e.g., truncation rules) if the run approaches the cost ceiling?"
 	],
-	"recommendation": "For the next demo eval run, keep: (1) claim-level trace summaries in the dashboard (selected source ids, missing evidence, retry count, output path) and store full raw traces on disk; do not render raw provider payloads by default. (2) Retry behavior: allow exactly one automatic retry for transient provider errors and disallow silent repeated generations for quality; log all retries and their cost/latency impact in the run manifest. If projected cost exceeds 1.15x, first reduce case batch size or tighten trace verbosity rather than increasing retry depth.",
+	"recommendation": "For the next demo eval run, keep: (1) claim-level trace summaries in the dashboard (selected source ids, missing evidence, retry count, output path) and store full raw traces on disk; do not render raw provider payloads by default. (2) Retry behavior: allow exactly one automatic retry for transient provider errors and disallow silent repeated generations for quality; log all retries and their cost/latency impact in the run manifest. If projected cost exceeds the reference target cost budget, first reduce case batch size or tighten trace verbosity rather than increasing retry depth.",
 	"metadata": {
 		"variant": "OpenAI Responses baseline",
 		"runId": "baseline-openai-20260624203921",

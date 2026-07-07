@@ -11,7 +11,7 @@
 	"failureTags": ["cost-guardrail", "trace-usability"],
 	"rubricEvidence": [
 		"Candidate preserves traces but adds claim-level summarization and retry caps.",
-		"Candidate ties the recommendation to the 1.15x finance guardrail and 10-second UX target."
+		"Candidate ties the recommendation to the reference target cost budget and 10-second UX target."
 	],
 	"citationSupport": [
 		{
@@ -22,7 +22,7 @@
 		{
 			"citation": "S2",
 			"supported": true,
-			"note": "Supports 1.15x cost guardrail."
+			"note": "Supports the reference target cost budget."
 		},
 		{
 			"citation": "S3",

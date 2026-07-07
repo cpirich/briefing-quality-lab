@@ -24,7 +24,6 @@
 		"medianLatencyMs": 10663,
 		"estimatedCostUsd": 0.06721575,
 		"evaluatorEstimatedCostUsd": 0.274465,
-		"costRatio": 1,
 		"latencyRatio": 1
 	},
 	"guardrails": [
@@ -36,11 +35,11 @@
 			"threshold": ">= 0.72"
 		},
 		{
-			"id": "cost-ratio",
-			"label": "Cost ratio",
+			"id": "estimated-cost",
+			"label": "Estimated cost",
 			"status": "pass",
-			"value": "1.00x",
-			"threshold": "<= 1.15x"
+			"value": "$0.3417",
+			"threshold": "Tracked in USD; compare against reference target budget"
 		}
 	],
 	"artifactPaths": [

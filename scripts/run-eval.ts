@@ -616,10 +616,6 @@ function manifestFor({
 		hasUnknownEvaluatorCost || evaluations.length === 0
 			? null
 			: roundCostUsd(knownEstimatedEvaluatorCost(evaluations));
-	const costRatio =
-		mode === "baseline"
-			? 1
-			: roundMetric(Math.max(1, 1 + knownEstimatedCost(traces)));
 	const citationSupport = averageScore(evaluations, "citationSupport");
 
 	return RunManifestSchema.parse({
@@ -651,7 +647,6 @@ function manifestFor({
 			medianLatencyMs: median(traces.map((trace) => trace.latencyMs)),
 			estimatedCostUsd,
 			evaluatorEstimatedCostUsd,
-			costRatio,
 			latencyRatio: latencyRatioFor({ mode, traces, referenceManifest }),
 		},
 		guardrails: [
@@ -663,11 +658,14 @@ function manifestFor({
 				threshold: ">= 0.72",
 			},
 			{
-				id: "cost-ratio",
-				label: "Cost ratio",
-				status: hasUnknownCost ? "warn" : costRatio <= 1.15 ? "pass" : "warn",
-				value: hasUnknownCost ? "unknown" : `${costRatio.toFixed(2)}x`,
-				threshold: "<= 1.15x",
+				id: "estimated-cost",
+				label: "Estimated cost",
+				status: hasUnknownCost ? "warn" : "pass",
+				value:
+					estimatedCostUsd === null
+						? "unknown"
+						: `$${estimatedCostUsd.toFixed(4)}`,
+				threshold: "Tracked in USD; compare against reference target budget",
 			},
 		],
 		artifactPaths,

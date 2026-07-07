@@ -24,7 +24,6 @@
 		"medianLatencyMs": 8000,
 		"estimatedCostUsd": null,
 		"costBudgetUsd": 0.1,
-		"costRatio": 1.1,
 		"latencyRatio": 0.94
 	},
 	"guardrails": [

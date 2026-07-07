@@ -18,7 +18,7 @@
 		},
 		{
 			"role": "assistant",
-			"content": "Keep trace depth where it helps reviewers verify failed claims, but summarize traces at claim level and cap retries so the run stays under the 1.15x cost guardrail."
+			"content": "Keep trace depth where it helps reviewers verify failed claims, but summarize traces at claim level and cap retries so the run stays under the reference target cost budget."
 		}
 	],
 	"model": {
@@ -43,11 +43,11 @@
 		"id": "briefing-cost-latency-budget-candidate",
 		"sourcePacketId": "packet-cost-latency",
 		"caseId": "case-cost-latency-budget",
-		"title": "Recommendation: keep summarized traces inside the cost guardrail",
-		"summary": "Keep trace depth where it helps reviewers verify failed claims, but summarize traces at claim level and cap retries so the run stays under the 1.15x cost guardrail.",
+		"title": "Recommendation: keep summarized traces inside the cost budget",
+		"summary": "Keep trace depth where it helps reviewers verify failed claims, but summarize traces at claim level and cap retries so the run stays under the reference target cost budget.",
 		"claims": [
 			{
-				"text": "The candidate's extra token cost is currently inside the approved 1.15x guardrail.",
+				"text": "The candidate's extra token cost is currently inside the approved reference target cost budget.",
 				"citations": ["S1", "S2"]
 			},
 			{
@@ -61,9 +61,9 @@
 		],
 		"openQuestions": [
 			"Which trace fields should be summarized next to evaluator failures?",
-			"What retry cap keeps the candidate below the finance threshold on larger batches?"
+			"What retry cap keeps the candidate below the reference target cost budget on larger batches?"
 		],
-		"recommendation": "Retain claim-level trace summaries, cap retries, and shrink the batch if cost rises above 1.15x.",
+		"recommendation": "Retain claim-level trace summaries, cap retries, and shrink the batch if cost rises above the reference target cost budget.",
 		"metadata": {
 			"variant": "candidate-citation-gates",
 			"runId": "candidate-citation-gates",

@@ -148,9 +148,9 @@
 		"taskAnswerStatus": "answers-task",
 		"overconfidenceStatus": "calibrated",
 		"missingImportantEvidence": [
-			"The recommendation relies on Finance’s 1.15x ceiling and exceed-threshold actions, which are supported by S2 but S2 is not included in the generated cited source ids or claim citations."
+			"The recommendation relies on Finance’s reference target cost budget and over-budget mitigation actions, which are supported by S2 but S2 is not included in the generated cited source ids or claim citations."
 		],
-		"explanation": "The briefing directly answers how much tracing and retry behavior to keep: claim-level summaries in UI, full traces on disk, one transient-error retry, no silent repeated generations, and cost controls if projected cost exceeds 1.15x. This is broadly supported by the packet. The main weakness is citation coverage: S2 is essential for the finance ceiling and mitigation actions but is not cited. The zero-quality-regeneration wording is somewhat more specific than the retry draft, which only rejects silent repeated generations.",
+		"explanation": "The briefing directly answers how much tracing and retry behavior to keep: claim-level summaries in UI, full traces on disk, one transient-error retry, no silent repeated generations, and cost controls if projected cost exceeds the reference target cost budget. This is broadly supported by the packet. The main weakness is citation coverage: S2 is essential for the finance budget and mitigation actions but is not cited. The zero-quality-regeneration wording is somewhat more specific than the retry draft, which only rejects silent repeated generations.",
 		"failureTags": ["missing-citation", "minor-over-specificity"]
 	},
 	"scores": {

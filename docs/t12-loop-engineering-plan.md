@@ -144,7 +144,7 @@ Status: partially implemented. Specs are validated for the existing `openai-resp
 		"cost": "flat-or-up"
 	},
 	"budget": {
-		"maxCostRatio": 1.15,
+		"maxEstimatedCostUsd": 0.25,
 		"maxMedianLatencyMs": 10000
 	},
 	"rollbackReason": "Reject if citation support does not improve or if cost/latency exceeds the demo budget."
@@ -233,7 +233,7 @@ mise exec -- bun run eval:matrix
 - Citation support delta.
 - Unsupported claims.
 - Median latency.
-- Cost ratio.
+- Estimated cost.
 - Guardrail status.
 
 ### Acceptance Criteria
@@ -335,5 +335,5 @@ The important story is not that the loop removes the engineer. The story is that
 - TypeScript remains authoritative for executable variant definitions at first; JSON variant specs provide explanatory metadata for the Lab.
 - `eval:matrix` should use OpenAI/hybrid by default because the local/deterministic signal is currently too weak. Control cost through small case/variant counts, retry caps, and visible estimates rather than by defaulting to local evaluation.
 - Loop state starts as Markdown in `docs/briefing-loop-state.md`; add a Zod-validated JSON ledger only when scripts or the Lab UI need structured state.
-- Unsupported claims are the first hard ship blocker, followed by citation support, holdout regression, cost ratio, and latency.
+- Unsupported claims are the first hard ship blocker, followed by citation support, holdout regression, estimated cost, and latency.
 - The product should support a reliable local recorded-demo workflow as well as a live walkthrough. Automations remain a follow-on once the manually triggered loop is dependable.

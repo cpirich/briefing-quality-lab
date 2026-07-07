@@ -17,7 +17,6 @@ const lowerIsBetterMetrics = new Set([
 	"Grounding risk units",
 	"Median latency",
 	"Estimated cost",
-	"Cost ratio",
 ]);
 
 const targetMinusCurrentGapMetrics = new Set([
@@ -443,9 +442,7 @@ function ImprovementLoopPanel({
 	runComparison: RunComparison;
 }) {
 	const overallMetric = metricByLabel(runComparison.metrics, "Overall quality");
-	const costMetric =
-		metricByLabel(runComparison.metrics, "Estimated cost") ??
-		metricByLabel(runComparison.metrics, "Cost ratio");
+	const costMetric = metricByLabel(runComparison.metrics, "Estimated cost");
 	const latencyMetric =
 		metricByLabel(runComparison.metrics, "Median latency") ??
 		metricByLabel(runComparison.metrics, "Latency ratio");
@@ -633,9 +630,7 @@ export default async function LabPage() {
 		})
 		.filter((cluster) => cluster.count > 0);
 	const failureThemeMovements = runComparison.failureThemeMovements ?? [];
-	const comparisonRows = runComparison.comparisonRows.filter(
-		(row) => row.metric !== "Cost ratio",
-	);
+	const comparisonRows = runComparison.comparisonRows;
 	const baselineLabel =
 		runComparison.baselineLabel ??
 		comparisonSideLabel(runComparison.baselineRunId);

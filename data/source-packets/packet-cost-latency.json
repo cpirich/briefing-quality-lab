@@ -13,7 +13,7 @@
 		{
 			"id": "S2",
 			"title": "Finance guidance",
-			"body": "Finance approved up to a 1.15x cost ratio for demo-quality eval runs if the report shows why extra tokens reduce review time. Anything above that threshold needs a smaller case batch or stricter retry cap.\n\nFinance accepted a 1.15x ceiling for demo-quality runs because better traces can reduce reviewer time. The approval is conditional: if the run exceeds the threshold, the team should reduce batch size, cap retries, or summarize traces more aggressively. The note does not approve unlimited trace retention.",
+			"body": "Finance approved demo-quality eval runs up to the reference target cost budget if the report shows why extra tokens reduce review time. Anything above that budget needs a smaller case batch or stricter retry cap.\n\nFinance accepted the reference target cost budget for demo-quality runs because better traces can reduce reviewer time. The approval is conditional: if the run exceeds that budget, the team should reduce batch size, cap retries, or summarize traces more aggressively. The note does not approve unlimited trace retention.",
 			"documentType": "finance note"
 		},
 		{

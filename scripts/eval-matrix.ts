@@ -503,24 +503,25 @@ function assertLiveProviderReady(
 function guardrailStatusFor({
 	citationSupport,
 	unsupportedClaimCount,
-	costRatio,
+	estimatedCostUsd,
 	medianLatencyMs,
 	spec,
 }: {
 	citationSupport: number;
 	unsupportedClaimCount: number;
-	costRatio: number;
+	estimatedCostUsd: number | null;
 	medianLatencyMs: number;
 	spec: VariantSpec;
 }) {
 	if (
 		unsupportedClaimCount > 0 ||
-		costRatio > spec.budget.maxCostRatio ||
+		(estimatedCostUsd !== null &&
+			estimatedCostUsd > spec.budget.maxEstimatedCostUsd) ||
 		medianLatencyMs > spec.budget.maxMedianLatencyMs
 	) {
 		return "fail" as const;
 	}
-	if (citationSupport < 0.72) {
+	if (estimatedCostUsd === null || citationSupport < 0.72) {
 		return "warn" as const;
 	}
 
@@ -552,10 +553,6 @@ function manifestForVariantRun({
 	const evaluatorEstimatedCostUsd = hasUnknownEvaluatorCost(evaluations)
 		? null
 		: roundCostUsd(knownEstimatedEvaluatorCost(evaluations));
-	const totalEstimatedCostUsd = hasUnknownTotalCost({ evaluations, traces })
-		? null
-		: roundCostUsd(knownEstimatedTotalCost({ evaluations, traces }));
-
 	return RunManifestSchema.parse({
 		runId,
 		createdAt: new Date().toISOString(),
@@ -574,10 +571,6 @@ function manifestForVariantRun({
 			medianLatencyMs: median(traces.map((trace) => trace.latencyMs)),
 			estimatedCostUsd,
 			evaluatorEstimatedCostUsd,
-			costRatio:
-				totalEstimatedCostUsd === null
-					? 1
-					: Math.max(1, 1 + totalEstimatedCostUsd),
 			latencyRatio: 1,
 		},
 		guardrails: [
@@ -912,22 +905,22 @@ function matrixRecommendation(runs: VariantRunArtifacts[]) {
 					traces: bestRun.traces,
 				}),
 			);
-	const costRatio =
-		estimatedCostUsd === null ? 1 : Math.max(1, 1 + estimatedCostUsd);
 	const latencyMs = median(bestRun.traces.map((trace) => trace.latencyMs));
 	const guardrailStatus = guardrailStatusFor({
 		citationSupport,
 		unsupportedClaimCount: risk,
-		costRatio,
+		estimatedCostUsd,
 		medianLatencyMs: latencyMs,
 		spec: bestRun.spec,
 	});
+	const costSummary =
+		estimatedCostUsd === null ? "unknown cost" : `$${estimatedCostUsd}`;
 
 	return {
 		variantId: bestRun.variant.id,
 		label:
 			guardrailStatus === "pass" ? "promising candidate" : "needs human review",
-		rationale: `${bestRun.variant.label} ranked highest on the focused visible slice with ${risk} unsupported-claim risk units and ${citationSupport.toFixed(2)} citation support.`,
+		rationale: `${bestRun.variant.label} ranked highest on the focused visible slice with ${risk} unsupported-claim risk units, ${citationSupport.toFixed(2)} citation support, and ${costSummary} estimated cost.`,
 		guardrailStatus,
 	};
 }
@@ -982,7 +975,6 @@ function dryRunMatrix({
 				unsupportedClaims: 0,
 				medianLatencyMs: 0,
 				estimatedCostUsd: null,
-				costRatio: 1,
 				guardrailStatus: "warn",
 			},
 			artifactPaths: [matrixPath],
@@ -1120,8 +1112,6 @@ async function main() {
 							traces: run.traces,
 						}),
 					);
-			const costRatio =
-				estimatedCostUsd === null ? 1 : Math.max(1, 1 + estimatedCostUsd);
 			const citationSupport = averageScore(run.evaluations, "citationSupport");
 			const risk = unsupportedClaims(run.evaluations);
 			const medianLatencyMs = median(
@@ -1144,11 +1134,10 @@ async function main() {
 					unsupportedClaims: risk,
 					medianLatencyMs,
 					estimatedCostUsd,
-					costRatio,
 					guardrailStatus: guardrailStatusFor({
 						citationSupport,
 						unsupportedClaimCount: risk,
-						costRatio,
+						estimatedCostUsd,
 						medianLatencyMs,
 						spec: run.spec,
 					}),

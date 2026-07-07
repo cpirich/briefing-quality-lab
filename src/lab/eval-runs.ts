@@ -113,7 +113,6 @@ function buildManifest({
 			citationSupport: 0,
 			unsupportedClaims: 0,
 			medianLatencyMs: 0,
-			costRatio: 1,
 			latencyRatio: 1,
 		},
 		guardrails: [

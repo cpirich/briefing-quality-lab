@@ -23,7 +23,6 @@
 		"groundingRiskUnits": 26,
 		"medianLatencyMs": 8400,
 		"estimatedCostUsd": 0.098,
-		"costRatio": 1,
 		"latencyRatio": 1
 	},
 	"guardrails": [
@@ -35,11 +34,11 @@
 			"threshold": ">= 0.72"
 		},
 		{
-			"id": "cost-ratio",
-			"label": "Cost ratio",
+			"id": "estimated-cost",
+			"label": "Estimated cost",
 			"status": "pass",
-			"value": "1.00x",
-			"threshold": "<= 1.15x"
+			"value": "$0.0980",
+			"threshold": "Tracked in USD"
 		}
 	],
 	"artifactPaths": [

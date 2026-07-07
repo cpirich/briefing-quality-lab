@@ -14,7 +14,7 @@
 			"citations": ["S2", "S6"]
 		},
 		{
-			"text": "Long traces are useful for debugging, but unchecked retries caused a 1.34x cost increase; finance will accept trace retention if retries are capped and summarized in a run manifest (retry count, cost ratio, and what the trace resolved).",
+			"text": "Long traces are useful for debugging, but unchecked retries caused a 1.34x cost increase; finance will accept trace retention if retries are capped and summarized in a run manifest (retry count, estimated cost, and what the trace resolved).",
 			"citations": ["S3"]
 		},
 		{
@@ -28,11 +28,11 @@
 	],
 	"openQuestions": [
 		"What exact citation-support threshold (block condition) will be used for the shipping gate, and how will ‘unsupported claim’ be operationally detected and clustered?",
-		"What retry cap will be set, and what is the acceptable cost ratio increase (guardrail) for an eval run?",
+		"What retry cap will be set, and what is the acceptable cost budget for an eval run?",
 		"What dashboard clustering taxonomy and UX will be implemented to make failure patterns ‘visible’ in the next batch (e.g., grouping by unsupported-claim pattern vs weak-citation pattern)?",
 		"What size constitutes the next ‘smaller visible batch,’ and what criteria will trigger expansion to broader coverage after it?"
 	],
-	"recommendation": "Do not immediately expand to broader automated coverage. Run one more smaller, reviewer-friendly batch first, with: (1) a hard citation-support shipping gate tracked separately from coverage, (2) a dashboard that clusters failures by pattern (unsupported claims/weak citations/cost/holdout signals), (3) retained long traces but with capped retries and a manifest summarizing retry count and cost ratio, and (4) holdout performance reported only in aggregate (no tuning labels in prompt-iteration tools). Expand automated eval coverage only if the next candidate improves grounding while staying within the cost guardrail.",
+	"recommendation": "Do not immediately expand to broader automated coverage. Run one more smaller, reviewer-friendly batch first, with: (1) a hard citation-support shipping gate tracked separately from coverage, (2) a dashboard that clusters failures by pattern (unsupported claims/weak citations/cost/holdout signals), (3) retained long traces but with capped retries and a manifest summarizing retry count and estimated cost, and (4) holdout performance reported only in aggregate (no tuning labels in prompt-iteration tools). Expand automated eval coverage only if the next candidate improves grounding while staying within the cost guardrail.",
 	"metadata": {
 		"variant": "OpenAI Responses baseline",
 		"runId": "baseline-openai-20260624203921",

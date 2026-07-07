@@ -25,11 +25,11 @@
 			"tone": "blue"
 		},
 		{
-			"label": "Cost ratio",
-			"value": "1.10x",
-			"delta": "+0.10x",
-			"status": "Inside 1.15x guardrail",
-			"tone": "amber"
+			"label": "Estimated cost",
+			"value": "0.098",
+			"delta": "-0.002",
+			"status": "Baseline cost vs Reference target budget <= 0.1",
+			"tone": "green"
 		},
 		{
 			"label": "Latency ratio",
@@ -119,7 +119,7 @@
 			"title": "Cost and latency tradeoff too vague",
 			"count": 2,
 			"severity": "Medium",
-			"evidence": "Recommendations mention cost or speed without tying the decision to the 1.15x guardrail, retry caps, or progress UX.",
+			"evidence": "Recommendations mention cost or speed without tying the decision to the reference target cost budget, retry caps, or progress UX.",
 			"cases": ["case-cost-latency-budget", "case-eval-loop"]
 		}
 	],

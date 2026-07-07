@@ -19,7 +19,7 @@
 		{
 			"id": "S3",
 			"title": "Cost review",
-			"body": "Long traces help debug failures, but unchecked retries created a 1.34x cost increase in the last dry run. The finance reviewer accepted trace retention only if retries are capped and summarized in the run manifest.\n\nThe cost review separates trace usefulness from retry sprawl. Long traces helped diagnose why a claim failed, but retries created duplicate traces that nobody read. Finance accepted keeping detailed traces when the run manifest shows retry count, cost ratio, and a short explanation of what the trace helped resolve.",
+			"body": "Long traces help debug failures, but unchecked retries created a 1.34x cost increase in the last dry run. The finance reviewer accepted trace retention only if retries are capped and summarized in the run manifest.\n\nThe cost review separates trace usefulness from retry sprawl. Long traces helped diagnose why a claim failed, but retries created duplicate traces that nobody read. Finance accepted keeping detailed traces when the run manifest shows retry count, estimated cost, and a short explanation of what the trace helped resolve.",
 			"documentType": "cost review"
 		},
 		{

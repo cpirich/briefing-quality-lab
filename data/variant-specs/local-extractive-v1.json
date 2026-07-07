@@ -17,7 +17,7 @@
 		"cost": "flat"
 	},
 	"budget": {
-		"maxCostRatio": 1,
+		"maxEstimatedCostUsd": 0.1,
 		"maxMedianLatencyMs": 1000
 	},
 	"rollbackReason": "Use only as an offline smoke test; reject it as product-quality evidence when choosing a generated candidate."

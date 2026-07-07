@@ -26,7 +26,7 @@
 		"What citation-support threshold should block a candidate run?",
 		"Which traces are worth keeping when retry costs rise?"
 	],
-	"recommendation": "Run the next experiment as a small visible batch with citation support and cost ratio as explicit gates.",
+	"recommendation": "Run the next experiment as a small visible batch with citation support and absolute cost as explicit gates.",
 	"metadata": {
 		"variant": "candidate-citation-gates",
 		"runId": "candidate-citation-gates",

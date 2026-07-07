@@ -144,7 +144,7 @@ The `/lab` route should show:
 
 - Top bar labeled Briefing Genie Improvement Lab, selected run pair, and actions for seed, run evals, compare, and open latest report.
 - Compact Briefing Genie panel for selecting a source packet and producing one briefing without leaving the dashboard.
-- Metric strip for overall quality, citation grounding, coverage, cost ratio, and latency ratio.
+- Metric strip for overall quality, citation grounding, coverage, estimated cost, and latency ratio.
 - Run comparison table with baseline versus latest variant.
 - Failure cluster list with short evaluator evidence.
 - Featured case diff showing source evidence from the packet, baseline briefing, variant briefing, and evaluator notes. The UI may show previews or excerpts for readability, but the product scenario is that Briefing Genie evaluates source documents in the packet, not pre-selected excerpts from an unstated upstream process.

@@ -135,7 +135,7 @@ export const VariantSpecSchema = z.object({
 		})
 		.strict(),
 	budget: z.object({
-		maxCostRatio: z.number().positive(),
+		maxEstimatedCostUsd: z.number().nonnegative(),
 		maxMedianLatencyMs: z.number().int().positive(),
 	}),
 	rollbackReason: z.string().min(1),
@@ -394,7 +394,6 @@ export const RunManifestSchema = z.object({
 		estimatedCostUsd: z.number().nonnegative().nullable().optional(),
 		evaluatorEstimatedCostUsd: z.number().nonnegative().nullable().optional(),
 		costBudgetUsd: z.number().positive().optional(),
-		costRatio: z.number().positive(),
 		latencyRatio: z.number().positive(),
 	}),
 	guardrails: z.array(
@@ -540,7 +539,6 @@ export const FocusedVariantMatrixSchema = z.object({
 				unsupportedClaims: z.number().int().nonnegative(),
 				medianLatencyMs: z.number().int().nonnegative(),
 				estimatedCostUsd: z.number().nonnegative().nullable(),
-				costRatio: z.number().positive(),
 				guardrailStatus: z.enum(["pass", "warn", "fail"]),
 			}),
 			artifactPaths: z.array(artifactPathSchema).min(1),

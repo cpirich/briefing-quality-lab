@@ -296,7 +296,7 @@ const fixtures: CaseFixture[] = [
 				"Which traces are worth keeping when retry costs rise?",
 			],
 			recommendation:
-				"Run the next experiment as a small visible batch with citation support and cost ratio as explicit gates.",
+				"Run the next experiment as a small visible batch with citation support and absolute cost as explicit gates.",
 		},
 		evaluation: {
 			scores: {
@@ -767,7 +767,7 @@ const fixtures: CaseFixture[] = [
 			{
 				id: "S2",
 				title: "Finance guidance",
-				body: "Finance approved up to a 1.15x cost ratio for demo-quality eval runs if the report shows why extra tokens reduce review time. Anything above that threshold needs a smaller case batch or stricter retry cap.",
+				body: "Finance approved demo-quality eval runs up to the reference target cost budget if the report shows why extra tokens reduce review time. Anything above that budget needs a smaller case batch or stricter retry cap.",
 				documentType: "finance note",
 			},
 			{
@@ -784,14 +784,14 @@ const fixtures: CaseFixture[] = [
 			},
 		],
 		expectedCoverage: [
-			"Candidate cost increased but stays within the 1.15x guardrail.",
+			"Candidate cost increased but stays within the reference target cost budget.",
 			"Latency improved because fewer manual reruns were needed.",
 			"Long traces need claim-level summaries, not raw payloads alone.",
 			"Single-briefing UX should stay under 10 seconds while eval runs show progress.",
 		],
 		traps: [
 			"Do not optimize cost by deleting traces reviewers need for grounding failures.",
-			"Do not ignore the 1.15x cost threshold.",
+			"Do not ignore the reference target cost budget.",
 		],
 		holdout: false,
 		demoHighlight: false,
@@ -820,12 +820,12 @@ const fixtures: CaseFixture[] = [
 				"Keep full traces for all cases and revisit cost after the demo.",
 		},
 		candidate: {
-			title: "Recommendation: keep summarized traces inside the cost guardrail",
+			title: "Recommendation: keep summarized traces inside the cost budget",
 			summary:
-				"Keep trace depth where it helps reviewers verify failed claims, but summarize traces at claim level and cap retries so the run stays under the 1.15x cost guardrail.",
+				"Keep trace depth where it helps reviewers verify failed claims, but summarize traces at claim level and cap retries so the run stays under the reference target cost budget.",
 			claims: [
 				{
-					text: "The candidate's extra token cost is currently inside the approved 1.15x guardrail.",
+					text: "The candidate's extra token cost is currently inside the approved reference target cost budget.",
 					citations: ["S1", "S2"],
 				},
 				{
@@ -839,10 +839,10 @@ const fixtures: CaseFixture[] = [
 			],
 			openQuestions: [
 				"Which trace fields should be summarized next to evaluator failures?",
-				"What retry cap keeps the candidate below the finance threshold on larger batches?",
+				"What retry cap keeps the candidate below the reference target cost budget on larger batches?",
 			],
 			recommendation:
-				"Retain claim-level trace summaries, cap retries, and shrink the batch if cost rises above 1.15x.",
+				"Retain claim-level trace summaries, cap retries, and shrink the batch if cost rises above the reference target cost budget.",
 		},
 		evaluation: {
 			scores: {
@@ -854,7 +854,7 @@ const fixtures: CaseFixture[] = [
 			failureTags: ["cost-guardrail", "trace-usability"],
 			rubricEvidence: [
 				"Candidate preserves traces but adds claim-level summarization and retry caps.",
-				"Candidate ties the recommendation to the 1.15x finance guardrail and 10-second UX target.",
+				"Candidate ties the recommendation to the reference target cost budget and 10-second UX target.",
 			],
 			citationSupport: [
 				{
@@ -865,7 +865,7 @@ const fixtures: CaseFixture[] = [
 				{
 					citation: "S2",
 					supported: true,
-					note: "Supports 1.15x cost guardrail.",
+					note: "Supports the reference target cost budget.",
 				},
 				{
 					citation: "S3",
@@ -1302,7 +1302,7 @@ const sourceBodyAdditions: Record<string, Record<string, string>> = {
 	"case-eval-loop": {
 		S1: "The memo compares a broad dry run with a smaller reviewed batch. The broad run produced more scores, but reviewers spent extra time rediscovering whether each failure was new. The smaller batch made repeated citation issues easier to group and produced more actionable prompt changes.",
 		S2: "The guardrail note came from a release review where the candidate covered more requested points but attached weak citations to several claims. Reviewers agreed that coverage and grounding must be tracked separately. A candidate can look better in aggregate and still be blocked if unsupported claims reach customer-facing recommendations.",
-		S3: "The cost review separates trace usefulness from retry sprawl. Long traces helped diagnose why a claim failed, but retries created duplicate traces that nobody read. Finance accepted keeping detailed traces when the run manifest shows retry count, cost ratio, and a short explanation of what the trace helped resolve.",
+		S3: "The cost review separates trace usefulness from retry sprawl. Long traces helped diagnose why a claim failed, but retries created duplicate traces that nobody read. Finance accepted keeping detailed traces when the run manifest shows retry count, estimated cost, and a short explanation of what the trace helped resolve.",
 		S4: "The holdout protocol distinguishes dashboard visibility from tuning visibility. Aggregate holdout scores may appear in the lab so reviewers know the set exists, but labels and expected answers should not appear in prompt-editing screens. The goal is to catch overfitting to the visible demo cases.",
 	},
 	"case-code-review-queues": {
@@ -1325,7 +1325,7 @@ const sourceBodyAdditions: Record<string, Record<string, string>> = {
 	},
 	"case-cost-latency-budget": {
 		S1: "Telemetry compares the candidate prompt with the baseline over the visible eval set. Token usage rose because the candidate retained more claim-level evidence, but fewer outputs needed manual reruns. The latency improvement came from fewer repeated attempts, not from shorter single generations.",
-		S2: "Finance accepted a 1.15x ceiling for demo-quality runs because better traces can reduce reviewer time. The approval is conditional: if the run exceeds the threshold, the team should reduce batch size, cap retries, or summarize traces more aggressively. The note does not approve unlimited trace retention.",
+		S2: "Finance accepted the reference target cost budget for demo-quality runs because better traces can reduce reviewer time. The approval is conditional: if the run exceeds that budget, the team should reduce batch size, cap retries, or summarize traces more aggressively. The note does not approve unlimited trace retention.",
 		S3: "Reviewers liked traces when they were attached to the failed claim and cited source. Raw payload dumps slowed them down because they had to search for the relevant turn. The requested improvement is a short trace summary near each evaluator finding.",
 		S4: "The rehearsal note separates product responsiveness from lab-run duration. A single briefing felt live-demo safe under 10 seconds. Full eval runs could take longer if the UI showed the current case, elapsed time, and artifact path so observers understood progress.",
 	},
@@ -1770,7 +1770,6 @@ function runManifestFor(
 					medianLatencyMs: 8000,
 					estimatedCostUsd: null,
 					costBudgetUsd: 0.1,
-					costRatio: 1.1,
 					latencyRatio: 0.94,
 				}
 			: {
@@ -1782,7 +1781,6 @@ function runManifestFor(
 					groundingRiskUnits: 26,
 					medianLatencyMs: 8400,
 					estimatedCostUsd: 0.098,
-					costRatio: 1,
 					latencyRatio: 1,
 				},
 		guardrails: [
@@ -1794,11 +1792,11 @@ function runManifestFor(
 				threshold: isCandidate ? ">= 0.96" : ">= 0.72",
 			},
 			{
-				id: isCandidate ? "cost-budget" : "cost-ratio",
-				label: isCandidate ? "Cost budget" : "Cost ratio",
+				id: isCandidate ? "cost-budget" : "estimated-cost",
+				label: isCandidate ? "Cost budget" : "Estimated cost",
 				status: "pass",
-				value: isCandidate ? "$0.1000" : "1.00x",
-				threshold: isCandidate ? "OpenAI corpus cost target" : "<= 1.15x",
+				value: isCandidate ? "$0.1000" : "$0.0980",
+				threshold: isCandidate ? "OpenAI corpus cost target" : "Tracked in USD",
 			},
 		],
 		artifactPaths: [
@@ -1837,11 +1835,11 @@ function comparisonFor(): RunComparison {
 				tone: "blue",
 			},
 			{
-				label: "Cost ratio",
-				value: "1.10x",
-				delta: "+0.10x",
-				status: "Inside 1.15x guardrail",
-				tone: "amber",
+				label: "Estimated cost",
+				value: "0.098",
+				delta: "-0.002",
+				status: "Baseline cost vs Reference target budget <= 0.1",
+				tone: "green",
 			},
 			{
 				label: "Latency ratio",
@@ -1934,7 +1932,7 @@ function comparisonFor(): RunComparison {
 				count: 2,
 				severity: "Medium",
 				evidence:
-					"Recommendations mention cost or speed without tying the decision to the 1.15x guardrail, retry caps, or progress UX.",
+					"Recommendations mention cost or speed without tying the decision to the reference target cost budget, retry caps, or progress UX.",
 				cases: ["case-cost-latency-budget", "case-eval-loop"],
 			},
 		],

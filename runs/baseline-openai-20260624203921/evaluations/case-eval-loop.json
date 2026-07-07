@@ -113,12 +113,12 @@
 			"failureTags": []
 		},
 		{
-			"claimText": "Long traces are useful for debugging, but unchecked retries caused a 1.34x cost increase; finance will accept trace retention if retries are capped and summarized in a run manifest (retry count, cost ratio, and what the trace resolved).",
+			"claimText": "Long traces are useful for debugging, but unchecked retries caused a 1.34x cost increase; finance will accept trace retention if retries are capped and summarized in a run manifest (retry count, estimated cost, and what the trace resolved).",
 			"citedSourceIds": ["S3"],
 			"supportStatus": "supported",
 			"supportingEvidenceIds": ["S3"],
 			"missingEvidence": [],
-			"explanation": "S3 directly supports all elements: long traces helped debug/diagnose failures, unchecked retries caused a 1.34x cost increase, and finance accepted trace retention if retries are capped and the manifest includes retry count, cost ratio, and an explanation of what the trace helped resolve.",
+			"explanation": "S3 directly supports all elements: long traces helped debug/diagnose failures, unchecked retries caused a 1.34x cost increase, and finance accepted trace retention if retries are capped and the manifest includes retry count, estimated cost, and an explanation of what the trace helped resolve.",
 			"failureTags": []
 		},
 		{
